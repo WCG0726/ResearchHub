@@ -12,15 +12,14 @@ import { initializeApp } from 'firebase/app'
 import { getDatabase, ref, set, onValue, onDisconnect, serverTimestamp } from 'firebase/database'
 import { getAuth, signInAnonymously } from 'firebase/auth'
 
-// ⬇️ 替换为你的 Firebase 配置
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
-  projectId: "YOUR_PROJECT",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyBg0IQOFKHeQR2pp-V_lUzKc9EST-uUghQ",
+  authDomain: "researchhub-3d4b4.firebaseapp.com",
+  databaseURL: "https://researchhub-3d4b4-default-rtdb.firebaseio.com",
+  projectId: "researchhub-3d4b4",
+  storageBucket: "researchhub-3d4b4.firebasestorage.app",
+  messagingSenderId: "209526833070",
+  appId: "1:209526833070:web:0cb7cffab117914191123f"
 }
 
 let app = null
