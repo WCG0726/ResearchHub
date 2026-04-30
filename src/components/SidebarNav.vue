@@ -28,6 +28,10 @@
         <span class="nav-icon">✨</span>
         <span class="nav-text">润色提示词</span>
       </router-link>
+      <router-link to="/links" class="nav-item" :class="{ active: $route.name === 'links' }">
+        <span class="nav-icon">🔗</span>
+        <span class="nav-text">学术导航</span>
+      </router-link>
 
       <div class="nav-section">生活</div>
       <router-link to="/checkin" class="nav-item" :class="{ active: $route.name === 'checkin' }">
@@ -49,14 +53,37 @@
     </nav>
 
     <div class="sidebar-footer">
-      <div class="version">v1.1.0</div>
+      <div class="user-info" v-if="user">
+        <div class="user-avatar">{{ user.nickname.charAt(0) }}</div>
+        <div class="user-name">{{ user.nickname }}</div>
+      </div>
+      <button class="btn-logout" @click="handleLogout">退出登录</button>
+      <div class="version">v2.0.0</div>
     </div>
   </aside>
 </template>
 
 <script>
+import { getCurrentUser, logout } from '../utils/auth'
+
 export default {
-  name: 'SidebarNav'
+  name: 'SidebarNav',
+  data() {
+    return {
+      user: getCurrentUser()
+    }
+  },
+  methods: {
+    handleLogout() {
+      logout()
+      this.$router.push('/login')
+    }
+  },
+  watch: {
+    '$route'() {
+      this.user = getCurrentUser()
+    }
+  }
 }
 </script>
 
@@ -124,6 +151,54 @@ export default {
 .sidebar-footer {
   padding: 16px;
   border-top: 1px solid var(--border);
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  background: var(--primary);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.user-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.btn-logout {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: none;
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 10px;
+}
+
+.btn-logout:hover {
+  border-color: var(--danger);
+  color: var(--danger);
 }
 
 .version {

@@ -28,15 +28,21 @@
 
     <!-- 今日打卡 -->
     <div class="card today-checkin">
-      <h3 class="card-title">今日打卡</h3>
-      <div v-if="isCheckedIn" class="checkin-done">
-        <span class="checkin-icon">✅</span>
-        <span>今日已打卡</span>
-        <span class="checkin-time">{{ checkinTime }}</span>
+      <h3 class="card-title">今日考勤</h3>
+      <div v-if="clockStatus.clockedOut" class="checkin-done">
+        <span class="checkin-icon">🏠</span>
+        <span>已下班</span>
+        <span class="checkin-time">{{ clockStatus.clockInTime }} - {{ clockStatus.clockOutTime }}（{{ clockStatus.duration }}）</span>
       </div>
-      <button v-else class="btn btn-primary btn-lg" @click="doCheckin">
-        立即打卡
-      </button>
+      <div v-else-if="clockStatus.clockedIn" class="checkin-done">
+        <span class="checkin-icon">💼</span>
+        <span>已上班</span>
+        <span class="checkin-time">{{ clockStatus.clockInTime }}</span>
+        <router-link to="/checkin" class="btn btn-primary btn-sm" style="margin-left:auto">去下班打卡</router-link>
+      </div>
+      <router-link v-else to="/checkin" class="btn btn-primary btn-lg">
+        上班打卡
+      </router-link>
     </div>
 
     <!-- 最近记录 -->
@@ -70,7 +76,7 @@
 </template>
 
 <script>
-import { getStreak, getRecords, checkinToday, getProfile } from '../utils/storage'
+import { getStreak, getRecords, getProfile, getTodayClockStatus } from '../utils/storage'
 
 const QUOTES = [
   { text: '科学是永无止境的，它是一个永恒之谜。', author: '爱因斯坦' },
@@ -90,8 +96,7 @@ export default {
       nickname: getProfile().nickname,
       streak: { current: 0, longest: 0, total: 0 },
       records: [],
-      isCheckedIn: false,
-      checkinTime: '',
+      clockStatus: { clockedIn: false, clockedOut: false },
       quote: QUOTES[Math.floor(Math.random() * QUOTES.length)]
     }
   },
@@ -101,14 +106,6 @@ export default {
     }
   },
   methods: {
-    doCheckin() {
-      const result = checkinToday()
-      if (result) {
-        this.isCheckedIn = true
-        this.checkinTime = new Date().toLocaleTimeString('zh-CN')
-        this.streak = getStreak()
-      }
-    },
     formatDate(dateStr) {
       return new Date(dateStr).toLocaleDateString('zh-CN')
     },
@@ -118,13 +115,7 @@ export default {
     loadData() {
       this.streak = getStreak()
       this.records = getRecords()
-
-      const today = new Date().toISOString().split('T')[0]
-      const checkins = JSON.parse(localStorage.getItem('research_hub_checkins') || '{}')
-      if (checkins[today]) {
-        this.isCheckedIn = true
-        this.checkinTime = new Date(checkins[today].time).toLocaleTimeString('zh-CN')
-      }
+      this.clockStatus = getTodayClockStatus()
     }
   },
   mounted() {

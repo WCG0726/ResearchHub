@@ -46,6 +46,50 @@ export function checkinToday() {
   return false
 }
 
+// 上班/下班打卡
+export function clockIn() {
+  const today = new Date().toISOString().split('T')[0]
+  const checkins = getCheckins()
+  if (!checkins[today]) {
+    checkins[today] = {}
+  }
+  if (checkins[today].clockIn) return false
+  checkins[today].clockIn = new Date().toISOString()
+  setCheckins(checkins)
+  return true
+}
+
+export function clockOut() {
+  const today = new Date().toISOString().split('T')[0]
+  const checkins = getCheckins()
+  if (!checkins[today] || !checkins[today].clockIn || checkins[today].clockOut) return false
+  checkins[today].clockOut = new Date().toISOString()
+  setCheckins(checkins)
+  return true
+}
+
+export function getTodayClockStatus() {
+  const today = new Date().toISOString().split('T')[0]
+  const checkins = getCheckins()
+  const record = checkins[today]
+  if (!record) return { clockedIn: false, clockedOut: false }
+  return {
+    clockedIn: !!record.clockIn,
+    clockedOut: !!record.clockOut,
+    clockInTime: record.clockIn ? new Date(record.clockIn).toLocaleTimeString('zh-CN') : '',
+    clockOutTime: record.clockOut ? new Date(record.clockOut).toLocaleTimeString('zh-CN') : '',
+    duration: record.clockIn && record.clockOut
+      ? formatDuration(new Date(record.clockOut) - new Date(record.clockIn))
+      : ''
+  }
+}
+
+function formatDuration(ms) {
+  const hours = Math.floor(ms / 3600000)
+  const minutes = Math.floor((ms % 3600000) / 60000)
+  return `${hours}小时${minutes}分钟`
+}
+
 export function getStreak() {
   const checkins = getCheckins()
   const dates = Object.keys(checkins).sort().reverse()

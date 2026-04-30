@@ -2,28 +2,40 @@
   <div class="checkin-page">
     <h1 class="page-title">打卡</h1>
 
-    <!-- 打卡按钮 -->
+    <!-- 上班/下班打卡 -->
     <div class="card checkin-card">
-      <div v-if="isCheckedIn" class="checkin-success">
-        <div class="success-icon">✅</div>
-        <h2>今日已打卡</h2>
-        <p>打卡时间：{{ checkinTime }}</p>
-        <div class="streak-info">
-          <div class="streak-item">
-            <span class="streak-value">{{ streak.current }}</span>
-            <span class="streak-label">连续天数</span>
+      <!-- 已下班 -->
+      <div v-if="clockStatus.clockedOut" class="checkin-success">
+        <div class="success-icon">🏠</div>
+        <h2>今日已下班</h2>
+        <div class="clock-detail">
+          <div class="clock-row">
+            <span class="clock-label">上班时间</span>
+            <span class="clock-value">{{ clockStatus.clockInTime }}</span>
           </div>
-          <div class="streak-item">
-            <span class="streak-value">{{ streak.total }}</span>
-            <span class="streak-label">累计打卡</span>
+          <div class="clock-row">
+            <span class="clock-label">下班时间</span>
+            <span class="clock-value">{{ clockStatus.clockOutTime }}</span>
+          </div>
+          <div class="clock-row highlight">
+            <span class="clock-label">工作时长</span>
+            <span class="clock-value">{{ clockStatus.duration }}</span>
           </div>
         </div>
       </div>
+      <!-- 已上班未下班 -->
+      <div v-else-if="clockStatus.clockedIn" class="checkin-success">
+        <div class="success-icon">💼</div>
+        <h2>上班打卡成功</h2>
+        <p>上班时间：{{ clockStatus.clockInTime }}</p>
+        <button class="btn btn-primary btn-xl" @click="doClockOut">下班打卡</button>
+      </div>
+      <!-- 未打卡 -->
       <div v-else class="checkin-prompt">
-        <div class="prompt-icon">📅</div>
+        <div class="prompt-icon">🌅</div>
         <h2>今日尚未打卡</h2>
-        <p>坚持每天打卡，养成科研好习惯</p>
-        <button class="btn btn-primary btn-xl" @click="doCheckin">立即打卡</button>
+        <p>开始新的一天，加油！</p>
+        <button class="btn btn-primary btn-xl" @click="doClockIn">上班打卡</button>
       </div>
     </div>
 
@@ -71,14 +83,13 @@
 </template>
 
 <script>
-import { getCheckins, getStreak, checkinToday } from '../utils/storage'
+import { getCheckins, getStreak, clockIn, clockOut, getTodayClockStatus } from '../utils/storage'
 
 export default {
   name: 'CheckinView',
   data() {
     return {
-      isCheckedIn: false,
-      checkinTime: '',
+      clockStatus: { clockedIn: false, clockedOut: false },
       streak: { current: 0, longest: 0, total: 0 },
       checkins: {},
       currentYear: new Date().getFullYear(),
@@ -97,7 +108,6 @@ export default {
       const lastDay = new Date(year, month + 1, 0)
       const days = []
 
-      // 填充上月日期
       const startWeekday = firstDay.getDay()
       for (let i = startWeekday - 1; i >= 0; i--) {
         const d = new Date(year, month, -i)
@@ -110,7 +120,6 @@ export default {
         })
       }
 
-      // 本月日期
       const today = new Date().toISOString().split('T')[0]
       for (let i = 1; i <= lastDay.getDate(); i++) {
         const d = new Date(year, month, i)
@@ -124,7 +133,6 @@ export default {
         })
       }
 
-      // 填充下月日期
       const remaining = 42 - days.length
       for (let i = 1; i <= remaining; i++) {
         const d = new Date(year, month + 1, i)
@@ -141,23 +149,20 @@ export default {
     }
   },
   methods: {
-    doCheckin() {
-      const result = checkinToday()
-      if (result) {
-        this.isCheckedIn = true
-        this.checkinTime = new Date().toLocaleTimeString('zh-CN')
+    doClockIn() {
+      if (clockIn()) {
+        this.loadData()
+      }
+    },
+    doClockOut() {
+      if (clockOut()) {
         this.loadData()
       }
     },
     loadData() {
       this.checkins = getCheckins()
       this.streak = getStreak()
-
-      const today = new Date().toISOString().split('T')[0]
-      if (this.checkins[today]) {
-        this.isCheckedIn = true
-        this.checkinTime = new Date(this.checkins[today].time).toLocaleTimeString('zh-CN')
-      }
+      this.clockStatus = getTodayClockStatus()
     }
   },
   mounted() {
@@ -218,6 +223,44 @@ export default {
 .streak-label {
   font-size: 14px;
   color: var(--text-secondary);
+}
+
+.clock-detail {
+  max-width: 320px;
+  margin: 0 auto;
+}
+
+.clock-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 15px;
+}
+
+.clock-row:last-child {
+  border-bottom: none;
+}
+
+.clock-row.highlight {
+  margin-top: 8px;
+  padding: 12px 0;
+  border-top: 2px solid var(--primary);
+  border-bottom: none;
+}
+
+.clock-label {
+  color: var(--text-secondary);
+}
+
+.clock-value {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.clock-row.highlight .clock-value {
+  color: var(--primary);
+  font-size: 18px;
 }
 
 .checkin-prompt .prompt-icon {

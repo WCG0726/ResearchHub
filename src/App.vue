@@ -1,12 +1,15 @@
 <template>
   <div class="app" :class="{ 'dark': isDark }">
-    <HeaderNav :is-dark="isDark" @toggle-theme="toggleTheme" />
-    <div class="layout">
-      <SidebarNav />
-      <main class="main">
-        <router-view />
-      </main>
-    </div>
+    <template v-if="!isLoginPage">
+      <HeaderNav :is-dark="isDark" @toggle-theme="toggleTheme" />
+      <div class="layout">
+        <SidebarNav />
+        <main class="main">
+          <router-view />
+        </main>
+      </div>
+    </template>
+    <router-view v-else />
   </div>
 </template>
 
@@ -21,6 +24,11 @@ export default {
   data() {
     return {
       isDark: getTheme() === 'dark'
+    }
+  },
+  computed: {
+    isLoginPage() {
+      return this.$route.name === 'login'
     }
   },
   methods: {

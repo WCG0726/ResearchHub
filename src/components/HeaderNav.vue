@@ -112,6 +112,12 @@ export default {
   justify-content: space-between;
   padding: 0 24px;
   z-index: 100;
+  backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.dark .header {
+  background: rgba(15, 23, 42, 0.9);
 }
 
 .header-left {
