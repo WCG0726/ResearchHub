@@ -397,7 +397,10 @@ export default {
 .welcome-title {
   font-size: 22px;
   font-weight: 700;
-  color: var(--text-primary);
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   margin: 0 0 2px;
 }
 
@@ -410,7 +413,10 @@ export default {
 .clock-time {
   font-size: 28px;
   font-weight: 300;
-  color: var(--text-primary);
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   font-variant-numeric: tabular-nums;
 }
 
@@ -440,8 +446,13 @@ export default {
 
 .quick-btn:hover {
   border-color: var(--color);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-  transform: translateY(-2px);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--color) 25%, transparent);
+  transform: translateY(-3px);
+  background: color-mix(in srgb, var(--color) 6%, white);
+}
+
+.dark .quick-btn:hover {
+  background: color-mix(in srgb, var(--color) 12%, var(--bg-primary));
 }
 
 .quick-icon { font-size: 24px; }
@@ -462,6 +473,19 @@ export default {
   background: var(--bg-primary);
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-chip::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: var(--gradient-primary);
+  border-radius: 3px 0 0 3px;
 }
 
 .stat-chip-icon { font-size: 18px; }
@@ -521,7 +545,7 @@ export default {
   gap: 12px;
 }
 
-.att-status.on { color: var(--success); font-weight: 600; }
+.att-status.on { color: var(--success); font-weight: 600; animation: pulse-glow 2s ease-in-out infinite; }
 .att-status.off { color: var(--text-muted); }
 .att-since { font-size: 13px; color: var(--text-secondary); }
 
@@ -557,7 +581,7 @@ export default {
   transition: all 0.2s;
 }
 
-.record-item-link:hover { background: var(--bg-hover); }
+.record-item-link:hover { background: var(--bg-hover); transform: translateX(4px); }
 
 .record-item-link .record-title {
   font-size: 14px;
@@ -631,7 +655,7 @@ export default {
 }
 
 .mini-day.other { color: var(--text-muted); opacity: 0.4; }
-.mini-day.today { background: var(--primary); color: white; font-weight: 700; }
+.mini-day.today { background: var(--gradient-primary); color: white; font-weight: 700; box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3); }
 .mini-day.checked { color: var(--success); font-weight: 600; }
 .mini-day.weekend { color: #ef4444; }
 .mini-day.weekend.other { color: var(--text-muted); }
@@ -662,6 +686,7 @@ export default {
   border-radius: 50%;
   margin-top: 5px;
   flex-shrink: 0;
+  animation: pulse-glow 2s ease-in-out infinite;
 }
 
 .event-row .event-text { font-size: 14px; color: var(--text-primary); }
@@ -682,9 +707,22 @@ export default {
 
 /* 语录 */
 .quote-card {
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: var(--gradient-primary);
   color: white;
   border: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.quote-card::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+  animation: float 6s ease-in-out infinite;
 }
 
 .quote-mark {

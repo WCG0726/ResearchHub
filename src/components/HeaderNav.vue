@@ -256,19 +256,19 @@ export default {
   left: 0;
   right: 0;
   height: var(--header-h);
-  background: var(--bg-primary);
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 24px;
   z-index: 100;
-  backdrop-filter: blur(8px);
-  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(16px) saturate(180%);
+  background: rgba(255, 255, 255, 0.78);
 }
 
 .dark .header {
-  background: rgba(15, 23, 42, 0.9);
+  background: rgba(15, 23, 42, 0.82);
+  border-bottom-color: rgba(51, 65, 85, 0.6);
 }
 
 .header-left {
@@ -291,12 +291,18 @@ export default {
   align-items: center;
   gap: 10px;
   font-size: 18px;
-  font-weight: 700;
-  color: var(--text-primary);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .logo-icon {
   font-size: 24px;
+  -webkit-text-fill-color: initial;
+  animation: float 4s ease-in-out infinite;
 }
 
 .header-right {
@@ -337,7 +343,7 @@ export default {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: var(--primary);
+  background: var(--gradient-primary);
   color: white;
   display: flex;
   align-items: center;
@@ -345,6 +351,13 @@ export default {
   font-weight: 600;
   font-size: 14px;
   overflow: hidden;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.user-avatar:hover {
+  transform: scale(1.08);
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
 }
 
 .user-avatar.large {
@@ -547,19 +560,21 @@ export default {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
+  padding: 6px 14px;
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--bg-secondary);
+  border-radius: 20px;
+  background: var(--bg-surface);
   color: var(--text-muted);
   font-size: 13px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition);
 }
 
 .search-trigger:hover {
   border-color: var(--primary);
   color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08);
+  background: var(--bg-primary);
 }
 
 .search-hint {

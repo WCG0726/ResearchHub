@@ -159,6 +159,12 @@ export default {
   padding: 12px 10px;
   z-index: 90;
   overflow-y: auto;
+  backdrop-filter: blur(16px) saturate(180%);
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.dark .sidebar {
+  background: rgba(15, 23, 42, 0.88);
 }
 
 .sidebar-nav {
@@ -229,6 +235,8 @@ export default {
 .nav-item.active {
   background: rgba(99, 102, 241, 0.1);
   color: var(--primary);
+  box-shadow: inset 3px 0 0 var(--primary);
+  font-weight: 600;
 }
 
 .nav-icon {
