@@ -26,13 +26,29 @@
             <span class="quick-icon">📝</span>
             <span>写记录</span>
           </router-link>
-          <router-link to="/writing" class="quick-btn" style="--color: #f59e0b">
-            <span class="quick-icon">📄</span>
-            <span>论文</span>
+          <router-link to="/experiment" class="quick-btn" style="--color: #f59e0b">
+            <span class="quick-icon">🔬</span>
+            <span>实验</span>
           </router-link>
+          <router-link to="/pomodoro" class="quick-btn" style="--color: #ef4444">
+            <span class="quick-icon">🍅</span>
+            <span>番茄钟</span>
+          </router-link>
+          <a href="https://github.com/WCG0726" target="_blank" rel="noopener noreferrer" class="quick-btn" style="--color: #333">
+            <span class="quick-icon">🐙</span>
+            <span>GitHub</span>
+          </a>
+          <a href="https://github.com/WCG0726/vasplearn" target="_blank" rel="noopener noreferrer" class="quick-btn" style="--color: #8b5cf6">
+            <span class="quick-icon">⚡</span>
+            <span>VASP</span>
+          </a>
           <router-link to="/translate" class="quick-btn" style="--color: #3b82f6">
             <span class="quick-icon">🌐</span>
             <span>翻译</span>
+          </router-link>
+          <router-link to="/writing" class="quick-btn" style="--color: #06b6d4">
+            <span class="quick-icon">📄</span>
+            <span>论文</span>
           </router-link>
         </div>
 
@@ -315,24 +331,24 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .welcome-title {
-  font-size: 26px;
+  font-size: 22px;
   font-weight: 700;
   color: var(--text-primary);
-  margin: 0 0 4px;
+  margin: 0 0 2px;
 }
 
 .welcome-date {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text-secondary);
   margin: 0;
 }
 
 .clock-time {
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 300;
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
@@ -342,7 +358,7 @@ export default {
 .quick-actions {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
+  gap: 10px;
   margin-bottom: 20px;
 }
 
@@ -350,14 +366,14 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 20px 12px;
+  gap: 6px;
+  padding: 14px 10px;
   background: var(--bg-primary);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   text-decoration: none;
   color: var(--text-primary);
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
   transition: all 0.2s;
 }
@@ -368,21 +384,21 @@ export default {
   transform: translateY(-2px);
 }
 
-.quick-icon { font-size: 28px; }
+.quick-icon { font-size: 24px; }
 
 /* 统计条 */
 .stats-row {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  margin-bottom: 20px;
+  gap: 10px;
+  margin-bottom: 16px;
 }
 
 .stat-chip {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 14px 16px;
+  gap: 6px;
+  padding: 10px 12px;
   background: var(--bg-primary);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -619,8 +635,14 @@ export default {
 
 @media (max-width: 900px) {
   .dashboard-grid { grid-template-columns: 1fr; }
-  .quick-actions { grid-template-columns: repeat(2, 1fr); }
+  .quick-actions { grid-template-columns: repeat(4, 1fr); gap: 8px; }
   .stats-row { grid-template-columns: repeat(2, 1fr); }
   .welcome-section { flex-direction: column; align-items: flex-start; gap: 8px; }
+}
+
+@media (max-width: 480px) {
+  .quick-actions { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .quick-btn { padding: 10px 6px; }
+  .quick-icon { font-size: 20px; }
 }
 </style>

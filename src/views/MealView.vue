@@ -138,46 +138,46 @@ export default {
 </script>
 
 <style scoped>
-.meal-page { max-width: 600px; margin: 0 auto; }
+.meal-page { max-width: 500px; margin: 0 auto; }
 
 .random-card { text-align: center; }
 
 .random-result {
-  padding: 20px;
-  margin-bottom: 16px;
+  padding: 16px;
+  margin-bottom: 12px;
 }
 
-.random-icon { font-size: 64px; margin-bottom: 8px; }
+.random-icon { font-size: 52px; margin-bottom: 6px; }
 
 .random-name {
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .random-type {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text-secondary);
 }
 
 .btn {
-  padding: 10px 24px;
+  padding: 8px 20px;
   border: none;
   border-radius: var(--radius);
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
 }
 
 .btn-primary { background: var(--primary); color: white; }
 .btn-primary:hover { opacity: 0.9; }
-.btn-lg { padding: 12px 32px; font-size: 16px; }
+.btn-lg { padding: 10px 28px; font-size: 15px; }
 
 .category-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  gap: 6px;
 }
 
 .category-item {

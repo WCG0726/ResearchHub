@@ -1,7 +1,7 @@
 :root {
   /* 布局 */
-  --header-h: 60px;
-  --sidebar-w: 240px;
+  --header-h: 56px;
+  --sidebar-w: 220px;
 
   /* 主题色 */
   --primary: #6366f1;

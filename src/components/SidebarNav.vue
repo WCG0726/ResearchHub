@@ -28,12 +28,18 @@
     </nav>
 
     <div class="sidebar-footer">
-      <div class="user-info" v-if="user">
-        <div class="user-avatar">{{ user.nickname.charAt(0) }}</div>
-        <div class="user-name">{{ user.nickname }}</div>
+      <div class="external-links">
+        <a href="https://github.com/WCG0726" target="_blank" rel="noopener noreferrer" class="ext-link">
+          <span class="ext-icon">🐙</span>
+          <span>GitHub</span>
+        </a>
+        <a href="https://github.com/WCG0726/vasplearn" target="_blank" rel="noopener noreferrer" class="ext-link">
+          <span class="ext-icon">⚡</span>
+          <span>VASP</span>
+        </a>
       </div>
       <button class="btn-logout" @click="handleLogout">退出登录</button>
-      <div class="version">v2.2.0</div>
+      <div class="version">v2.3.0</div>
     </div>
   </aside>
 </template>
@@ -54,6 +60,13 @@ const SECTIONS = [
     ]
   },
   {
+    key: 'myprojects', label: '我的项目',
+    items: [
+      { to: '/links', name: 'links', icon: '🔗', text: 'GitHub & 项目' },
+      { to: '/zotero', name: 'zotero', icon: '📚', text: 'Zotero' },
+    ]
+  },
+  {
     key: 'tools', label: '工具',
     items: [
       { to: '/translate', name: 'translate', icon: '🌐', text: '翻译' },
@@ -67,8 +80,6 @@ const SECTIONS = [
   {
     key: 'literature', label: '文献',
     items: [
-      { to: '/zotero', name: 'zotero', icon: '📚', text: 'Zotero' },
-      { to: '/links', name: 'links', icon: '🔗', text: '学术导航' },
       { to: '/academic-calendar', name: 'academic-calendar', icon: '📅', text: '学术日历' },
     ]
   },
@@ -270,6 +281,36 @@ export default {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.external-links {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.ext-link {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.ext-link:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: rgba(99, 102, 241, 0.05);
+}
+
+.ext-icon { font-size: 14px; }
 
 .btn-logout {
   width: 100%;

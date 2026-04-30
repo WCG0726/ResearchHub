@@ -87,6 +87,17 @@ export default {
       newDesc: '',
       linkGroups: [
         {
+          title: '我的项目', icon: '⭐',
+          links: [
+            { name: 'GitHub 主页', desc: '我的 GitHub 个人主页', url: 'https://github.com/WCG0726' },
+            { name: 'VASP 学习平台', desc: 'VASP 计算材料学习平台', url: 'https://github.com/WCG0726/vasplearn' },
+            { name: '仿真学习平台', desc: 'COMSOL & ANSYS 仿真学习平台', url: 'https://github.com/WCG0726/simu-learn' },
+            { name: 'sci-plot', desc: '开箱即用的科研绘图工具', url: 'https://github.com/WCG0726/sci-plot' },
+            { name: 'PyWPEM', desc: 'AI-Driven XRD Structure Refinement', url: 'https://github.com/WCG0726/PyWPEM' },
+            { name: 'ResearchHub', desc: '科研管理平台（本项目）', url: 'https://github.com/WCG0726/ResearchHub' },
+          ]
+        },
+        {
           title: '文献检索', icon: '🔍',
           links: [
             { name: '玻尔学术', desc: '中文学术搜索与文献发现平台', url: 'https://bohr.cn' },
@@ -149,12 +160,51 @@ export default {
           ]
         },
         {
+          title: '计算材料学', icon: '💻',
+          links: [
+            { name: 'VASP Wiki', desc: 'VASP 官方文档与教程', url: 'https://www.vasp.at/wiki/' },
+            { name: 'VASP Manual', desc: 'VASP 官方手册', url: 'https://www.vasp.at/wiki/index.php/The_VASP_Manual' },
+            { name: 'Materials Project', desc: '材料数据库，DFT 计算数据', url: 'https://materialsproject.org' },
+            { name: 'AFLOW', desc: '自动计算材料数据库', url: 'https://aflow.org' },
+            { name: 'OQMD', desc: '开放量子材料数据库', url: 'http://oqmd.org' },
+            { name: 'phonopy', desc: '声子计算工具', url: 'https://phonopy.github.io/phonopy/' },
+            { name: 'pymatgen', desc: 'Python 材料分析库', url: 'https://pymatgen.org' },
+            { name: 'ASE', desc: '原子模拟环境', url: 'https://wiki.fysik.dtu.dk/ase/' },
+            { name: 'VESTA', desc: '晶体结构可视化', url: 'https://jp-minerals.org/vesta/en/' },
+            { name: 'Bilbao Crystallographic', desc: '晶体学数据库', url: 'https://www.cryst.ehu.es' },
+          ]
+        },
+        {
+          title: '仿真与模拟', icon: '🔬',
+          links: [
+            { name: 'COMSOL 官网', desc: '多物理场仿真软件', url: 'https://www.comsol.com' },
+            { name: 'ANSYS 官网', desc: '工程仿真软件', url: 'https://www.ansys.com' },
+            { name: 'LAMMPS', desc: '分子动力学模拟', url: 'https://www.lammps.org' },
+            { name: 'GROMACS', desc: '生物分子动力学', url: 'https://www.gromacs.org' },
+            { name: 'Quantum ESPRESSO', desc: '开源 DFT 计算', url: 'https://www.quantum-espresso.org' },
+            { name: 'ABINIT', desc: '从头算材料模拟', url: 'https://www.abinit.org' },
+          ]
+        },
+        {
           title: '预印本与社区', icon: '📖',
           links: [
             { name: 'arXiv', desc: '物理/数学/CS 预印本', url: 'https://arxiv.org' },
             { name: 'bioRxiv', desc: '生物学预印本', url: 'https://www.biorxiv.org' },
             { name: 'ResearchGate', desc: '学术社交网络', url: 'https://www.researchgate.net' },
             { name: 'GitHub', desc: '代码托管平台', url: 'https://github.com' },
+            { name: '小木虫', desc: '国内学术论坛', url: 'http://muchong.com' },
+            { name: '材料人', desc: '材料科学社区', url: 'https://www.cailiaoren.com' },
+          ]
+        },
+        {
+          title: '数据处理与可视化', icon: '📈',
+          links: [
+            { name: 'Origin', desc: '科研数据绘图标准工具', url: 'https://www.originlab.com' },
+            { name: 'matplotlib', desc: 'Python 科研绘图库', url: 'https://matplotlib.org' },
+            { name: 'Plotly', desc: '交互式绘图库', url: 'https://plotly.com' },
+            { name: 'Gnuplot', desc: '命令行绘图工具', url: 'http://www.gnuplot.info' },
+            { name: 'VMD', desc: '分子可视化', url: 'https://www.ks.uiuc.edu/Research/vmd/' },
+            { name: 'ParaView', desc: '科学数据可视化', url: 'https://www.paraview.org' },
           ]
         },
         {
@@ -163,7 +213,8 @@ export default {
             { name: 'Journal Finder (Elsevier)', desc: 'Elsevier 期刊推荐', url: 'https://journalfinder.elsevier.com' },
             { name: 'Journal Suggester (Springer)', desc: 'Springer 期刊推荐', url: 'https://journalsuggester.springer.com' },
             { name: 'LetPub', desc: 'SCI 期刊查询和投稿经验', url: 'https://www.letpub.com.cn' },
-            { name: '小木虫', desc: '学术论坛和投稿经验', url: 'http://muchong.com' },
+            { name: 'Journal Citation Reports', desc: '期刊影响因子查询', url: 'https://jcr.clarivate.com' },
+            { name: '中科院分区表', desc: '期刊分区查询', url: 'https://www.fenqubiao.com' },
           ]
         }
       ]

@@ -152,33 +152,33 @@ export default {
 </script>
 
 <style scoped>
-.pomodoro-page { max-width: 600px; }
-.timer-card { text-align: center; padding: 40px 24px; margin-bottom: 30px; }
+.pomodoro-page { max-width: 500px; }
+.timer-card { text-align: center; padding: 32px 20px; margin-bottom: 24px; }
 .timer-display {
-  font-size: 80px;
+  font-size: 64px;
   font-weight: 700;
-  font-family: 'Consolas', monospace;
+  font-family: 'Consolas', 'SF Mono', monospace;
   color: var(--text-primary);
-  letter-spacing: 4px;
+  letter-spacing: 3px;
   transition: color 0.3s;
 }
 .timer-display.running { color: var(--primary); }
 .timer-display.break { color: var(--success); }
-.timer-label { font-size: 16px; color: var(--text-secondary); margin-bottom: 24px; }
-.timer-settings { display: flex; justify-content: center; gap: 24px; margin-bottom: 24px; }
+.timer-label { font-size: 14px; color: var(--text-secondary); margin-bottom: 20px; }
+.timer-settings { display: flex; justify-content: center; gap: 20px; margin-bottom: 20px; }
 .setting { display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .setting label { font-size: 12px; color: var(--text-muted); }
-.input-sm { width: 70px; text-align: center; padding: 6px 8px; }
-.timer-controls { display: flex; justify-content: center; gap: 12px; }
-.btn-lg { padding: 12px 32px; font-size: 16px; }
-.stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 30px; }
-.stat-card { text-align: center; padding: 20px; }
-.stat-value { font-size: 32px; font-weight: 700; color: var(--primary); }
-.stat-label { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
-.history-card { padding: 20px; }
-.history-list { display: flex; flex-direction: column; gap: 8px; }
-.history-item { display: flex; align-items: center; gap: 10px; font-size: 14px; }
-.history-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); flex-shrink: 0; }
+.input-sm { width: 64px; text-align: center; padding: 6px 8px; font-size: 13px; }
+.timer-controls { display: flex; justify-content: center; gap: 10px; }
+.btn-lg { padding: 10px 28px; font-size: 15px; }
+.stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+.stat-card { text-align: center; padding: 16px; }
+.stat-value { font-size: 28px; font-weight: 700; color: var(--primary); }
+.stat-label { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+.history-card { padding: 16px; }
+.history-list { display: flex; flex-direction: column; gap: 6px; }
+.history-item { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.history-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--primary); flex-shrink: 0; }
 .history-time { font-weight: 600; color: var(--text-primary); }
-.history-date { color: var(--text-muted); font-size: 13px; }
+.history-date { color: var(--text-muted); font-size: 12px; }
 </style>

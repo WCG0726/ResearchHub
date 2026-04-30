@@ -94,27 +94,27 @@ export default {
 </script>
 
 <style scoped>
-.water-page { max-width: 600px; margin: 0 auto; }
+.water-page { max-width: 500px; margin: 0 auto; }
 
 .water-main { text-align: center; }
 
-.water-display { padding: 20px 0; }
+.water-display { padding: 16px 0; }
 
 .cups-row {
   display: flex;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .cup {
-  width: 48px;
-  height: 48px;
+  width: 42px;
+  height: 42px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
+  font-size: 24px;
   border-radius: var(--radius);
   background: var(--bg-secondary);
   cursor: pointer;
@@ -135,10 +135,10 @@ export default {
 }
 
 .water-count {
-  font-size: 36px;
+  font-size: 30px;
   font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .count-sep { color: var(--text-muted); margin: 0 4px; }
