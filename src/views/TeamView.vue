@@ -154,20 +154,39 @@ export default {
       const user = getCurrentUser()
       if (user) this.currentUser = user.username
 
-      // 加载所有用户
+      // 刷新 Firebase 在线状态
+      this.presenceData = getAllPresence()
+
+      // 加载所有用户：合并 localStorage 本地用户 + Firebase presence 用户
       try {
-        const users = JSON.parse(localStorage.getItem('research_hub_users') || '{}')
-        this.members = Object.keys(users).map(username => ({
-          username,
-          nickname: users[username].nickname || username,
-          createdAt: users[username].createdAt
-        }))
+        const localUsers = JSON.parse(localStorage.getItem('research_hub_users') || '{}')
+        const presence = this.presenceData
+        const allUsers = new Map()
+
+        // 先加本地用户
+        for (const [username, data] of Object.entries(localUsers)) {
+          allUsers.set(username, {
+            username,
+            nickname: data.nickname || username,
+            createdAt: data.createdAt
+          })
+        }
+
+        // 再加 Firebase 中的用户（可能来自其他浏览器）
+        for (const [username, data] of Object.entries(presence)) {
+          if (!allUsers.has(username)) {
+            allUsers.set(username, {
+              username,
+              nickname: data.nickname || username,
+              createdAt: null
+            })
+          }
+        }
+
+        this.members = Array.from(allUsers.values())
       } catch {
         this.members = []
       }
-
-      // 刷新 Firebase 在线状态
-      this.presenceData = getAllPresence()
 
       // 计算当前用户统计
       const streak = getStreak()
