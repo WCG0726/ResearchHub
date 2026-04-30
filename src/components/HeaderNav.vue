@@ -63,6 +63,7 @@
 
 <script>
 import { getProfile, setProfile } from '../utils/storage.js'
+import { getCurrentUser } from '../utils/auth.js'
 
 export default {
   name: 'HeaderNav',
@@ -71,8 +72,13 @@ export default {
   },
   emits: ['toggle-theme', 'toggle-sidebar'],
   data() {
+    const user = getCurrentUser()
+    const profile = getProfile()
+    if (user && user.nickname) {
+      profile.nickname = user.nickname
+    }
     return {
-      profile: getProfile(),
+      profile,
       showEditor: false,
       editName: '',
       editAvatar: '',

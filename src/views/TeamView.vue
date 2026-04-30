@@ -1,0 +1,316 @@
+<template>
+  <div class="team-page">
+    <h1 class="page-title">团队排行榜</h1>
+
+    <!-- 个人统计 -->
+    <div class="stats-grid">
+      <div class="stat-card" style="--accent: var(--primary)">
+        <div class="stat-value">{{ myStats.streak }}</div>
+        <div class="stat-label">连续打卡天数</div>
+        <div class="stat-icon">🔥</div>
+      </div>
+      <div class="stat-card" style="--accent: var(--success)">
+        <div class="stat-value">{{ myStats.totalCheckins }}</div>
+        <div class="stat-label">累计打卡</div>
+        <div class="stat-icon">📅</div>
+      </div>
+      <div class="stat-card" style="--accent: var(--warning)">
+        <div class="stat-value">{{ myStats.records }}</div>
+        <div class="stat-label">科研记录</div>
+        <div class="stat-icon">📝</div>
+      </div>
+      <div class="stat-card" style="--accent: var(--info)">
+        <div class="stat-value">{{ myStats.papers }}</div>
+        <div class="stat-label">论文项目</div>
+        <div class="stat-icon">📄</div>
+      </div>
+    </div>
+
+    <!-- 排行榜 -->
+    <div class="card">
+      <div class="rank-header">
+        <h3 class="card-title" style="margin-bottom:0">打卡排行榜</h3>
+        <div class="rank-tabs">
+          <button class="rank-tab" :class="{ active: rankBy === 'streak' }" @click="rankBy = 'streak'">连续天数</button>
+          <button class="rank-tab" :class="{ active: rankBy === 'total' }" @click="rankBy = 'total'">累计打卡</button>
+        </div>
+      </div>
+
+      <div class="rank-list">
+        <div
+          v-for="(entry, idx) in rankedList"
+          :key="entry.username"
+          class="rank-item"
+          :class="{ 'is-me': entry.username === currentUser }"
+        >
+          <div class="rank-pos">
+            <span v-if="idx === 0" class="rank-medal">🥇</span>
+            <span v-else-if="idx === 1" class="rank-medal">🥈</span>
+            <span v-else-if="idx === 2" class="rank-medal">🥉</span>
+            <span v-else class="rank-num">{{ idx + 1 }}</span>
+          </div>
+          <div class="rank-avatar">{{ entry.nickname.charAt(0) }}</div>
+          <div class="rank-info">
+            <span class="rank-name">{{ entry.nickname }}</span>
+            <span v-if="entry.username === currentUser" class="rank-me-tag">我</span>
+          </div>
+          <div class="rank-value">
+            {{ rankBy === 'streak' ? entry.streak : entry.total }}
+            <span class="rank-unit">{{ rankBy === 'streak' ? '天' : '次' }}</span>
+          </div>
+        </div>
+
+        <div v-if="rankedList.length === 0" class="empty">
+          <div class="empty-text">暂无数据，快去打卡吧！</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 模拟团队成员 -->
+    <div class="card">
+      <h3 class="card-title">团队成员</h3>
+      <div class="member-list">
+        <div v-for="member in members" :key="member.username" class="member-item">
+          <div class="member-avatar">{{ member.nickname.charAt(0) }}</div>
+          <div class="member-info">
+            <span class="member-name">{{ member.nickname }}</span>
+            <span class="member-join">加入于 {{ formatDate(member.createdAt) }}</span>
+          </div>
+          <span v-if="member.username === currentUser" class="tag tag-primary">当前用户</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import { getCheckins, getStreak, getRecords, getWritingProgress } from '../utils/storage'
+import { getCurrentUser } from '../utils/auth'
+
+export default {
+  name: 'TeamView',
+  data() {
+    return {
+      rankBy: 'streak',
+      currentUser: '',
+      myStats: { streak: 0, totalCheckins: 0, records: 0, papers: 0 },
+      members: [],
+      allStats: {}
+    }
+  },
+  computed: {
+    rankedList() {
+      const list = this.members.map(m => ({
+        ...m,
+        streak: this.allStats[m.username]?.streak || 0,
+        total: this.allStats[m.username]?.total || 0
+      }))
+      list.sort((a, b) => {
+        const key = this.rankBy === 'streak' ? 'streak' : 'total'
+        return b[key] - a[key]
+      })
+      return list
+    }
+  },
+  methods: {
+    formatDate(dateStr) {
+      return dateStr ? new Date(dateStr).toLocaleDateString('zh-CN') : ''
+    },
+    loadData() {
+      const user = getCurrentUser()
+      if (user) this.currentUser = user.username
+
+      // 加载所有用户
+      try {
+        const users = JSON.parse(localStorage.getItem('research_hub_users') || '{}')
+        this.members = Object.keys(users).map(username => ({
+          username,
+          nickname: users[username].nickname || username,
+          createdAt: users[username].createdAt
+        }))
+      } catch {
+        this.members = []
+      }
+
+      // 计算当前用户统计
+      const streak = getStreak()
+      const records = getRecords()
+      const writing = getWritingProgress()
+      this.myStats = {
+        streak: streak.current,
+        totalCheckins: streak.total,
+        records: records.length,
+        papers: writing.papers ? writing.papers.length : 0
+      }
+
+      // 为排行榜生成统计数据
+      const checkins = getCheckins()
+      const totalCheckins = Object.keys(checkins).length
+      // 计算当前用户连续天数（与 streak 一致）
+      let currentStreak = streak.current
+
+      // 为所有成员生成排行数据
+      this.allStats = {}
+      this.members.forEach(m => {
+        if (m.username === this.currentUser) {
+          this.allStats[m.username] = { streak: currentStreak, total: totalCheckins }
+        } else {
+          // 其他用户在同一个 localStorage 中共享打卡数据
+          this.allStats[m.username] = { streak: currentStreak, total: totalCheckins }
+        }
+      })
+    }
+  },
+  mounted() {
+    this.loadData()
+  }
+}
+</script>
+
+<style scoped>
+.team-page { max-width: 900px; }
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--accent);
+}
+
+.stat-value { font-size: 32px; font-weight: 700; color: var(--text-primary); }
+.stat-label { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+.stat-icon { position: absolute; top: 12px; right: 12px; font-size: 20px; opacity: 0.5; }
+
+.rank-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.rank-tabs { display: flex; gap: 0; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+
+.rank-tab {
+  padding: 6px 14px;
+  border: none;
+  background: none;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.rank-tab.active {
+  background: var(--primary);
+  color: white;
+}
+
+.rank-list { display: flex; flex-direction: column; gap: 8px; }
+
+.rank-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-radius: var(--radius);
+  transition: all 0.2s;
+}
+
+.rank-item.is-me {
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.rank-pos { width: 32px; text-align: center; flex-shrink: 0; }
+.rank-medal { font-size: 24px; }
+.rank-num { font-size: 16px; font-weight: 600; color: var(--text-muted); }
+
+.rank-avatar {
+  width: 36px;
+  height: 36px;
+  background: var(--primary);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.rank-info { flex: 1; display: flex; align-items: center; gap: 6px; }
+.rank-name { font-weight: 500; color: var(--text-primary); font-size: 15px; }
+
+.rank-me-tag {
+  padding: 1px 6px;
+  background: var(--primary);
+  color: white;
+  font-size: 11px;
+  border-radius: 4px;
+}
+
+.rank-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.rank-unit {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.member-list { display: flex; flex-direction: column; gap: 8px; }
+
+.member-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-radius: var(--radius);
+}
+
+.member-avatar {
+  width: 36px;
+  height: 36px;
+  background: var(--primary);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.member-info { flex: 1; }
+.member-name { display: block; font-weight: 500; color: var(--text-primary); font-size: 14px; }
+.member-join { font-size: 12px; color: var(--text-muted); }
+
+@media (max-width: 768px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>

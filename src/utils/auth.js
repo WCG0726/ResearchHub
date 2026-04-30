@@ -2,6 +2,8 @@
  * 多用户登录管理
  */
 
+import { setProfile } from './storage'
+
 const USERS_KEY = 'research_hub_users'
 const SESSION_KEY = 'research_hub_session'
 
@@ -22,13 +24,15 @@ export function register(username, password, nickname) {
   if (users[username]) {
     return { success: false, message: '用户名已存在' }
   }
+  const nick = nickname || username
   users[username] = {
     password: btoa(password),
-    nickname: nickname || username,
+    nickname: nick,
     createdAt: new Date().toISOString()
   }
   saveUsers(users)
   setSession(username)
+  setProfile({ nickname: nick })
   return { success: true }
 }
 
@@ -42,6 +46,7 @@ export function login(username, password) {
     return { success: false, message: '密码错误' }
   }
   setSession(username)
+  setProfile({ nickname: user.nickname })
   return { success: true }
 }
 

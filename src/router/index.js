@@ -13,6 +13,8 @@ const MealView = () => import('../views/MealView.vue')
 const TranslateView = () => import('../views/TranslateView.vue')
 const PolishView = () => import('../views/PolishView.vue')
 const LinksView = () => import('../views/LinksView.vue')
+const ZoteroView = () => import('../views/ZoteroView.vue')
+const TeamView = () => import('../views/TeamView.vue')
 
 const routes = [
   { path: '/login', name: 'login', component: LoginView },
@@ -28,6 +30,8 @@ const routes = [
   { path: '/translate', name: 'translate', component: TranslateView, meta: { requiresAuth: true } },
   { path: '/polish', name: 'polish', component: PolishView, meta: { requiresAuth: true } },
   { path: '/links', name: 'links', component: LinksView, meta: { requiresAuth: true } },
+  { path: '/zotero', name: 'zotero', component: ZoteroView, meta: { requiresAuth: true } },
+  { path: '/team', name: 'team', component: TeamView, meta: { requiresAuth: true } },
 ]
 
 const router = createRouter({
@@ -58,7 +62,9 @@ router.beforeEach((to) => {
     meal: '今天吃什么',
     translate: '翻译工具',
     polish: '论文润色',
-    links: '学术导航'
+    links: '学术导航',
+    zotero: 'Zotero 文献',
+    team: '团队排行榜'
   }
   document.title = titles[to.name] || '科研管理平台'
 })

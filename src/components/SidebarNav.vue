@@ -28,9 +28,19 @@
         <span class="nav-icon">✨</span>
         <span class="nav-text">润色提示词</span>
       </router-link>
+      <router-link to="/zotero" class="nav-item" :class="{ active: $route.name === 'zotero' }">
+        <span class="nav-icon">📚</span>
+        <span class="nav-text">Zotero</span>
+      </router-link>
       <router-link to="/links" class="nav-item" :class="{ active: $route.name === 'links' }">
         <span class="nav-icon">🔗</span>
         <span class="nav-text">学术导航</span>
+      </router-link>
+
+      <div class="nav-section">社交</div>
+      <router-link to="/team" class="nav-item" :class="{ active: $route.name === 'team' }">
+        <span class="nav-icon">🏆</span>
+        <span class="nav-text">排行榜</span>
       </router-link>
 
       <div class="nav-section">生活</div>
