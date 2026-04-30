@@ -1,66 +1,35 @@
 # ResearchHub - 科研管理平台
 
-> 打卡、记录、论文写作一站式管理工具
+> 打卡、记录、论文写作一站式科研管理工具
 
 **在线访问：[https://wcg0726.github.io/ResearchHub/](https://wcg0726.github.io/ResearchHub/)**
 
-## 功能特性
+## 功能概览
 
-### 打卡系统
-- 每日签到打卡
-- 连续天数统计
-- 可视化日历
-- 打卡记录查看
+| 模块 | 功能 |
+|------|------|
+| 工作台 | 综合仪表盘：实时时钟、迷你日历、快捷入口、待办事项、近期事件、考勤状态 |
+| 打卡 | 上班/下班签到、工时统计、日历标记、纪念日设置、自定义事件 |
+| 科研记录 | Markdown 编辑、标签分类、搜索筛选 |
+| 论文写作 | 项目管理、章节进度追踪、状态管理 |
+| 写作指南 | 英文论文结构、中文论文规范、学术句式库、投稿检查清单 |
+| 润色提示词 | 英文/中文润色、语法检查、中译英、投稿回复等 20+ 提示词模板 |
+| 翻译工具 | 中英文互译、学术术语翻译 |
+| Zotero | 连接本地/云端 Zotero，同步文献库 |
+| 计划表 | 待办任务管理、优先级排序 |
+| 喝水提醒 | 每日饮水记录与目标追踪 |
+| 吃什么 | 餐食推荐与记录 |
+| 排行榜 | 团队打卡排名、实时在线状态（Firebase 跨浏览器同步） |
+| 学术导航 | 40+ 常用学术网站、自定义收藏链接、玻尔学术等 |
 
-### 科研记录
-- Markdown 编辑支持
-- 标签分类管理
-- 搜索筛选功能
-- 记录编辑删除
+## 特色功能
 
-### 论文写作
-- 论文项目管理
-- 章节进度追踪
-- 状态管理（构思/写作/修改/投稿）
-- 进度可视化
-
-### 写作指南
-- 论文结构模板
-- 常用学术句式
-- 写作技巧总结
-- 期刊投稿清单
-- 热电材料专用模板
-
-### 计划表
-- 任务创建与管理
-- 优先级与截止日期
-- 完成状态追踪
-
-### 喝水提醒
-- 每日饮水记录
-- 饮水量统计
-
-### 吃什么
-- 餐食推荐
-- 饮食记录
-
-### 翻译工具
-- 中英文互译
-- 学术术语翻译
-
-### 润色提示词
-- 论文润色提示词模板
-- 常用学术表达推荐
-
-### 用户设置
-- 用户昵称编辑
-- 头像自定义
-
-### 其他
+- 多用户登录注册系统
+- 自定义头像上传
 - 深色/浅色主题切换
-- 数据本地存储
-- 响应式设计
-- 纯前端，无需服务器
+- Firebase 跨浏览器在线状态同步
+- 日历纪念日（每年重复）
+- 响应式设计，支持移动端
 
 ## 快速开始
 
@@ -77,51 +46,47 @@ npm run build
 
 ## 技术栈
 
-- Vue 3 + Composition API
-- Vue Router 4
-- Vite
-- localStorage (本地存储)
-- 纯 CSS (无 UI 框架依赖)
+- **前端框架：** Vue 3 + Vue Router 4
+- **构建工具：** Vite
+- **数据存储：** localStorage + Firebase Realtime Database
+- **样式：** 纯 CSS（无 UI 框架依赖）
+- **部署：** GitHub Pages + GitHub Actions
 
 ## 项目结构
 
 ```
 ResearchHub/
 ├── src/
-│   ├── assets/styles/    # CSS 样式
-│   ├── components/       # 公共组件
-│   ├── router/           # 路由配置
-│   ├── utils/            # 工具函数
-│   └── views/            # 页面视图
-│       ├── DashboardView.vue    # 工作台
-│       ├── CheckinView.vue      # 打卡
-│       ├── RecordsView.vue      # 科研记录
-│       ├── WritingView.vue      # 论文写作
-│       ├── GuideView.vue        # 写作指南
-│       ├── PlanView.vue         # 计划表
-│       ├── WaterView.vue        # 喝水提醒
-│       ├── FoodView.vue         # 吃什么
-│       ├── TranslateView.vue    # 翻译工具
-│       └── PolishView.vue       # 润色提示词
-└── index.html
+│   ├── assets/styles/          # 全局样式与主题变量
+│   ├── components/
+│   │   ├── HeaderNav.vue       # 顶部导航栏
+│   │   └── SidebarNav.vue      # 侧边栏导航
+│   ├── router/index.js         # 路由配置与鉴权守卫
+│   ├── utils/
+│   │   ├── auth.js             # 用户认证（登录/注册）
+│   │   ├── storage.js          # localStorage 数据管理
+│   │   ├── firebase.js         # Firebase 在线状态服务
+│   │   ├── presence.js         # 在线状态管理（Firebase + 本地降级）
+│   │   └── zotero.js           # Zotero API 集成
+│   └── views/
+│       ├── LoginView.vue       # 登录/注册页
+│       ├── DashboardView.vue   # 工作台（综合仪表盘）
+│       ├── CheckinView.vue     # 打卡（上下班 + 日历 + 事件）
+│       ├── RecordsView.vue     # 科研记录
+│       ├── WritingView.vue     # 论文写作
+│       ├── GuideView.vue       # 写作指南（中英文）
+│       ├── PlanView.vue        # 计划表
+│       ├── WaterView.vue       # 喝水提醒
+│       ├── MealView.vue        # 吃什么
+│       ├── TranslateView.vue   # 翻译工具
+│       ├── PolishView.vue      # 润色提示词
+│       ├── ZoteroView.vue      # Zotero 文献管理
+│       ├── TeamView.vue        # 团队排行榜
+│       └── LinksView.vue       # 学术导航
+├── .github/workflows/deploy.yml  # GitHub Pages 自动部署
+├── index.html
+└── package.json
 ```
-
-## 数据存储
-
-所有数据存储在浏览器 localStorage 中，包括：
-- 打卡记录
-- 科研记录
-- 论文进度
-- 主题设置
-
-## 后续计划
-
-- [ ] 添加用户登录系统
-- [ ] 集成后端 API
-- [ ] 数据导出功能
-- [ ] 团队协作功能
-- [ ] 移动端适配优化
-- [ ] 提醒通知功能
 
 ## 许可证
 

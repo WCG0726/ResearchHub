@@ -87,15 +87,20 @@
           </span>
         </div>
         <div v-if="dayEvents.length" class="day-events">
-          <div v-for="ev in dayEvents" :key="ev.id" class="event-item">
+          <div v-for="ev in dayEvents" :key="ev.id + (ev.isAnniversary ? '-anniv' : '')" class="event-item">
             <span class="event-color" :style="{ background: ev.color || '#6366f1' }"></span>
             <span class="event-text">{{ ev.text }}</span>
-            <button class="btn-del-event" @click="removeEvent(ev.id)">×</button>
+            <span v-if="ev.isAnniversary" class="anniversary-badge">纪念日</span>
+            <button class="btn-del-event" @click="removeEvent(ev.id, ev.originalDate)">×</button>
           </div>
         </div>
         <div class="add-event">
           <input v-model="newEventText" type="text" placeholder="添加事件..." @keyup.enter="addEvent" />
           <input v-model="newEventColor" type="color" class="color-pick" />
+          <label class="recurring-check">
+            <input type="checkbox" v-model="newEventRecurring" />
+            <span>每年重复</span>
+          </label>
           <button class="btn btn-primary btn-sm" @click="addEvent">添加</button>
         </div>
       </div>
@@ -120,7 +125,7 @@
 </template>
 
 <script>
-import { getCheckins, getStreak, clockIn, clockOut, getTodayClockStatus, getCalendarEvents, addCalendarEvent, deleteCalendarEvent } from '../utils/storage'
+import { getCheckins, getStreak, clockIn, clockOut, getTodayClockStatus, getCalendarEvents, addCalendarEvent, deleteCalendarEvent, getEventsForDate } from '../utils/storage'
 
 export default {
   name: 'CheckinView',
@@ -136,7 +141,8 @@ export default {
       weekDays: ['日', '一', '二', '三', '四', '五', '六'],
       selectedDay: null,
       newEventText: '',
-      newEventColor: '#6366f1'
+      newEventColor: '#6366f1',
+      newEventRecurring: false
     }
   },
   computed: {
@@ -175,7 +181,7 @@ export default {
     },
     dayEvents() {
       if (!this.selectedDay) return []
-      return this.events[this.selectedDay.fullDate] || []
+      return getEventsForDate(this.selectedDay.fullDate)
     }
   },
   methods: {
@@ -230,14 +236,17 @@ export default {
       if (!this.newEventText.trim() || !this.selectedDay) return
       addCalendarEvent(this.selectedDay.fullDate, {
         text: this.newEventText.trim(),
-        color: this.newEventColor
+        color: this.newEventColor,
+        recurring: this.newEventRecurring
       })
       this.events = getCalendarEvents()
       this.newEventText = ''
+      this.newEventRecurring = false
     },
-    removeEvent(eventId) {
+    removeEvent(eventId, originalDate) {
       if (!this.selectedDay) return
-      deleteCalendarEvent(this.selectedDay.fullDate, eventId)
+      const date = originalDate || this.selectedDay.fullDate
+      deleteCalendarEvent(date, eventId)
       this.events = getCalendarEvents()
     },
     doClockIn() {
@@ -562,6 +571,15 @@ export default {
   border-radius: var(--radius);
 }
 
+.event-item .anniversary-badge {
+  font-size: 11px;
+  padding: 1px 5px;
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--warning);
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
 .event-color {
   width: 8px;
   height: 8px;
@@ -616,6 +634,22 @@ export default {
   border-radius: var(--radius);
   cursor: pointer;
   padding: 2px;
+}
+
+.recurring-check {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.recurring-check input {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--primary);
 }
 
 .stats-row {

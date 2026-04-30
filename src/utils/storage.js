@@ -266,6 +266,30 @@ export function addCalendarEvent(date, event) {
   return event
 }
 
+// 获取某天的事件（包含每年重复的纪念日）
+export function getEventsForDate(dateStr) {
+  const events = getCalendarEvents()
+  const result = []
+  // 直接事件
+  if (events[dateStr]) {
+    result.push(...events[dateStr])
+  }
+  // 检查纪念日（每年重复）
+  const [, m, d] = dateStr.split('-')
+  for (const [key, evts] of Object.entries(events)) {
+    if (key === dateStr) continue
+    const [, km, kd] = key.split('-')
+    if (km === m && kd === d) {
+      for (const ev of evts) {
+        if (ev.recurring) {
+          result.push({ ...ev, isAnniversary: true, originalDate: key })
+        }
+      }
+    }
+  }
+  return result
+}
+
 export function deleteCalendarEvent(date, eventId) {
   const events = getCalendarEvents()
   if (events[date]) {

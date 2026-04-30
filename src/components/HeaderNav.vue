@@ -16,7 +16,8 @@
       </button>
       <div class="user-area" @click="showEditor = true">
         <div class="user-avatar">
-          <img v-if="profile.avatar" :src="profile.avatar" alt="avatar" />
+          <img v-if="profile.avatarData" :src="profile.avatarData" alt="avatar" />
+          <span v-else-if="profile.avatar">{{ profile.avatar }}</span>
           <span v-else>{{ profile.nickname.charAt(0) }}</span>
         </div>
         <span class="user-name">{{ profile.nickname }}</span>
@@ -33,22 +34,26 @@
           </div>
           <div class="form-group">
             <label>头像</label>
+            <div class="avatar-upload-area">
+              <div class="avatar-preview-lg" @click="$refs.fileInput.click()">
+                <img v-if="editAvatarData" :src="editAvatarData" alt="avatar" />
+                <span v-else-if="editAvatar">{{ editAvatar }}</span>
+                <span v-else>{{ editName.charAt(0) || '?' }}</span>
+                <div class="avatar-overlay">📷</div>
+              </div>
+              <input ref="fileInput" type="file" accept="image/*" style="display:none" @change="onFileChange" />
+              <span class="upload-hint">点击上传自定义头像</span>
+            </div>
             <div class="avatar-options">
               <div
                 v-for="emoji in avatarOptions"
                 :key="emoji"
                 class="avatar-option"
-                :class="{ active: editAvatar === emoji }"
-                @click="editAvatar = emoji"
+                :class="{ active: !editAvatarData && editAvatar === emoji }"
+                @click="editAvatar = emoji; editAvatarData = ''"
               >
                 {{ emoji }}
               </div>
-            </div>
-            <div class="avatar-preview">
-              <div class="user-avatar large">
-                <span>{{ editName.charAt(0) || '?' }}</span>
-              </div>
-              <span>或使用昵称首字</span>
             </div>
           </div>
           <div class="modal-actions">
@@ -82,6 +87,7 @@ export default {
       showEditor: false,
       editName: '',
       editAvatar: '',
+      editAvatarData: '',
       avatarOptions: ['🧑‍🔬', '👩‍🔬', '👨‍🔬', '🧑‍💻', '👩‍💻', '👨‍💻', '📚', '🔬', '🧪', '🎯', '🌟', '⚡']
     }
   },
@@ -89,14 +95,33 @@ export default {
     showEditor(val) {
       if (val) {
         this.editName = this.profile.nickname
-        this.editAvatar = this.profile.avatar
+        this.editAvatar = this.profile.avatar || ''
+        this.editAvatarData = this.profile.avatarData || ''
       }
     }
   },
   methods: {
+    onFileChange(e) {
+      const file = e.target.files[0]
+      if (!file) return
+      if (file.size > 500 * 1024) {
+        alert('头像图片不能超过 500KB')
+        return
+      }
+      const reader = new FileReader()
+      reader.onload = (ev) => {
+        this.editAvatarData = ev.target.result
+        this.editAvatar = ''
+      }
+      reader.readAsDataURL(file)
+    },
     saveProfile() {
       const nickname = this.editName.trim() || '科研人'
-      this.profile = { nickname, avatar: this.editAvatar }
+      this.profile = {
+        nickname,
+        avatar: this.editAvatar,
+        avatarData: this.editAvatarData
+      }
       setProfile(this.profile)
       this.showEditor = false
     }
@@ -265,6 +290,57 @@ export default {
   color: var(--text-primary);
   font-size: 14px;
   box-sizing: border-box;
+}
+
+.avatar-upload-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.avatar-preview-lg {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 600;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.avatar-preview-lg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.avatar-preview-lg:hover .avatar-overlay {
+  opacity: 1;
+}
+
+.upload-hint {
+  font-size: 13px;
+  color: var(--text-muted);
 }
 
 .avatar-options {
