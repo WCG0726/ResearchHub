@@ -49,10 +49,16 @@
             <span v-else-if="idx === 2" class="rank-medal">🥉</span>
             <span v-else class="rank-num">{{ idx + 1 }}</span>
           </div>
-          <div class="rank-avatar">{{ entry.nickname.charAt(0) }}</div>
+          <div class="rank-avatar-wrap">
+            <div class="rank-avatar">{{ entry.nickname.charAt(0) }}</div>
+            <span class="online-dot" :class="{ online: entry.online }"></span>
+          </div>
           <div class="rank-info">
-            <span class="rank-name">{{ entry.nickname }}</span>
-            <span v-if="entry.username === currentUser" class="rank-me-tag">我</span>
+            <div class="rank-name-row">
+              <span class="rank-name">{{ entry.nickname }}</span>
+              <span v-if="entry.username === currentUser" class="rank-me-tag">我</span>
+            </div>
+            <span class="rank-status" :class="{ online: entry.online }">{{ entry.online ? '在线' : entry.lastSeen }}</span>
           </div>
           <div class="rank-value">
             {{ rankBy === 'streak' ? entry.streak : entry.total }}
@@ -66,15 +72,18 @@
       </div>
     </div>
 
-    <!-- 模拟团队成员 -->
+    <!-- 团队成员 -->
     <div class="card">
-      <h3 class="card-title">团队成员</h3>
+      <h3 class="card-title">团队成员 <span class="online-count">{{ onlineCount }} 人在线</span></h3>
       <div class="member-list">
         <div v-for="member in members" :key="member.username" class="member-item">
-          <div class="member-avatar">{{ member.nickname.charAt(0) }}</div>
+          <div class="member-avatar-wrap">
+            <div class="member-avatar">{{ member.nickname.charAt(0) }}</div>
+            <span class="online-dot" :class="{ online: member.online }"></span>
+          </div>
           <div class="member-info">
             <span class="member-name">{{ member.nickname }}</span>
-            <span class="member-join">加入于 {{ formatDate(member.createdAt) }}</span>
+            <span class="member-join">加入于 {{ formatDate(member.createdAt) }} · <span :class="{ 'text-online': member.online }">{{ member.online ? '在线' : member.lastSeen }}</span></span>
           </div>
           <span v-if="member.username === currentUser" class="tag tag-primary">当前用户</span>
         </div>
@@ -86,6 +95,7 @@
 <script>
 import { getCheckins, getStreak, getRecords, getWritingProgress } from '../utils/storage'
 import { getCurrentUser } from '../utils/auth'
+import { isOnline, getLastSeen } from '../utils/presence'
 
 export default {
   name: 'TeamView',
@@ -103,13 +113,20 @@ export default {
       const list = this.members.map(m => ({
         ...m,
         streak: this.allStats[m.username]?.streak || 0,
-        total: this.allStats[m.username]?.total || 0
+        total: this.allStats[m.username]?.total || 0,
+        online: isOnline(m.username),
+        lastSeen: getLastSeen(m.username) || '从未活跃'
       }))
       list.sort((a, b) => {
+        // 在线用户排前面
+        if (a.online !== b.online) return a.online ? -1 : 1
         const key = this.rankBy === 'streak' ? 'streak' : 'total'
         return b[key] - a[key]
       })
       return list
+    },
+    onlineCount() {
+      return this.members.filter(m => isOnline(m.username)).length
     }
   },
   methods: {
@@ -126,7 +143,9 @@ export default {
         this.members = Object.keys(users).map(username => ({
           username,
           nickname: users[username].nickname || username,
-          createdAt: users[username].createdAt
+          createdAt: users[username].createdAt,
+          online: isOnline(username),
+          lastSeen: getLastSeen(username) || '从未活跃'
         }))
       } catch {
         this.members = []
@@ -163,6 +182,10 @@ export default {
   },
   mounted() {
     this.loadData()
+    this.refreshTimer = setInterval(() => this.loadData(), 15000)
+  },
+  unmounted() {
+    if (this.refreshTimer) clearInterval(this.refreshTimer)
   }
 }
 </script>
@@ -258,8 +281,53 @@ export default {
   flex-shrink: 0;
 }
 
-.rank-info { flex: 1; display: flex; align-items: center; gap: 6px; }
+.rank-avatar-wrap, .member-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.online-dot {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--bg-primary);
+  background: var(--text-muted);
+}
+
+.online-dot.online {
+  background: #22c55e;
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.5);
+}
+
+.rank-info { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+
+.rank-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .rank-name { font-weight: 500; color: var(--text-primary); font-size: 15px; }
+
+.rank-status {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.rank-status.online {
+  color: #22c55e;
+  font-weight: 500;
+}
+
+.online-count {
+  font-size: 13px;
+  font-weight: 400;
+  color: #22c55e;
+  margin-left: 8px;
+}
 
 .rank-me-tag {
   padding: 1px 6px;
@@ -309,6 +377,7 @@ export default {
 .member-info { flex: 1; }
 .member-name { display: block; font-weight: 500; color: var(--text-primary); font-size: 14px; }
 .member-join { font-size: 12px; color: var(--text-muted); }
+.text-online { color: #22c55e; font-weight: 500; }
 
 @media (max-width: 768px) {
   .stats-grid { grid-template-columns: repeat(2, 1fr); }

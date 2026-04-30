@@ -17,6 +17,8 @@
 import HeaderNav from './components/HeaderNav.vue'
 import SidebarNav from './components/SidebarNav.vue'
 import { getTheme, setTheme } from './utils/storage'
+import { getCurrentUser } from './utils/auth'
+import { startHeartbeat, stopHeartbeat } from './utils/presence'
 
 export default {
   name: 'App',
@@ -31,14 +33,31 @@ export default {
       return this.$route.name === 'login'
     }
   },
+  watch: {
+    '$route'() {
+      this.manageHeartbeat()
+    }
+  },
   methods: {
     toggleTheme() {
       this.isDark = !this.isDark
       setTheme(this.isDark ? 'dark' : 'light')
+    },
+    manageHeartbeat() {
+      const user = getCurrentUser()
+      if (user) {
+        startHeartbeat(user.username)
+      } else {
+        stopHeartbeat()
+      }
     }
   },
   mounted() {
     setTheme(this.isDark ? 'dark' : 'light')
+    this.manageHeartbeat()
+  },
+  unmounted() {
+    stopHeartbeat()
   }
 }
 </script>
