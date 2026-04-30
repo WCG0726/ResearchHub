@@ -127,6 +127,87 @@ export function setWritingProgress(data) {
   setStorage('writing', data)
 }
 
+// 计划表
+export function getPlans() {
+  return getStorage('plans', [])
+}
+
+export function setPlans(plans) {
+  setStorage('plans', plans)
+}
+
+export function addPlan(plan) {
+  const plans = getPlans()
+  plan.id = Date.now()
+  plan.done = false
+  plan.createdAt = new Date().toISOString()
+  plans.unshift(plan)
+  setPlans(plans)
+  return plan
+}
+
+export function togglePlan(id) {
+  const plans = getPlans()
+  const p = plans.find(p => p.id === id)
+  if (p) {
+    p.done = !p.done
+    setPlans(plans)
+  }
+}
+
+export function deletePlan(id) {
+  setPlans(getPlans().filter(p => p.id !== id))
+}
+
+// 喝水记录
+export function getWater() {
+  const today = new Date().toISOString().split('T')[0]
+  const data = getStorage('water', {})
+  if (!data[today]) data[today] = { cups: 0, goal: 8 }
+  return data[today]
+}
+
+export function addWaterCup() {
+  const today = new Date().toISOString().split('T')[0]
+  const data = getStorage('water', {})
+  if (!data[today]) data[today] = { cups: 0, goal: 8 }
+  data[today].cups++
+  setStorage('water', data)
+  return data[today]
+}
+
+export function removeWaterCup() {
+  const today = new Date().toISOString().split('T')[0]
+  const data = getStorage('water', {})
+  if (data[today] && data[today].cups > 0) {
+    data[today].cups--
+    setStorage('water', data)
+  }
+  return data[today] || { cups: 0, goal: 8 }
+}
+
+export function setWaterGoal(goal) {
+  const today = new Date().toISOString().split('T')[0]
+  const data = getStorage('water', {})
+  if (!data[today]) data[today] = { cups: 0, goal: 8 }
+  data[today].goal = goal
+  setStorage('water', data)
+}
+
+// 吃什么
+export function getMeals() {
+  return getStorage('meals', [])
+}
+
+export function addMeal(meal) {
+  const meals = getMeals()
+  meal.id = Date.now()
+  meal.date = new Date().toISOString()
+  meals.unshift(meal)
+  setStorage('meals', meals)
+  return meal
+}
+
 // 用户资料
 const DEFAULT_PROFILE = { nickname: '科研人', avatar: '' }
 
