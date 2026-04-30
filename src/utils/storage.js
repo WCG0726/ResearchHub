@@ -252,6 +252,29 @@ export function addMeal(meal) {
   return meal
 }
 
+// 日历事件
+export function getCalendarEvents() {
+  return getStorage('calendar_events', {})
+}
+
+export function addCalendarEvent(date, event) {
+  const events = getCalendarEvents()
+  if (!events[date]) events[date] = []
+  event.id = Date.now()
+  events[date].push(event)
+  setStorage('calendar_events', events)
+  return event
+}
+
+export function deleteCalendarEvent(date, eventId) {
+  const events = getCalendarEvents()
+  if (events[date]) {
+    events[date] = events[date].filter(e => e.id !== eventId)
+    if (events[date].length === 0) delete events[date]
+    setStorage('calendar_events', events)
+  }
+}
+
 // 用户资料
 const DEFAULT_PROFILE = { nickname: '科研人', avatar: '' }
 

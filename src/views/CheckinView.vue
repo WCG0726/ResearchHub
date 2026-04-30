@@ -41,7 +41,12 @@
 
     <!-- 打卡日历 -->
     <div class="card calendar-card">
-      <h3 class="card-title">{{ currentMonth }}</h3>
+      <div class="calendar-nav">
+        <button class="nav-btn" @click="prevMonth">◀</button>
+        <h3 class="card-title" style="margin:0">{{ currentYear }} 年 {{ currentMonth }} 月</h3>
+        <button class="nav-btn" @click="nextMonth">▶</button>
+        <button class="nav-btn today-btn" @click="goToday">今天</button>
+      </div>
       <div class="calendar">
         <div class="calendar-header">
           <span v-for="day in weekDays" :key="day" class="weekday">{{ day }}</span>
@@ -54,12 +59,44 @@
             :class="{
               'other-month': !day.currentMonth,
               'is-today': day.isToday,
-              'is-checked': day.isChecked
+              'is-checked': day.isChecked,
+              'has-event': day.hasEvent,
+              'is-weekend': day.isWeekend
             }"
+            @click="onDayClick(day)"
           >
             <span class="day-number">{{ day.date }}</span>
             <span v-if="day.isChecked" class="check-mark">✓</span>
+            <span v-if="day.hasEvent" class="event-dot" :title="day.eventText"></span>
           </div>
+        </div>
+      </div>
+      <!-- 选中日期的事件列表 -->
+      <div v-if="selectedDay" class="day-detail">
+        <div class="day-detail-header">
+          <h4>{{ selectedDay.fullDate }} {{ selectedDay.isToday ? '(今天)' : '' }}</h4>
+          <button class="btn-close" @click="selectedDay = null">×</button>
+        </div>
+        <div v-if="selectedDay.isChecked" class="day-checkin-info">
+          <span class="tag tag-success">已打卡</span>
+          <span v-if="checkins[selectedDay.fullDate]?.clockIn" class="checkin-time-detail">
+            上班 {{ formatTime(checkins[selectedDay.fullDate].clockIn) }}
+            <template v-if="checkins[selectedDay.fullDate]?.clockOut">
+              · 下班 {{ formatTime(checkins[selectedDay.fullDate].clockOut) }}
+            </template>
+          </span>
+        </div>
+        <div v-if="dayEvents.length" class="day-events">
+          <div v-for="ev in dayEvents" :key="ev.id" class="event-item">
+            <span class="event-color" :style="{ background: ev.color || '#6366f1' }"></span>
+            <span class="event-text">{{ ev.text }}</span>
+            <button class="btn-del-event" @click="removeEvent(ev.id)">×</button>
+          </div>
+        </div>
+        <div class="add-event">
+          <input v-model="newEventText" type="text" placeholder="添加事件..." @keyup.enter="addEvent" />
+          <input v-model="newEventColor" type="color" class="color-pick" />
+          <button class="btn btn-primary btn-sm" @click="addEvent">添加</button>
         </div>
       </div>
     </div>
@@ -83,86 +120,137 @@
 </template>
 
 <script>
-import { getCheckins, getStreak, clockIn, clockOut, getTodayClockStatus } from '../utils/storage'
+import { getCheckins, getStreak, clockIn, clockOut, getTodayClockStatus, getCalendarEvents, addCalendarEvent, deleteCalendarEvent } from '../utils/storage'
 
 export default {
   name: 'CheckinView',
   data() {
+    const now = new Date()
     return {
       clockStatus: { clockedIn: false, clockedOut: false },
       streak: { current: 0, longest: 0, total: 0 },
       checkins: {},
-      currentYear: new Date().getFullYear(),
-      currentMonth: new Date().getMonth() + 1,
-      weekDays: ['日', '一', '二', '三', '四', '五', '六']
+      events: {},
+      currentYear: now.getFullYear(),
+      currentMonth: now.getMonth() + 1,
+      weekDays: ['日', '一', '二', '三', '四', '五', '六'],
+      selectedDay: null,
+      newEventText: '',
+      newEventColor: '#6366f1'
     }
   },
   computed: {
-    currentMonthText() {
-      return `${this.currentYear} 年 ${this.currentMonth} 月`
-    },
     calendarDays() {
       const year = this.currentYear
       const month = this.currentMonth - 1
       const firstDay = new Date(year, month, 1)
       const lastDay = new Date(year, month + 1, 0)
+      const today = new Date().toISOString().split('T')[0]
       const days = []
 
+      // 上月填充
       const startWeekday = firstDay.getDay()
       for (let i = startWeekday - 1; i >= 0; i--) {
         const d = new Date(year, month, -i)
-        days.push({
-          date: d.getDate(),
-          currentMonth: false,
-          isToday: false,
-          isChecked: false,
-          fullDate: d.toISOString().split('T')[0]
-        })
+        const dateStr = this.formatDate(d)
+        days.push(this.makeDay(d.getDate(), dateStr, false, today))
       }
 
-      const today = new Date().toISOString().split('T')[0]
+      // 本月
       for (let i = 1; i <= lastDay.getDate(); i++) {
         const d = new Date(year, month, i)
-        const dateStr = d.toISOString().split('T')[0]
-        days.push({
-          date: i,
-          currentMonth: true,
-          isToday: dateStr === today,
-          isChecked: !!this.checkins[dateStr],
-          fullDate: dateStr
-        })
+        const dateStr = this.formatDate(d)
+        days.push(this.makeDay(i, dateStr, true, today))
       }
 
+      // 下月填充
       const remaining = 42 - days.length
       for (let i = 1; i <= remaining; i++) {
         const d = new Date(year, month + 1, i)
-        days.push({
-          date: i,
-          currentMonth: false,
-          isToday: false,
-          isChecked: false,
-          fullDate: d.toISOString().split('T')[0]
-        })
+        const dateStr = this.formatDate(d)
+        days.push(this.makeDay(i, dateStr, false, today))
       }
 
       return days
+    },
+    dayEvents() {
+      if (!this.selectedDay) return []
+      return this.events[this.selectedDay.fullDate] || []
     }
   },
   methods: {
-    doClockIn() {
-      if (clockIn()) {
-        this.loadData()
+    formatDate(d) {
+      const y = d.getFullYear()
+      const m = String(d.getMonth() + 1).padStart(2, '0')
+      const day = String(d.getDate()).padStart(2, '0')
+      return `${y}-${m}-${day}`
+    },
+    makeDay(date, dateStr, currentMonth, today) {
+      const d = new Date(dateStr)
+      const weekday = d.getDay()
+      return {
+        date,
+        fullDate: dateStr,
+        currentMonth,
+        isToday: dateStr === today,
+        isWeekend: weekday === 0 || weekday === 6,
+        isChecked: !!this.checkins[dateStr],
+        hasEvent: !!(this.events[dateStr] && this.events[dateStr].length),
+        eventText: (this.events[dateStr] || []).map(e => e.text).join(', ')
       }
     },
-    doClockOut() {
-      if (clockOut()) {
-        this.loadData()
+    formatTime(isoStr) {
+      return new Date(isoStr).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+    },
+    prevMonth() {
+      if (this.currentMonth === 1) {
+        this.currentMonth = 12
+        this.currentYear--
+      } else {
+        this.currentMonth--
       }
+    },
+    nextMonth() {
+      if (this.currentMonth === 12) {
+        this.currentMonth = 1
+        this.currentYear++
+      } else {
+        this.currentMonth++
+      }
+    },
+    goToday() {
+      const now = new Date()
+      this.currentYear = now.getFullYear()
+      this.currentMonth = now.getMonth() + 1
+    },
+    onDayClick(day) {
+      this.selectedDay = day
+    },
+    addEvent() {
+      if (!this.newEventText.trim() || !this.selectedDay) return
+      addCalendarEvent(this.selectedDay.fullDate, {
+        text: this.newEventText.trim(),
+        color: this.newEventColor
+      })
+      this.events = getCalendarEvents()
+      this.newEventText = ''
+    },
+    removeEvent(eventId) {
+      if (!this.selectedDay) return
+      deleteCalendarEvent(this.selectedDay.fullDate, eventId)
+      this.events = getCalendarEvents()
+    },
+    doClockIn() {
+      if (clockIn()) this.loadData()
+    },
+    doClockOut() {
+      if (clockOut()) this.loadData()
     },
     loadData() {
       this.checkins = getCheckins()
       this.streak = getStreak()
       this.clockStatus = getTodayClockStatus()
+      this.events = getCalendarEvents()
     }
   },
   mounted() {
@@ -287,8 +375,42 @@ export default {
   margin-bottom: 30px;
 }
 
+.calendar-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.nav-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.nav-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.today-btn {
+  width: auto;
+  padding: 0 12px;
+  font-size: 13px;
+  margin-left: auto;
+}
+
 .calendar {
-  margin-top: 16px;
+  margin-top: 0;
 }
 
 .calendar-header {
@@ -345,10 +467,155 @@ export default {
   color: white;
 }
 
+.calendar-day.is-weekend {
+  color: var(--danger);
+}
+
+.calendar-day.other-month.is-weekend {
+  color: var(--text-muted);
+}
+
+.calendar-day.has-event {
+  cursor: pointer;
+}
+
 .check-mark {
   font-size: 10px;
   position: absolute;
   bottom: 4px;
+}
+
+.event-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--primary);
+  position: absolute;
+  top: 4px;
+  right: 4px;
+}
+
+.day-detail {
+  margin-top: 16px;
+  padding: 16px;
+  background: var(--bg-surface);
+  border-radius: var(--radius);
+}
+
+.day-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.day-detail-header h4 {
+  font-size: 15px;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.btn-close {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: none;
+  font-size: 18px;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-close:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.day-checkin-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.checkin-time-detail {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.day-events {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.event-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--bg-primary);
+  border-radius: var(--radius);
+}
+
+.event-color {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.event-text {
+  flex: 1;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.btn-del-event {
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px;
+}
+
+.btn-del-event:hover {
+  color: var(--danger);
+}
+
+.add-event {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.add-event input[type="text"] {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.add-event input[type="text"]:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.color-pick {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  padding: 2px;
 }
 
 .stats-row {
