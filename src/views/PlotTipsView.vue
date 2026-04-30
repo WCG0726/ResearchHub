@@ -236,6 +236,132 @@ plt.savefig('xrd_stacked.pdf')</code></pre>`,
 <li>☐ 所有缩写在图注中解释</li>
 </ul>`,
     tools: []
+  },
+  {
+    category: 'Python 绘图',
+    title: '能带结构图 (Band Structure)',
+    content: `<p><strong>VASP + pymatgen 流程：</strong></p>
+<ol>
+<li>用 pymatgen 解析 vasprun.xml 获取能带数据</li>
+<li>设置高对称路径（KPOINTS）</li>
+<li>绘图时标注费米能级为 0 eV</li>
+</ol>
+<pre><code>from pymatgen.electronic_structure.bandstructure import BandStructureSymmLine
+from pymatgen.io.vasp.outputs import BSVasprun
+run = BSVasprun("vasprun.xml")
+bs = run.get_band_structure(line_mode=True)
+# 用 matplotlib 绘制</code></pre>
+<p><strong>技巧：</strong>用不同颜色区分 up/down spin，标注带隙值</p>`,
+    tools: ['Python', 'pymatgen', 'Matplotlib']
+  },
+  {
+    category: 'Python 绘图',
+    title: '态密度图 (DOS)',
+    content: `<p><strong>常见格式：</strong></p>
+<ul>
+<li>X轴：Energy (eV)，Y轴：DOS (states/eV)</li>
+<li>总态密度（TDOS）+ 分波态密度（PDOS）</li>
+<li>费米能级对齐到 0 eV</li>
+</ul>
+<pre><code>import matplotlib.pyplot as plt
+fig, ax = plt.subplots()
+ax.fill_between(energy, dos, alpha=0.3)
+ax.axvline(x=0, color='k', ls='--', lw=0.8)  # Fermi level
+ax.set_xlabel('Energy (eV)')
+ax.set_ylabel('DOS (states/eV)')</code></pre>
+<p><strong>技巧：</strong>用 subplot 同时展示 TDOS 和各元素 PDOS</p>`,
+    tools: ['Python', 'pymatgen', 'Matplotlib']
+  },
+  {
+    category: 'Python 绘图',
+    title: '声子谱图 (Phonon)',
+    content: `<p><strong>phonopy 输出绘图：</strong></p>
+<ul>
+<li>X轴：高对称路径上的 q 点</li>
+<li>Y轴：频率 Frequency (THz 或 cm⁻¹)</li>
+<li>虚频用负值表示，标注声学支</li>
+</ul>
+<pre><code>import yaml
+with open('band.yaml') as f:
+    data = yaml.safe_load(f)
+# 解析 q-points 和 frequencies，绘制色散关系</code></pre>
+<p><strong>注意：</strong>虚频表示结构不稳定，需要优化</p>`,
+    tools: ['Python', 'phonopy', 'Matplotlib']
+  },
+  {
+    category: 'Python 绘图',
+    title: '3D 晶体结构可视化',
+    content: `<p><strong>推荐工具对比：</strong></p>
+<table>
+<tr><th>工具</th><th>特点</th><th>适用场景</th></tr>
+<tr><td>VESTA</td><td>GUI 操作，效果好</td><td>快速查看，论文插图</td></tr>
+<tr><td>ASE</td><td>Python 库，可编程</td><td>批量渲染，自动化</td></tr>
+<tr><td>pymatgen</td><td>结构分析+绘图</td><td>结构分析流程</td></tr>
+<tr><td>OVITO</td><td>MD 轨迹可视化</td><td>分子动力学</td></tr>
+</table>
+<p><strong>VESTA 技巧：</strong>调整 Bond Radius 和 Polyhedra 显示，导出 PNG 时设置高分辨率</p>`,
+    tools: ['VESTA', 'ASE', 'pymatgen', 'OVITO']
+  },
+  {
+    category: 'COMSOL 绘图',
+    title: 'COMSOL 结果图导出',
+    content: `<p><strong>导出高质量图片：</strong></p>
+<ol>
+<li>Results → 选中绘图 → 右键 → Image</li>
+<li>设置分辨率：File → Preferences → Graphics → DPI</li>
+<li>推荐格式：PNG (位图) 或 EPS (矢量)</li>
+<li>去除背景网格：取消 Plot Settings → Grid</li>
+</ol>
+<p><strong>动画导出：</strong></p>
+<ul>
+<li>Player → 导出为 GIF 或 MP4</li>
+<li>帧率 15-30 fps，分辨率 1080p</li>
+</ul>`,
+    tools: ['COMSOL']
+  },
+  {
+    category: 'COMSOL 绘图',
+    title: 'COMSOL 数据导出到 Origin',
+    content: `<p><strong>步骤：</strong></p>
+<ol>
+<li>COMSOL: Results → Export → Data</li>
+<li>选择格式：CSV 或 Text</li>
+<li>设置导出的坐标范围和分辨率</li>
+<li>Origin: File → Import → ASCII</li>
+<li>设置列分隔符为逗号</li>
+</ol>
+<p><strong>技巧：</strong>用 Derived Values 先计算需要的物理量，再导出</p>`,
+    tools: ['COMSOL', 'Origin']
+  },
+  {
+    category: 'LaTeX 绘图',
+    title: 'TikZ 学术图表示例',
+    content: `<p><strong>用 TikZ 画简单示意图：</strong></p>
+<pre><code>\\begin{tikzpicture}
+  \\draw[->] (0,0) -- (4,0) node[right] {x};
+  \\draw[->] (0,0) -- (0,3) node[above] {y};
+  \\draw[domain=0:3.5, smooth, thick] plot (\\x, {0.5*\\x*\\x});
+  \\node at (2, 2.5) {$y = \\frac{1}{2}x^2$};
+\\end{tikzpicture}</code></pre>
+<p><strong>常用包：</strong>tikz, pgfplots, standalone</p>
+<p><strong>优势：</strong>矢量图，与论文字体一致，可版本控制</p>`,
+    tools: ['LaTeX', 'TikZ', 'pgfplots']
+  },
+  {
+    category: 'LaTeX 绘图',
+    title: 'pgfplots 数据绘图',
+    content: `<p><strong>直接从 CSV 绘图：</strong></p>
+<pre><code>\\begin{axis}[
+  xlabel={Temperature (K)},
+  ylabel={ZT},
+  legend pos=north west,
+  grid=major
+]
+\\addplot table[x=temp, y=zt, col sep=comma]{data.csv};
+\\addlegendentry{Sample A}
+\\end{axis}</code></pre>
+<p><strong>技巧：</strong>用 \\pgfplotstableset 设置数据格式，支持误差棒</p>`,
+    tools: ['LaTeX', 'pgfplots']
   }
 ]
 

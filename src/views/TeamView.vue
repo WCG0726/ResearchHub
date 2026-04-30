@@ -20,19 +20,38 @@
         <div class="stat-icon">📝</div>
       </div>
       <div class="stat-card" style="--accent: var(--info)">
-        <div class="stat-value">{{ myStats.papers }}</div>
-        <div class="stat-label">论文项目</div>
-        <div class="stat-icon">📄</div>
+        <div class="stat-value">{{ myStats.experiments }}</div>
+        <div class="stat-label">实验记录</div>
+        <div class="stat-icon">🔬</div>
+      </div>
+      <div class="stat-card" style="--accent: #ec4899">
+        <div class="stat-value">{{ myStats.litNotes }}</div>
+        <div class="stat-label">文献笔记</div>
+        <div class="stat-icon">📖</div>
+      </div>
+      <div class="stat-card" style="--accent: #8b5cf6">
+        <div class="stat-value">{{ myStats.pomodoro }}</div>
+        <div class="stat-label">番茄钟数</div>
+        <div class="stat-icon">🍅</div>
+      </div>
+      <div class="stat-card" style="--accent: #06b6d4">
+        <div class="stat-value">{{ myStats.inspirations }}</div>
+        <div class="stat-label">灵感记录</div>
+        <div class="stat-icon">💡</div>
+      </div>
+      <div class="stat-card" style="--accent: #f97316">
+        <div class="stat-value">{{ myStats.meetings }}</div>
+        <div class="stat-label">会议记录</div>
+        <div class="stat-icon">🗣️</div>
       </div>
     </div>
 
     <!-- 排行榜 -->
     <div class="card">
       <div class="rank-header">
-        <h3 class="card-title" style="margin-bottom:0">打卡排行榜</h3>
+        <h3 class="card-title" style="margin-bottom:0">排行榜</h3>
         <div class="rank-tabs">
-          <button class="rank-tab" :class="{ active: rankBy === 'streak' }" @click="rankBy = 'streak'">连续天数</button>
-          <button class="rank-tab" :class="{ active: rankBy === 'total' }" @click="rankBy = 'total'">累计打卡</button>
+          <button v-for="tab in rankTabs" :key="tab.key" class="rank-tab" :class="{ active: rankBy === tab.key }" @click="rankBy = tab.key">{{ tab.label }}</button>
         </div>
       </div>
 
@@ -61,8 +80,8 @@
             <span class="rank-status" :class="{ online: entry.online }">{{ entry.online ? '在线' : entry.lastSeen }}</span>
           </div>
           <div class="rank-value">
-            {{ rankBy === 'streak' ? entry.streak : entry.total }}
-            <span class="rank-unit">{{ rankBy === 'streak' ? '天' : '次' }}</span>
+            {{ entry[rankBy] || 0 }}
+            <span class="rank-unit">{{ rankUnit }}</span>
           </div>
         </div>
 
@@ -93,7 +112,7 @@
 </template>
 
 <script>
-import { getCheckins, getStreak, getRecords, getWritingProgress } from '../utils/storage'
+import { getCheckins, getStreak, getRecords, getWritingProgress, getExperiments, getLitNotes, getMeetings, getInspirations, getPomodoroStats } from '../utils/storage'
 import { getCurrentUser } from '../utils/auth'
 import { getAllPresence } from '../utils/presence'
 import { formatDate } from '../utils/date'
@@ -103,33 +122,40 @@ export default {
   data() {
     return {
       rankBy: 'streak',
+      rankTabs: [
+        { key: 'streak', label: '连续打卡' },
+        { key: 'total', label: '累计打卡' },
+        { key: 'records', label: '科研记录' },
+        { key: 'experiments', label: '实验记录' },
+        { key: 'litNotes', label: '文献笔记' },
+        { key: 'pomodoro', label: '番茄钟' },
+        { key: 'inspirations', label: '灵感' },
+        { key: 'meetings', label: '会议' },
+      ],
       currentUser: '',
-      myStats: { streak: 0, totalCheckins: 0, records: 0, papers: 0 },
+      myStats: { streak: 0, totalCheckins: 0, records: 0, experiments: 0, litNotes: 0, pomodoro: 0, inspirations: 0, meetings: 0 },
       members: [],
       allStats: {},
       presenceData: {}
     }
   },
   computed: {
+    rankUnit() {
+      const units = { streak: '天', total: '次', records: '条', experiments: '条', litNotes: '篇', pomodoro: '个', inspirations: '条', meetings: '次' }
+      return units[this.rankBy] || ''
+    },
     rankedList() {
       const presence = this.presenceData
-      const now = Date.now()
       const list = this.members.map(m => {
         const p = presence[m.username]
         const online = p ? p.online === true : false
         const lastSeen = p ? (p.online ? '在线' : this.formatDiff(p.lastSeen)) : '从未活跃'
-        return {
-          ...m,
-          streak: this.allStats[m.username]?.streak || 0,
-          total: this.allStats[m.username]?.total || 0,
-          online,
-          lastSeen
-        }
+        const stats = this.allStats[m.username] || {}
+        return { ...m, ...stats, online, lastSeen }
       })
       list.sort((a, b) => {
         if (a.online !== b.online) return a.online ? -1 : 1
-        const key = this.rankBy === 'streak' ? 'streak' : 'total'
-        return b[key] - a[key]
+        return (b[this.rankBy] || 0) - (a[this.rankBy] || 0)
       })
       return list
     },
@@ -192,28 +218,32 @@ export default {
       // 计算当前用户统计
       const streak = getStreak()
       const records = getRecords()
-      const writing = getWritingProgress()
-      this.myStats = {
-        streak: streak.current,
-        totalCheckins: streak.total,
-        records: records.length,
-        papers: writing.papers ? writing.papers.length : 0
-      }
+      const experiments = getExperiments()
+      const litNotes = getLitNotes()
+      const pomodoro = getPomodoroStats()
+      const inspirations = getInspirations()
+      const meetings = getMeetings()
+      const totalCheckins = Object.keys(getCheckins()).length
 
-      // 为排行榜生成统计数据
-      const checkins = getCheckins()
-      const totalCheckins = Object.keys(checkins).length
-      // 计算当前用户连续天数（与 streak 一致）
-      let currentStreak = streak.current
+      const myData = {
+        streak: streak.current,
+        total: totalCheckins,
+        records: records.length,
+        experiments: experiments.length,
+        litNotes: litNotes.length,
+        pomodoro: pomodoro.total || 0,
+        inspirations: inspirations.length,
+        meetings: meetings.length
+      }
+      this.myStats = { ...myData, totalCheckins }
 
       // 为所有成员生成排行数据
       this.allStats = {}
       this.members.forEach(m => {
         if (m.username === this.currentUser) {
-          this.allStats[m.username] = { streak: currentStreak, total: totalCheckins }
+          this.allStats[m.username] = myData
         } else {
-          // 其他用户在同一个 localStorage 中共享打卡数据
-          this.allStats[m.username] = { streak: currentStreak, total: totalCheckins }
+          this.allStats[m.username] = myData
         }
       })
     }
@@ -234,7 +264,7 @@ export default {
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
+  gap: 12px;
   margin-bottom: 24px;
 }
 

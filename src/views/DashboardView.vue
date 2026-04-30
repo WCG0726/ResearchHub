@@ -42,6 +42,30 @@
             <span class="quick-icon">📄</span>
             <span>论文</span>
           </router-link>
+          <router-link to="/lit-notes" class="quick-btn" style="--color: #8b5cf6">
+            <span class="quick-icon">📖</span>
+            <span>文献笔记</span>
+          </router-link>
+          <router-link to="/meeting" class="quick-btn" style="--color: #ec4899">
+            <span class="quick-icon">🗣️</span>
+            <span>组会</span>
+          </router-link>
+          <router-link to="/inspiration" class="quick-btn" style="--color: #f97316">
+            <span class="quick-icon">💡</span>
+            <span>灵感</span>
+          </router-link>
+          <router-link to="/plan" class="quick-btn" style="--color: #14b8a6">
+            <span class="quick-icon">📋</span>
+            <span>计划</span>
+          </router-link>
+          <router-link to="/links" class="quick-btn" style="--color: #64748b">
+            <span class="quick-icon">🔗</span>
+            <span>导航</span>
+          </router-link>
+          <router-link to="/polish" class="quick-btn" style="--color: #a855f7">
+            <span class="quick-icon">✨</span>
+            <span>润色</span>
+          </router-link>
         </div>
 
         <!-- 打卡统计 -->
@@ -168,6 +192,40 @@
           </div>
         </div>
 
+        <!-- 最近灵感 -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title" style="margin-bottom:0">💡 最近灵感</h3>
+            <router-link to="/inspiration" class="view-all-link">全部 →</router-link>
+          </div>
+          <div v-if="recentInspirations.length === 0" class="empty-sm">暂无灵感</div>
+          <div v-else class="inspiration-list">
+            <div v-for="insp in recentInspirations" :key="insp.id" class="inspiration-item" :style="{ borderLeft: `3px solid ${insp.color || '#6366f1'}` }">
+              <div class="inspiration-title">{{ insp.title }}</div>
+              <div v-if="insp.content" class="inspiration-content">{{ insp.content.slice(0, 60) }}{{ insp.content.length > 60 ? '...' : '' }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 最近文献笔记 -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title" style="margin-bottom:0">📖 最近笔记</h3>
+            <router-link to="/lit-notes" class="view-all-link">全部 →</router-link>
+          </div>
+          <div v-if="recentLitNotes.length === 0" class="empty-sm">暂无笔记</div>
+          <div v-else class="lit-notes-list">
+            <div v-for="note in recentLitNotes" :key="note.id" class="lit-note-item">
+              <div class="lit-note-title">{{ note.title }}</div>
+              <div class="lit-note-meta">
+                <span v-if="note.journal">{{ note.journal }}</span>
+                <span v-if="note.year">{{ note.year }}</span>
+                <span v-if="note.rating" class="rating-stars">{{ '★'.repeat(note.rating) }}{{ '☆'.repeat(5 - note.rating) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- 激励语录 -->
         <div class="card quote-card">
           <div class="quote-mark">"</div>
@@ -180,7 +238,7 @@
 </template>
 
 <script>
-import { getStreak, getRecords, getProfile, getTodayClockStatus, getPlans, getCheckins, getCalendarEvents } from '../utils/storage'
+import { getStreak, getRecords, getProfile, getTodayClockStatus, getPlans, getCheckins, getCalendarEvents, getInspirations, getLitNotes } from '../utils/storage'
 import { getCurrentUser } from '../utils/auth'
 import { formatDate, toDateString, getToday } from '../utils/date'
 
@@ -201,6 +259,8 @@ export default {
       nickname: getProfile().nickname,
       streak: { current: 0, longest: 0, total: 0 },
       records: [],
+      inspirations: [],
+      litNotes: [],
       todos: [],
       clockStatus: { clockedIn: false, clockedOut: false },
       quote: QUOTES[Math.floor(Math.random() * QUOTES.length)],
@@ -229,6 +289,12 @@ export default {
     },
     recentRecords() {
       return this.records.slice(0, 5)
+    },
+    recentInspirations() {
+      return [...this.inspirations].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 4)
+    },
+    recentLitNotes() {
+      return this.litNotes.slice(0, 4)
     },
     miniCalendarDays() {
       const year = this.miniYear
@@ -297,6 +363,8 @@ export default {
       this.todos = getPlans().slice(0, 5)
       this.checkins = getCheckins()
       this.events = getCalendarEvents()
+      this.inspirations = getInspirations()
+      this.litNotes = getLitNotes()
     },
     startClock() {
       const update = () => {
@@ -349,7 +417,7 @@ export default {
 /* 快捷入口 */
 .quick-actions {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 10px;
   margin-bottom: 20px;
 }
@@ -599,6 +667,19 @@ export default {
 .event-row .event-text { font-size: 14px; color: var(--text-primary); }
 .event-row .event-date { font-size: 12px; color: var(--text-muted); }
 
+/* 灵感 */
+.inspiration-list { display: flex; flex-direction: column; gap: 8px; }
+.inspiration-item { padding: 10px 12px; background: var(--bg-surface); border-radius: var(--radius); }
+.inspiration-title { font-size: 14px; font-weight: 500; color: var(--text-primary); margin-bottom: 2px; }
+.inspiration-content { font-size: 12px; color: var(--text-muted); }
+
+/* 文献笔记 */
+.lit-notes-list { display: flex; flex-direction: column; gap: 8px; }
+.lit-note-item { padding: 10px 12px; background: var(--bg-surface); border-radius: var(--radius); }
+.lit-note-title { font-size: 14px; font-weight: 500; color: var(--text-primary); margin-bottom: 2px; }
+.lit-note-meta { display: flex; gap: 8px; font-size: 12px; color: var(--text-muted); }
+.rating-stars { color: #f59e0b; }
+
 /* 语录 */
 .quote-card {
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
@@ -633,7 +714,7 @@ export default {
 }
 
 @media (max-width: 480px) {
-  .quick-actions { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .quick-actions { grid-template-columns: repeat(3, 1fr); gap: 6px; }
   .quick-btn { padding: 10px 6px; }
   .quick-icon { font-size: 20px; }
 }

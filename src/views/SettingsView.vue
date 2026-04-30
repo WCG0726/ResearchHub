@@ -2,6 +2,51 @@
   <div class="settings-page">
     <h1 class="page-title">设置</h1>
 
+    <!-- AI API 配置 -->
+    <div class="card">
+      <h3 class="card-title">🤖 AI API 配置</h3>
+      <p class="desc">配置 OpenAI 兼容 API，用于翻译、润色、标签建议等 AI 功能。此配置全局生效。</p>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>服务商</label>
+          <select v-model="aiConfig.provider" class="input" @change="onProviderChange">
+            <option value="openai">OpenAI</option>
+            <option value="custom">自定义 API</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>API Key</label>
+          <input v-model="aiConfig.apiKey" type="password" class="input" placeholder="sk-..." />
+        </div>
+        <div v-if="aiConfig.provider === 'custom'" class="form-group">
+          <label>API 地址</label>
+          <input v-model="aiConfig.baseUrl" type="text" class="input" placeholder="https://api.example.com/v1/chat/completions" />
+        </div>
+        <div class="form-group">
+          <label>模型</label>
+          <input v-model="aiConfig.model" type="text" class="input" placeholder="gpt-4o-mini" />
+        </div>
+      </div>
+      <div class="btn-row" style="margin-top:12px">
+        <button class="btn btn-primary" @click="saveAIConfig">保存配置</button>
+        <button class="btn btn-outline" @click="testAIConfig" :disabled="aiTesting">{{ aiTesting ? '测试中...' : '测试连接' }}</button>
+      </div>
+      <div v-if="aiMsg" class="msg" :class="aiMsgType">{{ aiMsg }}</div>
+      <div class="ai-features-hint">
+        <p>已接入 AI 的功能：</p>
+        <div class="feature-tags">
+          <span class="feature-tag">📝 论文润色</span>
+          <span class="feature-tag">🏷️ 自动标签</span>
+          <span class="feature-tag">📋 内容摘要</span>
+          <span class="feature-tag">📖 笔记生成</span>
+          <span class="feature-tag">🗣️ 会议纪要</span>
+          <span class="feature-tag">💡 灵感扩展</span>
+          <span class="feature-tag">📧 邮件生成</span>
+          <span class="feature-tag">🌐 翻译</span>
+        </div>
+      </div>
+    </div>
+
     <!-- 数据备份 -->
     <div class="card">
       <h3 class="card-title">💾 数据备份</h3>
@@ -57,7 +102,7 @@
 </template>
 
 <script>
-import { exportAllData, importAllData } from '../utils/storage'
+import { exportAllData, importAllData, getStorage, setStorage } from '../utils/storage'
 
 export default {
   name: 'SettingsView',
@@ -70,13 +115,72 @@ export default {
       importFile: null,
       storageUsed: '',
       storageTotal: '5 MB',
-      storagePercent: 0
+      storagePercent: 0,
+      aiConfig: { provider: 'openai', apiKey: '', baseUrl: '', model: 'gpt-4o-mini' },
+      aiMsg: '',
+      aiMsgType: '',
+      aiTesting: false
     }
   },
   mounted() {
     this.calcStorage()
+    this.loadAIConfig()
   },
   methods: {
+    loadAIConfig() {
+      const saved = getStorage('translate_config', null)
+      if (saved) {
+        this.aiConfig = {
+          provider: saved.provider || 'openai',
+          apiKey: saved.apiKey || '',
+          baseUrl: saved.baseUrl || '',
+          model: saved.model || 'gpt-4o-mini'
+        }
+      }
+    },
+    saveAIConfig() {
+      setStorage('translate_config', this.aiConfig)
+      this.aiMsg = '✓ 配置已保存，所有 AI 功能已生效'
+      this.aiMsgType = 'success'
+    },
+    onProviderChange() {
+      if (this.aiConfig.provider === 'openai') {
+        this.aiConfig.baseUrl = ''
+        if (!this.aiConfig.model) this.aiConfig.model = 'gpt-4o-mini'
+      }
+    },
+    async testAIConfig() {
+      if (!this.aiConfig.apiKey) { this.aiMsg = '请填写 API Key'; this.aiMsgType = 'error'; return }
+      this.aiTesting = true
+      this.aiMsg = ''
+      try {
+        const url = this.aiConfig.provider === 'openai'
+          ? 'https://api.openai.com/v1/chat/completions'
+          : this.aiConfig.baseUrl
+        const resp = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.aiConfig.apiKey}` },
+          body: JSON.stringify({
+            model: this.aiConfig.model || 'gpt-4o-mini',
+            messages: [{ role: 'user', content: 'Say "ok"' }],
+            max_tokens: 5
+          })
+        })
+        if (resp.ok) {
+          this.aiMsg = '✓ 连接成功，API 可用'
+          this.aiMsgType = 'success'
+        } else {
+          const err = await resp.json().catch(() => ({}))
+          this.aiMsg = '连接失败：' + (err.error?.message || `HTTP ${resp.status}`)
+          this.aiMsgType = 'error'
+        }
+      } catch (e) {
+        this.aiMsg = '连接失败：' + e.message
+        this.aiMsgType = 'error'
+      } finally {
+        this.aiTesting = false
+      }
+    },
     exportData() {
       try {
         const data = exportAllData()
@@ -159,4 +263,12 @@ export default {
 .shortcut-row { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text-secondary); }
 .shortcut-row span { margin-left: auto; color: var(--text-muted); }
 kbd { padding: 2px 8px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 4px; font-size: 12px; font-family: monospace; color: var(--text-primary); }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-group { margin-bottom: 0; }
+.form-group label { display: block; font-size: 13px; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px; }
+.ai-features-hint { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
+.ai-features-hint p { font-size: 13px; color: var(--text-muted); margin: 0 0 8px; }
+.feature-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.feature-tag { padding: 4px 10px; background: var(--bg-secondary); border-radius: var(--radius); font-size: 12px; color: var(--text-secondary); }
+@media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
 </style>
