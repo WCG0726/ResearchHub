@@ -34,14 +34,6 @@
             <span class="quick-icon">🍅</span>
             <span>番茄钟</span>
           </router-link>
-          <a href="https://github.com/WCG0726" target="_blank" rel="noopener noreferrer" class="quick-btn" style="--color: #333">
-            <span class="quick-icon">🐙</span>
-            <span>GitHub</span>
-          </a>
-          <a href="https://github.com/WCG0726/vasplearn" target="_blank" rel="noopener noreferrer" class="quick-btn" style="--color: #8b5cf6">
-            <span class="quick-icon">⚡</span>
-            <span>VASP</span>
-          </a>
           <router-link to="/translate" class="quick-btn" style="--color: #3b82f6">
             <span class="quick-icon">🌐</span>
             <span>翻译</span>

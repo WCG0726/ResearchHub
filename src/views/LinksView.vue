@@ -87,17 +87,6 @@ export default {
       newDesc: '',
       linkGroups: [
         {
-          title: '我的项目', icon: '⭐',
-          links: [
-            { name: 'GitHub 主页', desc: '我的 GitHub 个人主页', url: 'https://github.com/WCG0726' },
-            { name: 'VASP 学习平台', desc: 'VASP 计算材料学习平台', url: 'https://github.com/WCG0726/vasplearn' },
-            { name: '仿真学习平台', desc: 'COMSOL & ANSYS 仿真学习平台', url: 'https://github.com/WCG0726/simu-learn' },
-            { name: 'sci-plot', desc: '开箱即用的科研绘图工具', url: 'https://github.com/WCG0726/sci-plot' },
-            { name: 'PyWPEM', desc: 'AI-Driven XRD Structure Refinement', url: 'https://github.com/WCG0726/PyWPEM' },
-            { name: 'ResearchHub', desc: '科研管理平台（本项目）', url: 'https://github.com/WCG0726/ResearchHub' },
-          ]
-        },
-        {
           title: '文献检索', icon: '🔍',
           links: [
             { name: '玻尔学术', desc: '中文学术搜索与文献发现平台', url: 'https://bohr.cn' },

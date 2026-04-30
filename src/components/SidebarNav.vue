@@ -28,16 +28,6 @@
     </nav>
 
     <div class="sidebar-footer">
-      <div class="external-links">
-        <a href="https://github.com/WCG0726" target="_blank" rel="noopener noreferrer" class="ext-link">
-          <span class="ext-icon">🐙</span>
-          <span>GitHub</span>
-        </a>
-        <a href="https://github.com/WCG0726/vasplearn" target="_blank" rel="noopener noreferrer" class="ext-link">
-          <span class="ext-icon">⚡</span>
-          <span>VASP</span>
-        </a>
-      </div>
       <button class="btn-logout" @click="handleLogout">退出登录</button>
       <div class="version">v2.3.0</div>
     </div>
@@ -60,13 +50,6 @@ const SECTIONS = [
     ]
   },
   {
-    key: 'myprojects', label: '我的项目',
-    items: [
-      { to: '/links', name: 'links', icon: '🔗', text: 'GitHub & 项目' },
-      { to: '/zotero', name: 'zotero', icon: '📚', text: 'Zotero' },
-    ]
-  },
-  {
     key: 'tools', label: '工具',
     items: [
       { to: '/translate', name: 'translate', icon: '🌐', text: '翻译' },
@@ -80,6 +63,8 @@ const SECTIONS = [
   {
     key: 'literature', label: '文献',
     items: [
+      { to: '/zotero', name: 'zotero', icon: '📚', text: 'Zotero' },
+      { to: '/links', name: 'links', icon: '🔗', text: '学术导航' },
       { to: '/academic-calendar', name: 'academic-calendar', icon: '📅', text: '学术日历' },
     ]
   },
