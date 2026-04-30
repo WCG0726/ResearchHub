@@ -2,6 +2,8 @@
 
 > 打卡、记录、论文写作一站式管理工具
 
+**在线访问：[https://wcg0726.github.io/ResearchHub/](https://wcg0726.github.io/ResearchHub/)**
+
 ## 功能特性
 
 ### 打卡系统
@@ -28,6 +30,31 @@
 - 写作技巧总结
 - 期刊投稿清单
 - 热电材料专用模板
+
+### 计划表
+- 任务创建与管理
+- 优先级与截止日期
+- 完成状态追踪
+
+### 喝水提醒
+- 每日饮水记录
+- 饮水量统计
+
+### 吃什么
+- 餐食推荐
+- 饮食记录
+
+### 翻译工具
+- 中英文互译
+- 学术术语翻译
+
+### 润色提示词
+- 论文润色提示词模板
+- 常用学术表达推荐
+
+### 用户设置
+- 用户昵称编辑
+- 头像自定义
 
 ### 其他
 - 深色/浅色主题切换
@@ -70,7 +97,12 @@ ResearchHub/
 │       ├── CheckinView.vue      # 打卡
 │       ├── RecordsView.vue      # 科研记录
 │       ├── WritingView.vue      # 论文写作
-│       └── GuideView.vue        # 写作指南
+│       ├── GuideView.vue        # 写作指南
+│       ├── PlanView.vue         # 计划表
+│       ├── WaterView.vue        # 喝水提醒
+│       ├── FoodView.vue         # 吃什么
+│       ├── TranslateView.vue    # 翻译工具
+│       └── PolishView.vue       # 润色提示词
 └── index.html
 ```
 
