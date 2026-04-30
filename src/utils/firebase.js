@@ -3,14 +3,13 @@
  *
  * 配置步骤：
  * 1. 打开 https://console.firebase.google.com 创建项目
- * 2. 左侧菜单 → Authentication → 启用"匿名登录"
- * 3. 左侧菜单 → Realtime Database → 创建数据库 → 选择"测试模式"
- * 4. 左侧菜单 → 项目设置 → 常规 → 添加 Web 应用 → 复制配置填入下方
+ * 2. 左侧菜单 → Realtime Database → 创建数据库 → 选择"测试模式"
+ * 3. 左侧菜单 → 项目设置 → 常规 → 添加 Web 应用 → 复制配置填入下方
+ * 4. 数据库规则设为：{ "rules": { ".read": true, ".write": true } }
  */
 
 import { initializeApp } from 'firebase/app'
 import { getDatabase, ref, set, onValue, onDisconnect, serverTimestamp } from 'firebase/database'
-import { getAuth, signInAnonymously } from 'firebase/auth'
 
 const firebaseConfig = {
   apiKey: "AIzaSyBg0IQOFKHeQR2pp-V_lUzKc9EST-uUghQ",
@@ -24,7 +23,6 @@ const firebaseConfig = {
 
 let app = null
 let db = null
-let auth = null
 let initialized = false
 
 export function isFirebaseConfigured() {
@@ -38,8 +36,6 @@ export async function initFirebase() {
   try {
     app = initializeApp(firebaseConfig)
     db = getDatabase(app)
-    auth = getAuth(app)
-    await signInAnonymously(auth)
     initialized = true
     return true
   } catch (err) {
