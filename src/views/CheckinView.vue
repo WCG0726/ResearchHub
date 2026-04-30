@@ -126,6 +126,7 @@
 
 <script>
 import { getCheckins, getStreak, clockIn, clockOut, getTodayClockStatus, getCalendarEvents, addCalendarEvent, deleteCalendarEvent, getEventsForDate } from '../utils/storage'
+import { toDateString, formatTime } from '../utils/date'
 
 export default {
   name: 'CheckinView',
@@ -186,10 +187,7 @@ export default {
   },
   methods: {
     formatDate(d) {
-      const y = d.getFullYear()
-      const m = String(d.getMonth() + 1).padStart(2, '0')
-      const day = String(d.getDate()).padStart(2, '0')
-      return `${y}-${m}-${day}`
+      return toDateString(d)
     },
     makeDay(date, dateStr, currentMonth, today) {
       const d = new Date(dateStr)
@@ -205,9 +203,7 @@ export default {
         eventText: (this.events[dateStr] || []).map(e => e.text).join(', ')
       }
     },
-    formatTime(isoStr) {
-      return new Date(isoStr).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
-    },
+    formatTime,
     prevMonth() {
       if (this.currentMonth === 1) {
         this.currentMonth = 12

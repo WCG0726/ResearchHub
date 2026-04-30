@@ -174,6 +174,7 @@
 <script>
 import { getStreak, getRecords, getProfile, getTodayClockStatus, getPlans, getCheckins, getCalendarEvents } from '../utils/storage'
 import { getCurrentUser } from '../utils/auth'
+import { formatDate, toDateString, getToday } from '../utils/date'
 
 const QUOTES = [
   { text: '科学是永无止境的，它是一个永恒之谜。', author: '爱因斯坦' },
@@ -270,11 +271,9 @@ export default {
   },
   methods: {
     fmtDate(d) {
-      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+      return toDateString(d)
     },
-    formatDate(dateStr) {
-      return new Date(dateStr).toLocaleDateString('zh-CN')
-    },
+    formatDate,
     miniPrev() {
       if (this.miniMonth === 1) { this.miniMonth = 12; this.miniYear-- }
       else this.miniMonth--
@@ -292,14 +291,19 @@ export default {
       this.events = getCalendarEvents()
     },
     startClock() {
-      setInterval(() => {
+      const update = () => {
         this.currentTime = new Date().toLocaleTimeString('zh-CN')
-      }, 1000)
+        this._clockRaf = requestAnimationFrame(update)
+      }
+      this._clockRaf = requestAnimationFrame(update)
     }
   },
   mounted() {
     this.loadData()
     this.startClock()
+  },
+  beforeUnmount() {
+    if (this._clockRaf) cancelAnimationFrame(this._clockRaf)
   }
 }
 </script>

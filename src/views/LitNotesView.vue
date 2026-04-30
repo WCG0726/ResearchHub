@@ -111,6 +111,7 @@
 
 <script>
 import { getLitNotes, addLitNote, updateLitNote, deleteLitNote } from '../utils/storage'
+import { formatDate } from '../utils/date'
 
 export default {
   name: 'LitNotesView',
@@ -145,9 +146,7 @@ export default {
     parseTags(str) {
       return str.split(/[,，]/).map(s => s.trim()).filter(Boolean)
     },
-    formatDate(iso) {
-      return new Date(iso).toLocaleDateString('zh-CN')
-    },
+    formatDate,
     saveNote() {
       if (!this.form.title.trim()) return alert('请输入论文标题')
       if (this.editing) {

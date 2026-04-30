@@ -26,6 +26,7 @@ const PomodoroView = () => import('../views/PomodoroView.vue')
 const EmailTemplatesView = () => import('../views/EmailTemplatesView.vue')
 const LatexEditorView = () => import('../views/LatexEditorView.vue')
 const AcademicCalendarView = () => import('../views/AcademicCalendarView.vue')
+const NotFoundView = () => import('../views/NotFoundView.vue')
 
 const routes = [
   { path: '/login', name: 'login', component: LoginView },
@@ -54,6 +55,7 @@ const routes = [
   { path: '/email-templates', name: 'email-templates', component: EmailTemplatesView, meta: { requiresAuth: true } },
   { path: '/latex-editor', name: 'latex-editor', component: LatexEditorView, meta: { requiresAuth: true } },
   { path: '/academic-calendar', name: 'academic-calendar', component: AcademicCalendarView, meta: { requiresAuth: true } },
+  { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFoundView },
 ]
 
 const router = createRouter({
@@ -97,7 +99,8 @@ router.beforeEach((to) => {
     pomodoro: '番茄钟',
     'email-templates': '邮件模板',
     'latex-editor': 'LaTeX 编辑器',
-    'academic-calendar': '学术日历'
+    'academic-calendar': '学术日历',
+    'not-found': '页面未找到'
   }
   document.title = titles[to.name] || '科研管理平台'
 })

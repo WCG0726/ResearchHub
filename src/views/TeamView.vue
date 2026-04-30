@@ -96,6 +96,7 @@
 import { getCheckins, getStreak, getRecords, getWritingProgress } from '../utils/storage'
 import { getCurrentUser } from '../utils/auth'
 import { getAllPresence } from '../utils/presence'
+import { formatDate } from '../utils/date'
 
 export default {
   name: 'TeamView',
@@ -139,7 +140,7 @@ export default {
   },
   methods: {
     formatDate(dateStr) {
-      return dateStr ? new Date(dateStr).toLocaleDateString('zh-CN') : ''
+      return dateStr ? formatDate(dateStr) : ''
     },
     formatDiff(ts) {
       if (!ts) return '从未活跃'

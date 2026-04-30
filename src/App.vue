@@ -1,11 +1,15 @@
 <template>
   <div class="app" :class="{ 'dark': isDark }">
     <template v-if="!isLoginPage">
-      <HeaderNav :is-dark="isDark" @toggle-theme="toggleTheme" />
+      <HeaderNav :is-dark="isDark" @toggle-theme="toggleTheme" @toggle-sidebar="sidebarOpen = !sidebarOpen" />
       <div class="layout">
-        <SidebarNav />
-        <main class="main">
-          <router-view />
+        <SidebarNav :open="sidebarOpen" @close="sidebarOpen = false" />
+        <main class="main" @click="sidebarOpen = false">
+          <router-view v-slot="{ Component }">
+            <transition name="page" mode="out-in">
+              <component :is="Component" />
+            </transition>
+          </router-view>
         </main>
       </div>
     </template>
@@ -25,7 +29,8 @@ export default {
   components: { HeaderNav, SidebarNav },
   data() {
     return {
-      isDark: getTheme() === 'dark'
+      isDark: getTheme() === 'dark',
+      sidebarOpen: false
     }
   },
   computed: {
@@ -36,6 +41,7 @@ export default {
   watch: {
     '$route'() {
       this.manageHeartbeat()
+      this.sidebarOpen = false
     }
   },
   methods: {
@@ -81,6 +87,22 @@ export default {
   margin-left: var(--sidebar-w);
   padding: 30px 40px;
   min-height: calc(100vh - var(--header-h));
+}
+
+/* 页面切换动画 */
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 
 @media (max-width: 900px) {

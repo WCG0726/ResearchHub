@@ -95,6 +95,7 @@
 
 <script>
 import { getRecords, addRecord, updateRecord, deleteRecord as removeRecord } from '../utils/storage'
+import { formatDate } from '../utils/date'
 
 export default {
   name: 'RecordsView',
@@ -174,11 +175,7 @@ export default {
       this.editingId = null
       this.form = { title: '', content: '', tagsStr: '', category: 'experiment' }
     },
-    formatDate(dateStr) {
-      return new Date(dateStr).toLocaleDateString('zh-CN', {
-        year: 'numeric', month: '2-digit', day: '2-digit'
-      })
-    },
+    formatDate,
     truncate(str, len) {
       return str && str.length > len ? str.slice(0, len) + '...' : str
     },

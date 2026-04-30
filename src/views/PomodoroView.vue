@@ -57,6 +57,7 @@
 
 <script>
 import { getPomodoroStats, addPomodoroSession } from '../utils/storage'
+import { formatDateTime } from '../utils/date'
 
 export default {
   name: 'PomodoroView',

@@ -1,5 +1,6 @@
 <template>
-  <aside class="sidebar">
+  <aside class="sidebar" :class="{ open }">
+    <div v-if="open" class="sidebar-backdrop" @click="$emit('close')"></div>
     <nav class="sidebar-nav">
       <router-link to="/" class="nav-item" :class="{ active: $route.name === 'dashboard' }">
         <span class="nav-icon">📊</span>
@@ -99,6 +100,10 @@ const SECTIONS = [
 
 export default {
   name: 'SidebarNav',
+  props: {
+    open: { type: Boolean, default: false }
+  },
+  emits: ['close'],
   data() {
     return {
       user: getCurrentUser(),
@@ -132,6 +137,7 @@ export default {
           this.openSections = { ...this.openSections, [s.key]: true }
         }
       }
+      this.$emit('close')
     }
   }
 }
@@ -292,7 +298,19 @@ export default {
 @media (max-width: 900px) {
   .sidebar {
     transform: translateX(-100%);
-    transition: transform 0.3s;
+    transition: transform 0.3s ease;
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+  }
+
+  .sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: -1;
   }
 }
 </style>
