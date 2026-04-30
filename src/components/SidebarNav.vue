@@ -6,109 +6,24 @@
         <span class="nav-text">工作台</span>
       </router-link>
 
-      <div class="nav-section">科研工作</div>
-      <router-link to="/records" class="nav-item" :class="{ active: $route.name === 'records' }">
-        <span class="nav-icon">📝</span>
-        <span class="nav-text">科研记录</span>
-      </router-link>
-      <router-link to="/lit-notes" class="nav-item" :class="{ active: $route.name === 'lit-notes' }">
-        <span class="nav-icon">📖</span>
-        <span class="nav-text">文献笔记</span>
-      </router-link>
-      <router-link to="/experiment" class="nav-item" :class="{ active: $route.name === 'experiment' }">
-        <span class="nav-icon">🔬</span>
-        <span class="nav-text">实验记录</span>
-      </router-link>
-      <router-link to="/writing" class="nav-item" :class="{ active: $route.name === 'writing' }">
-        <span class="nav-icon">📄</span>
-        <span class="nav-text">论文写作</span>
-      </router-link>
-      <router-link to="/guide" class="nav-item" :class="{ active: $route.name === 'guide' }">
-        <span class="nav-icon">📚</span>
-        <span class="nav-text">写作指南</span>
-      </router-link>
-      <router-link to="/data-analysis" class="nav-item" :class="{ active: $route.name === 'data-analysis' }">
-        <span class="nav-icon">📈</span>
-        <span class="nav-text">数据分析</span>
-      </router-link>
-
-      <div class="nav-section">文献与导航</div>
-      <router-link to="/zotero" class="nav-item" :class="{ active: $route.name === 'zotero' }">
-        <span class="nav-icon">📚</span>
-        <span class="nav-text">Zotero</span>
-      </router-link>
-      <router-link to="/links" class="nav-item" :class="{ active: $route.name === 'links' }">
-        <span class="nav-icon">🔗</span>
-        <span class="nav-text">学术导航</span>
-      </router-link>
-      <router-link to="/academic-calendar" class="nav-item" :class="{ active: $route.name === 'academic-calendar' }">
-        <span class="nav-icon">📅</span>
-        <span class="nav-text">学术日历</span>
-      </router-link>
-
-      <div class="nav-section">效率工具</div>
-      <router-link to="/translate" class="nav-item" :class="{ active: $route.name === 'translate' }">
-        <span class="nav-icon">🌐</span>
-        <span class="nav-text">翻译工具</span>
-      </router-link>
-      <router-link to="/polish" class="nav-item" :class="{ active: $route.name === 'polish' }">
-        <span class="nav-icon">✨</span>
-        <span class="nav-text">润色提示词</span>
-      </router-link>
-      <router-link to="/latex-snippets" class="nav-item" :class="{ active: $route.name === 'latex-snippets' }">
-        <span class="nav-icon">Σ</span>
-        <span class="nav-text">LaTeX 片段</span>
-      </router-link>
-      <router-link to="/latex-editor" class="nav-item" :class="{ active: $route.name === 'latex-editor' }">
-        <span class="nav-icon">🖊️</span>
-        <span class="nav-text">LaTeX 编辑</span>
-      </router-link>
-      <router-link to="/email-templates" class="nav-item" :class="{ active: $route.name === 'email-templates' }">
-        <span class="nav-icon">📧</span>
-        <span class="nav-text">邮件模板</span>
-      </router-link>
-
-      <div class="nav-section">项目管理</div>
-      <router-link to="/plan" class="nav-item" :class="{ active: $route.name === 'plan' }">
-        <span class="nav-icon">📋</span>
-        <span class="nav-text">计划表</span>
-      </router-link>
-      <router-link to="/milestone" class="nav-item" :class="{ active: $route.name === 'milestone' }">
-        <span class="nav-icon">🎯</span>
-        <span class="nav-text">里程碑</span>
-      </router-link>
-      <router-link to="/meeting" class="nav-item" :class="{ active: $route.name === 'meeting' }">
-        <span class="nav-icon">📋</span>
-        <span class="nav-text">组会记录</span>
-      </router-link>
-      <router-link to="/inspiration" class="nav-item" :class="{ active: $route.name === 'inspiration' }">
-        <span class="nav-icon">💡</span>
-        <span class="nav-text">灵感板</span>
-      </router-link>
-
-      <div class="nav-section">团队</div>
-      <router-link to="/team" class="nav-item" :class="{ active: $route.name === 'team' }">
-        <span class="nav-icon">🏆</span>
-        <span class="nav-text">排行榜</span>
-      </router-link>
-
-      <div class="nav-section">生活</div>
-      <router-link to="/checkin" class="nav-item" :class="{ active: $route.name === 'checkin' }">
-        <span class="nav-icon">✅</span>
-        <span class="nav-text">打卡</span>
-      </router-link>
-      <router-link to="/pomodoro" class="nav-item" :class="{ active: $route.name === 'pomodoro' }">
-        <span class="nav-icon">🍅</span>
-        <span class="nav-text">番茄钟</span>
-      </router-link>
-      <router-link to="/water" class="nav-item" :class="{ active: $route.name === 'water' }">
-        <span class="nav-icon">💧</span>
-        <span class="nav-text">喝水</span>
-      </router-link>
-      <router-link to="/meal" class="nav-item" :class="{ active: $route.name === 'meal' }">
-        <span class="nav-icon">🍜</span>
-        <span class="nav-text">吃什么</span>
-      </router-link>
+      <div v-for="section in sections" :key="section.key" class="nav-group">
+        <div class="nav-section" @click="toggleSection(section.key)">
+          <span class="section-arrow" :class="{ open: isOpen(section.key) }">▶</span>
+          {{ section.label }}
+        </div>
+        <div v-show="isOpen(section.key)" class="nav-group-body">
+          <router-link
+            v-for="item in section.items"
+            :key="item.to"
+            :to="item.to"
+            class="nav-item"
+            :class="{ active: $route.name === item.name }"
+          >
+            <span class="nav-icon">{{ item.icon }}</span>
+            <span class="nav-text">{{ item.text }}</span>
+          </router-link>
+        </div>
+      </div>
     </nav>
 
     <div class="sidebar-footer">
@@ -117,7 +32,7 @@
         <div class="user-name">{{ user.nickname }}</div>
       </div>
       <button class="btn-logout" @click="handleLogout">退出登录</button>
-      <div class="version">v2.1.0</div>
+      <div class="version">v2.2.0</div>
     </div>
   </aside>
 </template>
@@ -126,14 +41,82 @@
 import { getCurrentUser, logout } from '../utils/auth'
 import { stopPresence } from '../utils/presence'
 
+const SECTIONS = [
+  {
+    key: 'research', label: '科研',
+    items: [
+      { to: '/records', name: 'records', icon: '📝', text: '科研记录' },
+      { to: '/lit-notes', name: 'lit-notes', icon: '📖', text: '文献笔记' },
+      { to: '/experiment', name: 'experiment', icon: '🔬', text: '实验记录' },
+      { to: '/writing', name: 'writing', icon: '📄', text: '论文写作' },
+      { to: '/guide', name: 'guide', icon: '📚', text: '写作指南' },
+    ]
+  },
+  {
+    key: 'tools', label: '工具',
+    items: [
+      { to: '/translate', name: 'translate', icon: '🌐', text: '翻译' },
+      { to: '/polish', name: 'polish', icon: '✨', text: '润色提示词' },
+      { to: '/plot-tips', name: 'plot-tips', icon: '📐', text: '绘图技巧' },
+      { to: '/latex-snippets', name: 'latex-snippets', icon: 'Σ', text: 'LaTeX 片段' },
+      { to: '/latex-editor', name: 'latex-editor', icon: '🖊️', text: 'LaTeX 编辑' },
+      { to: '/email-templates', name: 'email-templates', icon: '📧', text: '邮件模板' },
+    ]
+  },
+  {
+    key: 'literature', label: '文献',
+    items: [
+      { to: '/zotero', name: 'zotero', icon: '📚', text: 'Zotero' },
+      { to: '/links', name: 'links', icon: '🔗', text: '学术导航' },
+      { to: '/academic-calendar', name: 'academic-calendar', icon: '📅', text: '学术日历' },
+    ]
+  },
+  {
+    key: 'project', label: '项目',
+    items: [
+      { to: '/plan', name: 'plan', icon: '📋', text: '计划表' },
+      { to: '/milestone', name: 'milestone', icon: '🎯', text: '里程碑' },
+      { to: '/meeting', name: 'meeting', icon: '🗣️', text: '组会记录' },
+      { to: '/inspiration', name: 'inspiration', icon: '💡', text: '灵感板' },
+    ]
+  },
+  {
+    key: 'team', label: '团队',
+    items: [
+      { to: '/team', name: 'team', icon: '🏆', text: '排行榜' },
+    ]
+  },
+  {
+    key: 'life', label: '生活',
+    items: [
+      { to: '/checkin', name: 'checkin', icon: '✅', text: '打卡' },
+      { to: '/pomodoro', name: 'pomodoro', icon: '🍅', text: '番茄钟' },
+      { to: '/water', name: 'water', icon: '💧', text: '喝水' },
+      { to: '/meal', name: 'meal', icon: '🍜', text: '吃什么' },
+    ]
+  },
+]
+
 export default {
   name: 'SidebarNav',
   data() {
     return {
-      user: getCurrentUser()
+      user: getCurrentUser(),
+      sections: SECTIONS,
+      openSections: this.getInitialOpen()
     }
   },
   methods: {
+    getInitialOpen() {
+      const routeName = this.$route?.name
+      const open = {}
+      for (const s of SECTIONS) {
+        open[s.key] = s.items.some(i => i.name === routeName)
+      }
+      return open
+    },
+    isOpen(key) { return !!this.openSections[key] },
+    toggleSection(key) { this.openSections = { ...this.openSections, [key]: !this.openSections[key] } },
     handleLogout() {
       const user = getCurrentUser()
       if (user) stopPresence(user.username, user.nickname)
@@ -142,8 +125,13 @@ export default {
     }
   },
   watch: {
-    '$route'() {
+    '$route'(to) {
       this.user = getCurrentUser()
+      for (const s of this.sections) {
+        if (s.items.some(i => i.name === to.name)) {
+          this.openSections = { ...this.openSections, [s.key]: true }
+        }
+      }
     }
   }
 }
@@ -160,7 +148,7 @@ export default {
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  padding: 16px 12px;
+  padding: 12px 10px;
   z-index: 90;
   overflow-y: auto;
 }
@@ -169,7 +157,11 @@ export default {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
+}
+
+.nav-group {
+  margin-bottom: 2px;
 }
 
 .nav-section {
@@ -177,18 +169,45 @@ export default {
   font-weight: 600;
   text-transform: uppercase;
   color: var(--text-muted);
-  padding: 12px 16px 4px;
+  padding: 8px 12px 4px;
   letter-spacing: 0.5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+  transition: color 0.15s;
+}
+
+.nav-section:hover {
+  color: var(--text-secondary);
+}
+
+.section-arrow {
+  font-size: 8px;
+  transition: transform 0.2s;
+  display: inline-block;
+  width: 10px;
+}
+
+.section-arrow.open {
+  transform: rotate(90deg);
+}
+
+.nav-group-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
 }
 
 .nav-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 16px;
+  gap: 10px;
+  padding: 7px 12px;
   border-radius: var(--radius);
   color: var(--text-secondary);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   transition: all 0.2s;
   text-decoration: none;
@@ -205,13 +224,14 @@ export default {
 }
 
 .nav-icon {
-  font-size: 16px;
-  width: 24px;
+  font-size: 14px;
+  width: 22px;
   text-align: center;
+  flex-shrink: 0;
 }
 
 .sidebar-footer {
-  padding: 16px;
+  padding: 12px;
   border-top: 1px solid var(--border);
 }
 
@@ -223,21 +243,21 @@ export default {
 }
 
 .user-avatar {
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   background: var(--primary);
   color: white;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   flex-shrink: 0;
 }
 
 .user-name {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--text-primary);
   overflow: hidden;
@@ -247,15 +267,15 @@ export default {
 
 .btn-logout {
   width: 100%;
-  padding: 8px;
+  padding: 6px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: none;
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: 12px;
   cursor: pointer;
   transition: all 0.2s;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .btn-logout:hover {
@@ -264,7 +284,7 @@ export default {
 }
 
 .version {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-muted);
   text-align: center;
 }

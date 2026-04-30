@@ -17,7 +17,7 @@ const ZoteroView = () => import('../views/ZoteroView.vue')
 const TeamView = () => import('../views/TeamView.vue')
 const LitNotesView = () => import('../views/LitNotesView.vue')
 const ExperimentView = () => import('../views/ExperimentView.vue')
-const DataAnalysisView = () => import('../views/DataAnalysisView.vue')
+const PlotTipsView = () => import('../views/PlotTipsView.vue')
 const LatexSnippetsView = () => import('../views/LatexSnippetsView.vue')
 const MeetingView = () => import('../views/MeetingView.vue')
 const InspirationView = () => import('../views/InspirationView.vue')
@@ -45,7 +45,7 @@ const routes = [
   { path: '/team', name: 'team', component: TeamView, meta: { requiresAuth: true } },
   { path: '/lit-notes', name: 'lit-notes', component: LitNotesView, meta: { requiresAuth: true } },
   { path: '/experiment', name: 'experiment', component: ExperimentView, meta: { requiresAuth: true } },
-  { path: '/data-analysis', name: 'data-analysis', component: DataAnalysisView, meta: { requiresAuth: true } },
+  { path: '/plot-tips', name: 'plot-tips', component: PlotTipsView, meta: { requiresAuth: true } },
   { path: '/latex-snippets', name: 'latex-snippets', component: LatexSnippetsView, meta: { requiresAuth: true } },
   { path: '/meeting', name: 'meeting', component: MeetingView, meta: { requiresAuth: true } },
   { path: '/inspiration', name: 'inspiration', component: InspirationView, meta: { requiresAuth: true } },
@@ -89,7 +89,7 @@ router.beforeEach((to) => {
     team: '团队排行榜',
     'lit-notes': '文献笔记',
     experiment: '实验记录',
-    'data-analysis': '数据分析',
+    'plot-tips': '绘图技巧',
     'latex-snippets': 'LaTeX 片段',
     meeting: '组会记录',
     inspiration: '灵感板',
