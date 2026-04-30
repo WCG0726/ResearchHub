@@ -18,7 +18,7 @@ import HeaderNav from './components/HeaderNav.vue'
 import SidebarNav from './components/SidebarNav.vue'
 import { getTheme, setTheme } from './utils/storage'
 import { getCurrentUser } from './utils/auth'
-import { startHeartbeat, stopHeartbeat } from './utils/presence'
+import { initPresence, stopPresence } from './utils/presence'
 
 export default {
   name: 'App',
@@ -46,9 +46,9 @@ export default {
     manageHeartbeat() {
       const user = getCurrentUser()
       if (user) {
-        startHeartbeat(user.username)
+        initPresence(user.username, user.nickname)
       } else {
-        stopHeartbeat()
+        stopPresence()
       }
     }
   },
@@ -57,7 +57,8 @@ export default {
     this.manageHeartbeat()
   },
   unmounted() {
-    stopHeartbeat()
+    const user = getCurrentUser()
+    if (user) stopPresence(user.username, user.nickname)
   }
 }
 </script>

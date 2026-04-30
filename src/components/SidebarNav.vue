@@ -75,6 +75,7 @@
 
 <script>
 import { getCurrentUser, logout } from '../utils/auth'
+import { stopPresence } from '../utils/presence'
 
 export default {
   name: 'SidebarNav',
@@ -85,6 +86,8 @@ export default {
   },
   methods: {
     handleLogout() {
+      const user = getCurrentUser()
+      if (user) stopPresence(user.username, user.nickname)
       logout()
       this.$router.push('/login')
     }
