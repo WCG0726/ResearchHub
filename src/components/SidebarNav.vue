@@ -11,6 +11,14 @@
         <span class="nav-icon">📝</span>
         <span class="nav-text">科研记录</span>
       </router-link>
+      <router-link to="/lit-notes" class="nav-item" :class="{ active: $route.name === 'lit-notes' }">
+        <span class="nav-icon">📖</span>
+        <span class="nav-text">文献笔记</span>
+      </router-link>
+      <router-link to="/experiment" class="nav-item" :class="{ active: $route.name === 'experiment' }">
+        <span class="nav-icon">🔬</span>
+        <span class="nav-text">实验记录</span>
+      </router-link>
       <router-link to="/writing" class="nav-item" :class="{ active: $route.name === 'writing' }">
         <span class="nav-icon">📄</span>
         <span class="nav-text">论文写作</span>
@@ -19,15 +27,23 @@
         <span class="nav-icon">📚</span>
         <span class="nav-text">写作指南</span>
       </router-link>
+      <router-link to="/data-analysis" class="nav-item" :class="{ active: $route.name === 'data-analysis' }">
+        <span class="nav-icon">📈</span>
+        <span class="nav-text">数据分析</span>
+      </router-link>
 
       <div class="nav-section">文献与导航</div>
       <router-link to="/zotero" class="nav-item" :class="{ active: $route.name === 'zotero' }">
-        <span class="nav-icon">📖</span>
+        <span class="nav-icon">📚</span>
         <span class="nav-text">Zotero</span>
       </router-link>
       <router-link to="/links" class="nav-item" :class="{ active: $route.name === 'links' }">
         <span class="nav-icon">🔗</span>
         <span class="nav-text">学术导航</span>
+      </router-link>
+      <router-link to="/academic-calendar" class="nav-item" :class="{ active: $route.name === 'academic-calendar' }">
+        <span class="nav-icon">📅</span>
+        <span class="nav-text">学术日历</span>
       </router-link>
 
       <div class="nav-section">效率工具</div>
@@ -39,9 +55,35 @@
         <span class="nav-icon">✨</span>
         <span class="nav-text">润色提示词</span>
       </router-link>
+      <router-link to="/latex-snippets" class="nav-item" :class="{ active: $route.name === 'latex-snippets' }">
+        <span class="nav-icon">Σ</span>
+        <span class="nav-text">LaTeX 片段</span>
+      </router-link>
+      <router-link to="/latex-editor" class="nav-item" :class="{ active: $route.name === 'latex-editor' }">
+        <span class="nav-icon">🖊️</span>
+        <span class="nav-text">LaTeX 编辑</span>
+      </router-link>
+      <router-link to="/email-templates" class="nav-item" :class="{ active: $route.name === 'email-templates' }">
+        <span class="nav-icon">📧</span>
+        <span class="nav-text">邮件模板</span>
+      </router-link>
+
+      <div class="nav-section">项目管理</div>
       <router-link to="/plan" class="nav-item" :class="{ active: $route.name === 'plan' }">
         <span class="nav-icon">📋</span>
         <span class="nav-text">计划表</span>
+      </router-link>
+      <router-link to="/milestone" class="nav-item" :class="{ active: $route.name === 'milestone' }">
+        <span class="nav-icon">🎯</span>
+        <span class="nav-text">里程碑</span>
+      </router-link>
+      <router-link to="/meeting" class="nav-item" :class="{ active: $route.name === 'meeting' }">
+        <span class="nav-icon">📋</span>
+        <span class="nav-text">组会记录</span>
+      </router-link>
+      <router-link to="/inspiration" class="nav-item" :class="{ active: $route.name === 'inspiration' }">
+        <span class="nav-icon">💡</span>
+        <span class="nav-text">灵感板</span>
       </router-link>
 
       <div class="nav-section">团队</div>
@@ -54,6 +96,10 @@
       <router-link to="/checkin" class="nav-item" :class="{ active: $route.name === 'checkin' }">
         <span class="nav-icon">✅</span>
         <span class="nav-text">打卡</span>
+      </router-link>
+      <router-link to="/pomodoro" class="nav-item" :class="{ active: $route.name === 'pomodoro' }">
+        <span class="nav-icon">🍅</span>
+        <span class="nav-text">番茄钟</span>
       </router-link>
       <router-link to="/water" class="nav-item" :class="{ active: $route.name === 'water' }">
         <span class="nav-icon">💧</span>

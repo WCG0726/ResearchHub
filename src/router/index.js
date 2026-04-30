@@ -15,6 +15,17 @@ const PolishView = () => import('../views/PolishView.vue')
 const LinksView = () => import('../views/LinksView.vue')
 const ZoteroView = () => import('../views/ZoteroView.vue')
 const TeamView = () => import('../views/TeamView.vue')
+const LitNotesView = () => import('../views/LitNotesView.vue')
+const ExperimentView = () => import('../views/ExperimentView.vue')
+const DataAnalysisView = () => import('../views/DataAnalysisView.vue')
+const LatexSnippetsView = () => import('../views/LatexSnippetsView.vue')
+const MeetingView = () => import('../views/MeetingView.vue')
+const InspirationView = () => import('../views/InspirationView.vue')
+const MilestoneView = () => import('../views/MilestoneView.vue')
+const PomodoroView = () => import('../views/PomodoroView.vue')
+const EmailTemplatesView = () => import('../views/EmailTemplatesView.vue')
+const LatexEditorView = () => import('../views/LatexEditorView.vue')
+const AcademicCalendarView = () => import('../views/AcademicCalendarView.vue')
 
 const routes = [
   { path: '/login', name: 'login', component: LoginView },
@@ -32,6 +43,17 @@ const routes = [
   { path: '/links', name: 'links', component: LinksView, meta: { requiresAuth: true } },
   { path: '/zotero', name: 'zotero', component: ZoteroView, meta: { requiresAuth: true } },
   { path: '/team', name: 'team', component: TeamView, meta: { requiresAuth: true } },
+  { path: '/lit-notes', name: 'lit-notes', component: LitNotesView, meta: { requiresAuth: true } },
+  { path: '/experiment', name: 'experiment', component: ExperimentView, meta: { requiresAuth: true } },
+  { path: '/data-analysis', name: 'data-analysis', component: DataAnalysisView, meta: { requiresAuth: true } },
+  { path: '/latex-snippets', name: 'latex-snippets', component: LatexSnippetsView, meta: { requiresAuth: true } },
+  { path: '/meeting', name: 'meeting', component: MeetingView, meta: { requiresAuth: true } },
+  { path: '/inspiration', name: 'inspiration', component: InspirationView, meta: { requiresAuth: true } },
+  { path: '/milestone', name: 'milestone', component: MilestoneView, meta: { requiresAuth: true } },
+  { path: '/pomodoro', name: 'pomodoro', component: PomodoroView, meta: { requiresAuth: true } },
+  { path: '/email-templates', name: 'email-templates', component: EmailTemplatesView, meta: { requiresAuth: true } },
+  { path: '/latex-editor', name: 'latex-editor', component: LatexEditorView, meta: { requiresAuth: true } },
+  { path: '/academic-calendar', name: 'academic-calendar', component: AcademicCalendarView, meta: { requiresAuth: true } },
 ]
 
 const router = createRouter({
@@ -64,7 +86,18 @@ router.beforeEach((to) => {
     polish: '论文润色',
     links: '学术导航',
     zotero: 'Zotero 文献',
-    team: '团队排行榜'
+    team: '团队排行榜',
+    'lit-notes': '文献笔记',
+    experiment: '实验记录',
+    'data-analysis': '数据分析',
+    'latex-snippets': 'LaTeX 片段',
+    meeting: '组会记录',
+    inspiration: '灵感板',
+    milestone: '里程碑',
+    pomodoro: '番茄钟',
+    'email-templates': '邮件模板',
+    'latex-editor': 'LaTeX 编辑器',
+    'academic-calendar': '学术日历'
   }
   document.title = titles[to.name] || '科研管理平台'
 })

@@ -319,3 +319,245 @@ export function setTheme(theme) {
   setStorage('theme', theme)
   document.documentElement.setAttribute('data-theme', theme)
 }
+
+// 文献阅读笔记
+export function getLitNotes() {
+  return getStorage('lit_notes', [])
+}
+
+export function addLitNote(note) {
+  const notes = getLitNotes()
+  note.id = Date.now()
+  note.createdAt = new Date().toISOString()
+  note.updatedAt = note.createdAt
+  notes.unshift(note)
+  setStorage('lit_notes', notes)
+  return note
+}
+
+export function updateLitNote(id, updates) {
+  const notes = getLitNotes()
+  const idx = notes.findIndex(n => n.id === id)
+  if (idx !== -1) {
+    notes[idx] = { ...notes[idx], ...updates, updatedAt: new Date().toISOString() }
+    setStorage('lit_notes', notes)
+    return notes[idx]
+  }
+  return null
+}
+
+export function deleteLitNote(id) {
+  setStorage('lit_notes', getLitNotes().filter(n => n.id !== id))
+}
+
+// 实验记录
+export function getExperiments() {
+  return getStorage('experiments', [])
+}
+
+export function addExperiment(exp) {
+  const exps = getExperiments()
+  exp.id = Date.now()
+  exp.createdAt = new Date().toISOString()
+  exp.updatedAt = exp.createdAt
+  exps.unshift(exp)
+  setStorage('experiments', exps)
+  return exp
+}
+
+export function updateExperiment(id, updates) {
+  const exps = getExperiments()
+  const idx = exps.findIndex(e => e.id === id)
+  if (idx !== -1) {
+    exps[idx] = { ...exps[idx], ...updates, updatedAt: new Date().toISOString() }
+    setStorage('experiments', exps)
+    return exps[idx]
+  }
+  return null
+}
+
+export function deleteExperiment(id) {
+  setStorage('experiments', getExperiments().filter(e => e.id !== id))
+}
+
+// 数据分析
+export function getDatasets() {
+  return getStorage('datasets', [])
+}
+
+export function addDataset(ds) {
+  const datasets = getDatasets()
+  ds.id = Date.now()
+  ds.createdAt = new Date().toISOString()
+  datasets.unshift(ds)
+  setStorage('datasets', datasets)
+  return ds
+}
+
+export function deleteDataset(id) {
+  setStorage('datasets', getDatasets().filter(d => d.id !== id))
+}
+
+// LaTeX 片段
+export function getLatexSnippets() {
+  return getStorage('latex_snippets', [])
+}
+
+export function addLatexSnippet(s) {
+  const list = getLatexSnippets()
+  s.id = Date.now()
+  s.createdAt = new Date().toISOString()
+  list.unshift(s)
+  setStorage('latex_snippets', list)
+  return s
+}
+
+export function deleteLatexSnippet(id) {
+  setStorage('latex_snippets', getLatexSnippets().filter(s => s.id !== id))
+}
+
+// 组会/会议记录
+export function getMeetings() {
+  return getStorage('meetings', [])
+}
+
+export function addMeeting(m) {
+  const list = getMeetings()
+  m.id = Date.now()
+  m.createdAt = new Date().toISOString()
+  list.unshift(m)
+  setStorage('meetings', list)
+  return m
+}
+
+export function updateMeeting(id, updates) {
+  const list = getMeetings()
+  const idx = list.findIndex(m => m.id === id)
+  if (idx !== -1) {
+    list[idx] = { ...list[idx], ...updates }
+    setStorage('meetings', list)
+    return list[idx]
+  }
+  return null
+}
+
+export function deleteMeeting(id) {
+  setStorage('meetings', getMeetings().filter(m => m.id !== id))
+}
+
+// 灵感板
+export function getInspirations() {
+  return getStorage('inspirations', [])
+}
+
+export function addInspiration(item) {
+  const list = getInspirations()
+  item.id = Date.now()
+  item.createdAt = new Date().toISOString()
+  item.pinned = false
+  list.unshift(item)
+  setStorage('inspirations', list)
+  return item
+}
+
+export function updateInspiration(id, updates) {
+  const list = getInspirations()
+  const idx = list.findIndex(i => i.id === id)
+  if (idx !== -1) {
+    list[idx] = { ...list[idx], ...updates }
+    setStorage('inspirations', list)
+    return list[idx]
+  }
+  return null
+}
+
+export function deleteInspiration(id) {
+  setStorage('inspirations', getInspirations().filter(i => i.id !== id))
+}
+
+// 里程碑
+export function getMilestones() {
+  return getStorage('milestones', [])
+}
+
+export function addMilestone(m) {
+  const list = getMilestones()
+  m.id = Date.now()
+  m.createdAt = new Date().toISOString()
+  m.done = false
+  list.push(m)
+  setStorage('milestones', list)
+  return m
+}
+
+export function updateMilestone(id, updates) {
+  const list = getMilestones()
+  const idx = list.findIndex(m => m.id === id)
+  if (idx !== -1) {
+    list[idx] = { ...list[idx], ...updates }
+    setStorage('milestones', list)
+    return list[idx]
+  }
+  return null
+}
+
+export function deleteMilestone(id) {
+  setStorage('milestones', getMilestones().filter(m => m.id !== id))
+}
+
+// 番茄钟
+export function getPomodoroStats() {
+  return getStorage('pomodoro', { total: 0, today: 0, todayDate: '', history: [] })
+}
+
+export function addPomodoroSession(minutes) {
+  const stats = getPomodoroStats()
+  const today = new Date().toISOString().split('T')[0]
+  if (stats.todayDate !== today) {
+    stats.todayDate = today
+    stats.today = 0
+  }
+  stats.total++
+  stats.today++
+  stats.history.push({ date: today, minutes, time: new Date().toISOString() })
+  if (stats.history.length > 500) stats.history = stats.history.slice(-500)
+  setStorage('pomodoro', stats)
+  return stats
+}
+
+// 邮件模板
+export function getEmailTemplates() {
+  return getStorage('email_templates', [])
+}
+
+export function addEmailTemplate(t) {
+  const list = getEmailTemplates()
+  t.id = Date.now()
+  t.createdAt = new Date().toISOString()
+  list.unshift(t)
+  setStorage('email_templates', list)
+  return t
+}
+
+export function deleteEmailTemplate(id) {
+  setStorage('email_templates', getEmailTemplates().filter(t => t.id !== id))
+}
+
+// 学术日历（截稿日期）
+export function getAcademicEvents() {
+  return getStorage('academic_events', [])
+}
+
+export function addAcademicEvent(e) {
+  const list = getAcademicEvents()
+  e.id = Date.now()
+  e.createdAt = new Date().toISOString()
+  list.push(e)
+  list.sort((a, b) => a.date.localeCompare(b.date))
+  setStorage('academic_events', list)
+  return e
+}
+
+export function deleteAcademicEvent(id) {
+  setStorage('academic_events', getAcademicEvents().filter(e => e.id !== id))
+}
