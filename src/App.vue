@@ -1,6 +1,7 @@
 <template>
   <div class="app" :class="{ 'dark': isDark }">
     <template v-if="!isLoginPage">
+      <BackgroundDecor />
       <HeaderNav :is-dark="isDark" @toggle-theme="toggleTheme" />
       <div class="layout">
         <SidebarNav />
@@ -16,13 +17,14 @@
 <script>
 import HeaderNav from './components/HeaderNav.vue'
 import SidebarNav from './components/SidebarNav.vue'
+import BackgroundDecor from './components/BackgroundDecor.vue'
 import { getTheme, setTheme } from './utils/storage'
 import { getCurrentUser } from './utils/auth'
 import { initPresence, stopPresence } from './utils/presence'
 
 export default {
   name: 'App',
-  components: { HeaderNav, SidebarNav },
+  components: { HeaderNav, SidebarNav, BackgroundDecor },
   data() {
     return {
       isDark: getTheme() === 'dark'

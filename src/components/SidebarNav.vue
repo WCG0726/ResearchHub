@@ -1,11 +1,12 @@
 <template>
   <aside class="sidebar">
     <nav class="sidebar-nav">
-      <div class="nav-section">科研</div>
       <router-link to="/" class="nav-item" :class="{ active: $route.name === 'dashboard' }">
         <span class="nav-icon">📊</span>
         <span class="nav-text">工作台</span>
       </router-link>
+
+      <div class="nav-section">科研工作</div>
       <router-link to="/records" class="nav-item" :class="{ active: $route.name === 'records' }">
         <span class="nav-icon">📝</span>
         <span class="nav-text">科研记录</span>
@@ -19,7 +20,17 @@
         <span class="nav-text">写作指南</span>
       </router-link>
 
-      <div class="nav-section">工具</div>
+      <div class="nav-section">文献与导航</div>
+      <router-link to="/zotero" class="nav-item" :class="{ active: $route.name === 'zotero' }">
+        <span class="nav-icon">📖</span>
+        <span class="nav-text">Zotero</span>
+      </router-link>
+      <router-link to="/links" class="nav-item" :class="{ active: $route.name === 'links' }">
+        <span class="nav-icon">🔗</span>
+        <span class="nav-text">学术导航</span>
+      </router-link>
+
+      <div class="nav-section">效率工具</div>
       <router-link to="/translate" class="nav-item" :class="{ active: $route.name === 'translate' }">
         <span class="nav-icon">🌐</span>
         <span class="nav-text">翻译工具</span>
@@ -28,16 +39,12 @@
         <span class="nav-icon">✨</span>
         <span class="nav-text">润色提示词</span>
       </router-link>
-      <router-link to="/zotero" class="nav-item" :class="{ active: $route.name === 'zotero' }">
-        <span class="nav-icon">📚</span>
-        <span class="nav-text">Zotero</span>
-      </router-link>
-      <router-link to="/links" class="nav-item" :class="{ active: $route.name === 'links' }">
-        <span class="nav-icon">🔗</span>
-        <span class="nav-text">学术导航</span>
+      <router-link to="/plan" class="nav-item" :class="{ active: $route.name === 'plan' }">
+        <span class="nav-icon">📋</span>
+        <span class="nav-text">计划表</span>
       </router-link>
 
-      <div class="nav-section">社交</div>
+      <div class="nav-section">团队</div>
       <router-link to="/team" class="nav-item" :class="{ active: $route.name === 'team' }">
         <span class="nav-icon">🏆</span>
         <span class="nav-text">排行榜</span>
@@ -47,10 +54,6 @@
       <router-link to="/checkin" class="nav-item" :class="{ active: $route.name === 'checkin' }">
         <span class="nav-icon">✅</span>
         <span class="nav-text">打卡</span>
-      </router-link>
-      <router-link to="/plan" class="nav-item" :class="{ active: $route.name === 'plan' }">
-        <span class="nav-icon">📋</span>
-        <span class="nav-text">计划表</span>
       </router-link>
       <router-link to="/water" class="nav-item" :class="{ active: $route.name === 'water' }">
         <span class="nav-icon">💧</span>
@@ -68,7 +71,7 @@
         <div class="user-name">{{ user.nickname }}</div>
       </div>
       <button class="btn-logout" @click="handleLogout">退出登录</button>
-      <div class="version">v2.0.0</div>
+      <div class="version">v2.1.0</div>
     </div>
   </aside>
 </template>
