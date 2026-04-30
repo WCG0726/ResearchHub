@@ -11,6 +11,34 @@
       <button class="btn btn-primary" @click="showForm = true">+ 自定义模板</button>
     </div>
 
+    <!-- AI 邮件生成 -->
+    <div class="card ai-section">
+      <h3 class="card-title">🤖 AI 邮件生成</h3>
+      <p class="ai-desc">描述邮件场景和关键信息，AI 帮你生成专业邮件。</p>
+      <div class="form-group">
+        <label>邮件场景</label>
+        <input v-model="aiScenario" class="input" placeholder="如：向导师汇报本周实验进展" />
+      </div>
+      <div class="form-group">
+        <label>关键信息</label>
+        <textarea v-model="aiKeyInfo" class="input textarea" rows="3" placeholder="需要包含的关键内容..."></textarea>
+      </div>
+      <div class="ai-controls">
+        <button class="btn btn-primary" :disabled="aiLoading" @click="aiGenerate">{{ aiLoading ? '生成中...' : '生成邮件' }}</button>
+      </div>
+      <div v-if="aiMsg" class="ai-msg">{{ aiMsg }}</div>
+      <div v-if="aiResult" class="ai-result">
+        <div class="ai-result-header">
+          <span>生成结果</span>
+          <div class="ai-result-actions">
+            <button class="btn btn-sm btn-outline" @click="aiCopyResult">复制</button>
+            <button class="btn btn-sm btn-outline" @click="aiSaveAsTemplate">保存为模板</button>
+          </div>
+        </div>
+        <pre class="ai-result-text">{{ aiResult }}</pre>
+      </div>
+    </div>
+
     <div v-if="showForm" class="card form-card">
       <h3 class="card-title">添加模板</h3>
       <div class="form-grid">
@@ -59,6 +87,7 @@
 
 <script>
 import { getEmailTemplates, addEmailTemplate, deleteEmailTemplate } from '../utils/storage'
+import { generateEmail, isAIConfigured } from '../utils/ai'
 
 const BUILT_IN = [
   {
@@ -193,7 +222,12 @@ export default {
       filterCat: '',
       showForm: false,
       form: { name: '', category: '自定义', content: '' },
-      openCats: {}
+      openCats: {},
+      aiScenario: '',
+      aiKeyInfo: '',
+      aiResult: '',
+      aiLoading: false,
+      aiMsg: ''
     }
   },
   computed: {
@@ -234,7 +268,28 @@ export default {
       this.showForm = false
       this.form = { name: '', category: '自定义', content: '' }
     },
-    removeTemplate(id) { if (!confirm('确定删除？')) return; deleteEmailTemplate(id); this.customTemplates = getEmailTemplates() }
+    removeTemplate(id) { if (!confirm('确定删除？')) return; deleteEmailTemplate(id); this.customTemplates = getEmailTemplates() },
+    async aiGenerate() {
+      if (!isAIConfigured()) { this.aiMsg = '请先在"翻译"页面配置 API Key'; return }
+      if (!this.aiScenario.trim()) { this.aiMsg = '请填写邮件场景'; return }
+      this.aiLoading = true
+      this.aiMsg = ''
+      try {
+        this.aiResult = await generateEmail(this.aiScenario, this.aiKeyInfo)
+      } catch (e) {
+        this.aiMsg = e.message
+      } finally {
+        this.aiLoading = false
+      }
+    },
+    aiCopyResult() {
+      navigator.clipboard.writeText(this.aiResult).then(() => { this.aiMsg = '✓ 已复制'; setTimeout(() => { this.aiMsg = '' }, 2000) })
+    },
+    aiSaveAsTemplate() {
+      if (!this.aiResult) return
+      this.form = { name: this.aiScenario || 'AI 生成邮件', category: '自定义', content: this.aiResult }
+      this.showForm = true
+    }
   },
   mounted() {
     this.customTemplates = getEmailTemplates()
@@ -268,4 +323,12 @@ export default {
 .btn-icon:hover { background: var(--bg-hover); }
 .tpl-content { background: var(--bg-surface); padding: 14px 16px; border-radius: var(--radius); font-size: 13px; line-height: 1.7; margin: 0; white-space: pre-wrap; font-family: 'Consolas', monospace; color: var(--text-primary); }
 @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+.ai-section { margin-bottom: 24px; }
+.ai-desc { font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; }
+.ai-controls { margin-top: 8px; }
+.ai-msg { font-size: 13px; color: var(--primary); margin-top: 8px; }
+.ai-result { margin-top: 12px; background: var(--bg-secondary); border-radius: var(--radius); padding: 14px; }
+.ai-result-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 13px; font-weight: 600; color: var(--primary); }
+.ai-result-actions { display: flex; gap: 6px; }
+.ai-result-text { margin: 0; font-size: 13px; line-height: 1.7; white-space: pre-wrap; font-family: 'Consolas', monospace; color: var(--text-primary); }
 </style>

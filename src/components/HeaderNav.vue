@@ -11,6 +11,11 @@
     </div>
 
     <div class="header-right">
+      <div class="global-search-wrapper">
+        <button class="search-trigger" @click="openSearch" title="搜索 (Ctrl+K)">
+          🔍 <span class="search-hint">Ctrl+K</span>
+        </button>
+      </div>
       <button class="theme-btn" @click="$emit('toggle-theme')" :title="isDark ? '浅色模式' : '深色模式'">
         {{ isDark ? '☀️' : '🌙' }}
       </button>
@@ -63,11 +68,54 @@
         </div>
       </div>
     </Teleport>
+
+    <!-- 全局搜索 -->
+    <Teleport to="body">
+      <div v-if="showSearch" class="search-overlay" @click.self="showSearch = false">
+        <div class="search-modal">
+          <div class="search-input-row">
+            <span class="search-icon">🔍</span>
+            <input
+              ref="searchInput"
+              v-model="searchQuery"
+              class="search-input"
+              placeholder="搜索记录、笔记、灵感、会议..."
+              @keydown.esc="showSearch = false"
+              @keydown.down.prevent="moveSelection(1)"
+              @keydown.up.prevent="moveSelection(-1)"
+              @keydown.enter.prevent="goToSelected"
+            />
+            <kbd class="search-esc">Esc</kbd>
+          </div>
+          <div v-if="searchQuery && searchResults.length" class="search-results">
+            <div
+              v-for="(r, i) in searchResults"
+              :key="r.key"
+              class="search-result-item"
+              :class="{ selected: i === selectedIndex }"
+              @click="goTo(r)"
+              @mouseenter="selectedIndex = i"
+            >
+              <span class="result-icon">{{ r.icon }}</span>
+              <div class="result-info">
+                <div class="result-title">{{ r.title }}</div>
+                <div class="result-meta">{{ r.meta }}</div>
+              </div>
+              <span class="result-type">{{ r.type }}</span>
+            </div>
+          </div>
+          <div v-else-if="searchQuery" class="search-empty">未找到匹配结果</div>
+          <div v-else class="search-tips">
+            <div class="tip">输入关键词搜索所有数据</div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </header>
 </template>
 
 <script>
-import { getProfile, setProfile } from '../utils/storage.js'
+import { getProfile, setProfile, getRecords, getLitNotes, getInspirations, getMeetings, getExperiments } from '../utils/storage.js'
 import { getCurrentUser } from '../utils/auth.js'
 
 export default {
@@ -88,7 +136,10 @@ export default {
       editName: '',
       editAvatar: '',
       editAvatarData: '',
-      avatarOptions: ['🧑‍🔬', '👩‍🔬', '👨‍🔬', '🧑‍💻', '👩‍💻', '👨‍💻', '📚', '🔬', '🧪', '🎯', '🌟', '⚡']
+      avatarOptions: ['🧑‍🔬', '👩‍🔬', '👨‍🔬', '🧑‍💻', '👩‍💻', '👨‍💻', '📚', '🔬', '🧪', '🎯', '🌟', '⚡'],
+      showSearch: false,
+      searchQuery: '',
+      selectedIndex: 0
     }
   },
   watch: {
@@ -98,6 +149,54 @@ export default {
         this.editAvatar = this.profile.avatar || ''
         this.editAvatarData = this.profile.avatarData || ''
       }
+    },
+    showSearch(val) {
+      if (val) {
+        this.searchQuery = ''
+        this.selectedIndex = 0
+        this.$nextTick(() => this.$refs.searchInput?.focus())
+      }
+    },
+    searchQuery() {
+      this.selectedIndex = 0
+    }
+  },
+  computed: {
+    searchResults() {
+      const q = this.searchQuery.toLowerCase()
+      if (!q) return []
+      const results = []
+      // 搜索科研记录
+      for (const r of getRecords()) {
+        if ((r.title && r.title.toLowerCase().includes(q)) || (r.content && r.content.toLowerCase().includes(q))) {
+          results.push({ key: 'record-' + r.id, icon: '📝', title: r.title, meta: (r.content || '').slice(0, 60), type: '记录', to: '/records' })
+        }
+      }
+      // 搜索文献笔记
+      for (const n of getLitNotes()) {
+        if ((n.title && n.title.toLowerCase().includes(q)) || (n.authors && n.authors.toLowerCase().includes(q))) {
+          results.push({ key: 'lit-' + n.id, icon: '📖', title: n.title, meta: n.authors || '', type: '笔记', to: '/lit-notes' })
+        }
+      }
+      // 搜索灵感
+      for (const i of getInspirations()) {
+        if ((i.title && i.title.toLowerCase().includes(q)) || (i.content && i.content.toLowerCase().includes(q))) {
+          results.push({ key: 'insp-' + i.id, icon: '💡', title: i.title, meta: (i.content || '').slice(0, 60), type: '灵感', to: '/inspiration' })
+        }
+      }
+      // 搜索会议
+      for (const m of getMeetings()) {
+        if ((m.topics && m.topics.toLowerCase().includes(q)) || (m.feedback && m.feedback.toLowerCase().includes(q))) {
+          results.push({ key: 'meet-' + m.id, icon: '🗣️', title: m.date + ' ' + (m.type || ''), meta: (m.topics || '').slice(0, 60), type: '会议', to: '/meeting' })
+        }
+      }
+      // 搜索实验
+      for (const e of getExperiments()) {
+        if ((e.title && e.title.toLowerCase().includes(q)) || (e.content && e.content.toLowerCase().includes(q))) {
+          results.push({ key: 'exp-' + e.id, icon: '🔬', title: e.title, meta: (e.content || '').slice(0, 60), type: '实验', to: '/experiment' })
+        }
+      }
+      return results.slice(0, 12)
     }
   },
   methods: {
@@ -124,6 +223,27 @@ export default {
       }
       setProfile(this.profile)
       this.showEditor = false
+    },
+    openSearch() {
+      this.showSearch = true
+    },
+    closeSearch() {
+      this.showSearch = false
+    },
+    moveSelection(delta) {
+      const max = this.searchResults.length - 1
+      this.selectedIndex = Math.max(0, Math.min(max, this.selectedIndex + delta))
+    },
+    goToSelected() {
+      if (this.searchResults.length) {
+        this.goTo(this.searchResults[this.selectedIndex])
+      }
+    },
+    goTo(r) {
+      this.showSearch = false
+      if (r.to && this.$route.path !== r.to) {
+        this.$router.push(r.to)
+      }
     }
   }
 }
@@ -417,5 +537,120 @@ export default {
   .user-name {
     display: none;
   }
+  .search-hint {
+    display: none;
+  }
+}
+
+/* 全局搜索 */
+.search-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.search-trigger:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.search-hint {
+  font-size: 11px;
+  opacity: 0.6;
+}
+
+.search-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 15vh;
+  z-index: 1000;
+}
+
+.search-modal {
+  background: var(--bg-primary);
+  border-radius: var(--radius-lg);
+  width: 560px;
+  max-width: 90vw;
+  max-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+.search-input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.search-icon { font-size: 18px; flex-shrink: 0; }
+
+.search-input {
+  flex: 1;
+  border: none;
+  background: none;
+  font-size: 15px;
+  color: var(--text-primary);
+  outline: none;
+}
+
+.search-input::placeholder { color: var(--text-muted); }
+
+.search-esc {
+  padding: 2px 6px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: monospace;
+}
+
+.search-results {
+  overflow-y: auto;
+  padding: 6px;
+}
+
+.search-result-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.search-result-item:hover,
+.search-result-item.selected {
+  background: var(--bg-hover);
+}
+
+.result-icon { font-size: 18px; flex-shrink: 0; }
+.result-info { flex: 1; min-width: 0; }
+.result-title { font-size: 14px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.result-meta { font-size: 12px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px; }
+.result-type { font-size: 11px; color: var(--text-muted); background: var(--bg-secondary); padding: 2px 8px; border-radius: 10px; flex-shrink: 0; }
+
+.search-empty, .search-tips {
+  padding: 24px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
 }
 </style>

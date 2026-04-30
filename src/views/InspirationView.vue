@@ -48,6 +48,7 @@
           <h3 class="note-title">{{ item.title }}</h3>
           <div class="note-actions">
             <button class="btn-icon" :class="{ pinned: item.pinned }" @click="togglePin(item)">📌</button>
+            <button class="btn-icon" @click="aiExpand(item)" :disabled="expandingId === item.id" :title="expandingId === item.id ? '扩展中...' : 'AI 扩展'">🤖</button>
             <button class="btn-icon" @click="removeItem(item.id)">🗑️</button>
           </div>
         </div>
@@ -63,6 +64,7 @@
 
 <script>
 import { getInspirations, addInspiration, updateInspiration, deleteInspiration } from '../utils/storage'
+import { expandInspiration, isAIConfigured } from '../utils/ai'
 
 export default {
   name: 'InspirationView',
@@ -80,7 +82,10 @@ export default {
         { value: '#ef4444', label: '红' },
         { value: '#3b82f6', label: '蓝' },
         { value: '#ec4899', label: '粉' }
-      ]
+      ],
+      aiLoading: false,
+      aiMsg: '',
+      expandingId: null
     }
   },
   computed: {
@@ -105,6 +110,19 @@ export default {
       this.form = { title: '', content: '', tags: '', color: '#6366f1' }
     },
     togglePin(item) { updateInspiration(item.id, { pinned: !item.pinned }); this.items = getInspirations() },
+    async aiExpand(item) {
+      if (!isAIConfigured()) { alert('请先在"翻译"页面配置 API Key'); return }
+      this.expandingId = item.id
+      try {
+        const result = await expandInspiration(item.title, item.content)
+        updateInspiration(item.id, { content: (item.content ? item.content + '\n\n' : '') + '【AI 扩展分析】\n' + result })
+        this.items = getInspirations()
+      } catch (e) {
+        alert(e.message)
+      } finally {
+        this.expandingId = null
+      }
+    },
     removeItem(id) { if (!confirm('确定删除？')) return; deleteInspiration(id); this.items = getInspirations() }
   },
   mounted() { this.items = getInspirations() }

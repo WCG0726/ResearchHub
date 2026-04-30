@@ -56,15 +56,38 @@ export default {
       } else {
         stopPresence()
       }
+    },
+    handleKeydown(e) {
+      // Ctrl+K: 全局搜索
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault()
+        document.querySelector('.search-trigger')?.click()
+      }
+      // Ctrl+N: 新建记录
+      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+        e.preventDefault()
+        if (this.$route.name === 'records') {
+          document.querySelector('.btn-primary')?.click()
+        } else {
+          this.$router.push('/records')
+        }
+      }
+      // Ctrl+Shift+D: 切换主题
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'D') {
+        e.preventDefault()
+        this.toggleTheme()
+      }
     }
   },
   mounted() {
     setTheme(this.isDark ? 'dark' : 'light')
     this.manageHeartbeat()
+    document.addEventListener('keydown', this.handleKeydown)
   },
   unmounted() {
     const user = getCurrentUser()
     if (user) stopPresence(user.username, user.nickname)
+    document.removeEventListener('keydown', this.handleKeydown)
   }
 }
 </script>

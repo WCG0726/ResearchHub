@@ -92,6 +92,12 @@ const SECTIONS = [
       { to: '/meal', name: 'meal', icon: '🍜', text: '吃什么' },
     ]
   },
+  {
+    key: 'system', label: '系统',
+    items: [
+      { to: '/settings', name: 'settings', icon: '⚙️', text: '设置' },
+    ]
+  },
 ]
 
 export default {

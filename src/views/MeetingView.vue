@@ -8,7 +8,13 @@
     </div>
 
     <div v-if="showForm" class="card form-card">
-      <h3 class="card-title">{{ editing ? '编辑会议' : '新增会议记录' }}</h3>
+      <div class="form-title-row">
+        <h3 class="card-title" style="margin:0">{{ editing ? '编辑会议' : '新增会议记录' }}</h3>
+        <button v-if="!editing" class="btn btn-outline btn-sm" :disabled="aiLoading" @click="aiGenerateMinutes">
+          {{ aiLoading ? '生成中...' : 'AI 生成纪要' }}
+        </button>
+      </div>
+      <div v-if="aiMsg" class="ai-msg">{{ aiMsg }}</div>
       <div class="form-grid">
         <div class="form-group">
           <label>会议日期 *</label>
@@ -92,6 +98,7 @@
 
 <script>
 import { getMeetings, addMeeting, updateMeeting, deleteMeeting } from '../utils/storage'
+import { generateMeetingMinutes, isAIConfigured } from '../utils/ai'
 
 export default {
   name: 'MeetingView',
@@ -101,7 +108,9 @@ export default {
       search: '',
       showForm: false,
       editing: null,
-      form: this.emptyForm()
+      form: this.emptyForm(),
+      aiLoading: false,
+      aiMsg: ''
     }
   },
   computed: {
@@ -121,7 +130,22 @@ export default {
       this.cancelEdit()
     },
     editMeeting(m) { this.editing = m.id; this.form = { ...m }; this.showForm = true },
-    cancelEdit() { this.showForm = false; this.editing = null; this.form = this.emptyForm() },
+    cancelEdit() { this.showForm = false; this.editing = null; this.form = this.emptyForm(); this.aiMsg = '' },
+    async aiGenerateMinutes() {
+      if (!isAIConfigured()) { this.aiMsg = '请先在"翻译"页面配置 API Key'; return }
+      if (!this.form.topics.trim()) { this.aiMsg = '请先填写主要议题'; return }
+      this.aiLoading = true
+      this.aiMsg = ''
+      try {
+        const result = await generateMeetingMinutes(this.form.topics, this.form.feedback)
+        this.form.notes = (this.form.notes ? this.form.notes + '\n\n' : '') + '【AI 会议纪要】\n' + result
+        this.aiMsg = '✓ AI 纪要已添加到备注'
+      } catch (e) {
+        this.aiMsg = e.message
+      } finally {
+        this.aiLoading = false
+      }
+    },
     removeMeeting(id) { if (!confirm('确定删除？')) return; deleteMeeting(id); this.meetings = getMeetings() }
   },
   mounted() { this.meetings = getMeetings() }
@@ -153,4 +177,6 @@ export default {
 .todo-list { margin: 0; padding-left: 20px; font-size: 14px; }
 .todo-list li { margin-bottom: 4px; color: var(--text-primary); }
 @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+.form-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.ai-msg { font-size: 13px; color: var(--primary); margin-bottom: 10px; }
 </style>

@@ -12,7 +12,13 @@
     </div>
 
     <div v-if="showForm" class="card form-card">
-      <h3 class="card-title">{{ editing ? '编辑笔记' : '新增阅读笔记' }}</h3>
+      <div class="form-title-row">
+        <h3 class="card-title" style="margin:0">{{ editing ? '编辑笔记' : '新增阅读笔记' }}</h3>
+        <button v-if="!editing" class="btn btn-outline btn-sm" :disabled="aiLoading" @click="aiGenerateNote">
+          {{ aiLoading ? '生成中...' : 'AI 自动生成' }}
+        </button>
+      </div>
+      <div v-if="aiMsg" class="ai-msg">{{ aiMsg }}</div>
       <div class="form-grid">
         <div class="form-group">
           <label>论文标题 *</label>
@@ -112,6 +118,7 @@
 <script>
 import { getLitNotes, addLitNote, updateLitNote, deleteLitNote } from '../utils/storage'
 import { formatDate } from '../utils/date'
+import { generateLitNoteTemplate, isAIConfigured } from '../utils/ai'
 
 export default {
   name: 'LitNotesView',
@@ -122,7 +129,9 @@ export default {
       filterTag: '',
       showForm: false,
       editing: null,
-      form: this.emptyForm()
+      form: this.emptyForm(),
+      aiLoading: false,
+      aiMsg: ''
     }
   },
   computed: {
@@ -166,6 +175,36 @@ export default {
       this.showForm = false
       this.editing = null
       this.form = this.emptyForm()
+      this.aiMsg = ''
+    },
+    async aiGenerateNote() {
+      if (!isAIConfigured()) { this.aiMsg = '请先在"翻译"页面配置 API Key'; return }
+      if (!this.form.title.trim()) { this.aiMsg = '请先填写论文标题'; return }
+      this.aiLoading = true
+      this.aiMsg = ''
+      try {
+        const result = await generateLitNoteTemplate(this.form.title, this.form.doi)
+        // 解析结果填充到对应字段
+        const lines = result.split('\n')
+        let section = ''
+        const parsed = { keyPoints: '', methods: '', comments: '' }
+        for (const line of lines) {
+          if (/核心要点|Key Points/i.test(line)) section = 'keyPoints'
+          else if (/研究方法|Methods/i.test(line)) section = 'methods'
+          else if (/个人评价|Comments/i.test(line)) section = 'comments'
+          else if (section && line.trim()) {
+            parsed[section] += (parsed[section] ? '\n' : '') + line.replace(/^[-•*]\s*/, '')
+          }
+        }
+        if (parsed.keyPoints) this.form.keyPoints = parsed.keyPoints
+        if (parsed.methods) this.form.methods = parsed.methods
+        if (parsed.comments) this.form.comments = parsed.comments
+        this.aiMsg = '✓ AI 已生成笔记模板'
+      } catch (e) {
+        this.aiMsg = e.message
+      } finally {
+        this.aiLoading = false
+      }
     },
     removeNote(id) {
       if (!confirm('确定删除？')) return
@@ -210,4 +249,6 @@ export default {
 .note-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; font-size: 12px; color: var(--text-muted); }
 .doi-link { color: var(--primary); font-size: 12px; }
 @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+.form-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.ai-msg { font-size: 13px; color: var(--primary); margin-bottom: 10px; }
 </style>

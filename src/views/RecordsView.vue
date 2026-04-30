@@ -65,12 +65,16 @@
 
         <div class="form-group">
           <label>内容</label>
-          <textarea v-model="form.content" class="input textarea" placeholder="输入内容..."></textarea>
+          <textarea v-model="form.content" class="input textarea" rows="6" placeholder="输入内容..."></textarea>
+          <button class="btn btn-outline btn-sm" style="margin-top:6px" :disabled="aiLoading" @click="aiSummarize">AI 生成摘要</button>
         </div>
 
         <div class="form-group">
           <label>标签（逗号分隔）</label>
-          <input v-model="form.tagsStr" class="input" placeholder="如: DFT, 计算, 材料" />
+          <div class="tags-row">
+            <input v-model="form.tagsStr" class="input" placeholder="如: DFT, 计算, 材料" />
+            <button class="btn btn-outline btn-sm" :disabled="aiLoading" @click="aiSuggestTags">AI 建议</button>
+          </div>
         </div>
 
         <div class="form-group">
@@ -84,6 +88,8 @@
           </select>
         </div>
 
+        <div v-if="aiMsg" class="ai-msg">{{ aiMsg }}</div>
+
         <div class="modal-actions">
           <button class="btn btn-outline" @click="closeEditor">取消</button>
           <button class="btn btn-primary" @click="saveRecord">保存</button>
@@ -96,6 +102,7 @@
 <script>
 import { getRecords, addRecord, updateRecord, deleteRecord as removeRecord } from '../utils/storage'
 import { formatDate } from '../utils/date'
+import { suggestTags, generateSummary, isAIConfigured } from '../utils/ai'
 
 export default {
   name: 'RecordsView',
@@ -111,7 +118,9 @@ export default {
         content: '',
         tagsStr: '',
         category: 'experiment'
-      }
+      },
+      aiLoading: false,
+      aiMsg: ''
     }
   },
   computed: {
@@ -174,6 +183,37 @@ export default {
       this.showEditor = false
       this.editingId = null
       this.form = { title: '', content: '', tagsStr: '', category: 'experiment' }
+      this.aiMsg = ''
+    },
+    async aiSuggestTags() {
+      if (!isAIConfigured()) { this.aiMsg = '请先在"翻译"页面配置 API Key'; return }
+      if (!this.form.content.trim()) { this.aiMsg = '请先填写内容'; return }
+      this.aiLoading = true
+      this.aiMsg = ''
+      try {
+        const tags = await suggestTags(this.form.title + '\n' + this.form.content)
+        this.form.tagsStr = tags
+        this.aiMsg = '✓ 标签已生成'
+      } catch (e) {
+        this.aiMsg = e.message
+      } finally {
+        this.aiLoading = false
+      }
+    },
+    async aiSummarize() {
+      if (!isAIConfigured()) { this.aiMsg = '请先在"翻译"页面配置 API Key'; return }
+      if (!this.form.content.trim()) { this.aiMsg = '请先填写内容'; return }
+      this.aiLoading = true
+      this.aiMsg = ''
+      try {
+        const summary = await generateSummary(this.form.title + '\n' + this.form.content)
+        this.form.content = this.form.content + '\n\n【AI 摘要】' + summary
+        this.aiMsg = '✓ 摘要已添加到内容末尾'
+      } catch (e) {
+        this.aiMsg = e.message
+      } finally {
+        this.aiLoading = false
+      }
     },
     formatDate,
     truncate(str, len) {
@@ -334,5 +374,20 @@ export default {
   justify-content: flex-end;
   gap: 12px;
   margin-top: 24px;
+}
+
+.tags-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.tags-row .input { flex: 1; }
+
+.ai-msg {
+  font-size: 13px;
+  color: var(--primary);
+  margin-bottom: 12px;
+  padding: 6px 0;
 }
 </style>
