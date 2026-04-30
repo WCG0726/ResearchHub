@@ -95,7 +95,7 @@
 <script>
 import { getCheckins, getStreak, getRecords, getWritingProgress } from '../utils/storage'
 import { getCurrentUser } from '../utils/auth'
-import { isOnline, getLastSeen } from '../utils/presence'
+import { getAllPresence } from '../utils/presence'
 
 export default {
   name: 'TeamView',
@@ -105,20 +105,27 @@ export default {
       currentUser: '',
       myStats: { streak: 0, totalCheckins: 0, records: 0, papers: 0 },
       members: [],
-      allStats: {}
+      allStats: {},
+      presenceData: {}
     }
   },
   computed: {
     rankedList() {
-      const list = this.members.map(m => ({
-        ...m,
-        streak: this.allStats[m.username]?.streak || 0,
-        total: this.allStats[m.username]?.total || 0,
-        online: isOnline(m.username),
-        lastSeen: getLastSeen(m.username) || '从未活跃'
-      }))
+      const presence = this.presenceData
+      const now = Date.now()
+      const list = this.members.map(m => {
+        const p = presence[m.username]
+        const online = p ? p.online === true : false
+        const lastSeen = p ? (p.online ? '在线' : this.formatDiff(p.lastSeen)) : '从未活跃'
+        return {
+          ...m,
+          streak: this.allStats[m.username]?.streak || 0,
+          total: this.allStats[m.username]?.total || 0,
+          online,
+          lastSeen
+        }
+      })
       list.sort((a, b) => {
-        // 在线用户排前面
         if (a.online !== b.online) return a.online ? -1 : 1
         const key = this.rankBy === 'streak' ? 'streak' : 'total'
         return b[key] - a[key]
@@ -126,12 +133,22 @@ export default {
       return list
     },
     onlineCount() {
-      return this.members.filter(m => isOnline(m.username)).length
+      const presence = this.presenceData
+      return this.members.filter(m => presence[m.username]?.online === true).length
     }
   },
   methods: {
     formatDate(dateStr) {
       return dateStr ? new Date(dateStr).toLocaleDateString('zh-CN') : ''
+    },
+    formatDiff(ts) {
+      if (!ts) return '从未活跃'
+      const diff = Date.now() - ts
+      if (diff < 120000) return '在线'
+      if (diff < 60000) return '刚刚'
+      if (diff < 3600000) return `${Math.floor(diff / 60000)} 分钟前`
+      if (diff < 86400000) return `${Math.floor(diff / 3600000)} 小时前`
+      return `${Math.floor(diff / 86400000)} 天前`
     },
     loadData() {
       const user = getCurrentUser()
@@ -143,13 +160,14 @@ export default {
         this.members = Object.keys(users).map(username => ({
           username,
           nickname: users[username].nickname || username,
-          createdAt: users[username].createdAt,
-          online: isOnline(username),
-          lastSeen: getLastSeen(username) || '从未活跃'
+          createdAt: users[username].createdAt
         }))
       } catch {
         this.members = []
       }
+
+      // 刷新 Firebase 在线状态
+      this.presenceData = getAllPresence()
 
       // 计算当前用户统计
       const streak = getStreak()
