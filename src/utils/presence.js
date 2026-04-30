@@ -24,6 +24,8 @@ export async function initPresence(username, nickname) {
       remoteUnsubscribe = watchPresence((data) => {
         remotePresence = data
       })
+      // 页面关闭时标记离线
+      window.addEventListener('beforeunload', () => goOffline(username, nickname))
       return
     }
   }

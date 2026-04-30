@@ -9,7 +9,7 @@
  */
 
 import { initializeApp } from 'firebase/app'
-import { getDatabase, ref, set, onValue, onDisconnect, serverTimestamp } from 'firebase/database'
+import { getDatabase, ref, set, onValue } from 'firebase/database'
 
 const firebaseConfig = {
   apiKey: "AIzaSyBg0IQOFKHeQR2pp-V_lUzKc9EST-uUghQ",
@@ -24,6 +24,7 @@ const firebaseConfig = {
 let app = null
 let db = null
 let initialized = false
+let heartbeatTimer = null
 
 export function isFirebaseConfigured() {
   return firebaseConfig.apiKey !== 'YOUR_API_KEY'
@@ -44,31 +45,35 @@ export async function initFirebase() {
   }
 }
 
-// 上线：写入 presence 节点，断线自动移除
+// 上线（带心跳）
 export function goOnline(username, nickname) {
   if (!initialized || !db) return
-  const userRef = ref(db, `presence/${username}`)
-  set(userRef, {
-    nickname,
-    online: true,
-    lastSeen: serverTimestamp()
-  })
-  // 断线时自动设为离线
-  onDisconnect(userRef).set({
-    nickname,
-    online: false,
-    lastSeen: serverTimestamp()
-  })
+  stopHeartbeat()
+  writePresence(username, nickname, true)
+  heartbeatTimer = setInterval(() => writePresence(username, nickname, true), 30000)
 }
 
-// 手动下线
+// 下线
 export function goOffline(username, nickname) {
   if (!initialized || !db) return
+  stopHeartbeat()
+  writePresence(username, nickname, false)
+}
+
+function stopHeartbeat() {
+  if (heartbeatTimer) {
+    clearInterval(heartbeatTimer)
+    heartbeatTimer = null
+  }
+}
+
+function writePresence(username, nickname, online) {
+  if (!db) return
   const userRef = ref(db, `presence/${username}`)
   set(userRef, {
     nickname,
-    online: false,
-    lastSeen: serverTimestamp()
+    online,
+    lastSeen: Date.now()
   })
 }
 
