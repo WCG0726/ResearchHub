@@ -127,6 +127,17 @@ export function setWritingProgress(data) {
   setStorage('writing', data)
 }
 
+// 用户资料
+const DEFAULT_PROFILE = { nickname: '科研人', avatar: '' }
+
+export function getProfile() {
+  return getStorage('profile', DEFAULT_PROFILE)
+}
+
+export function setProfile(profile) {
+  setStorage('profile', { ...getProfile(), ...profile })
+}
+
 // 主题
 export function getTheme() {
   return getStorage('theme', 'light')

@@ -14,20 +14,87 @@
       <button class="theme-btn" @click="$emit('toggle-theme')" :title="isDark ? '浅色模式' : '深色模式'">
         {{ isDark ? '☀️' : '🌙' }}
       </button>
-      <div class="user-avatar">
-        <span>R</span>
+      <div class="user-area" @click="showEditor = true">
+        <div class="user-avatar">
+          <img v-if="profile.avatar" :src="profile.avatar" alt="avatar" />
+          <span v-else>{{ profile.nickname.charAt(0) }}</span>
+        </div>
+        <span class="user-name">{{ profile.nickname }}</span>
       </div>
     </div>
+
+    <Teleport to="body">
+      <div v-if="showEditor" class="modal-overlay" @click.self="showEditor = false">
+        <div class="modal">
+          <h3>编辑资料</h3>
+          <div class="form-group">
+            <label>昵称</label>
+            <input v-model="editName" type="text" maxlength="10" placeholder="输入昵称" />
+          </div>
+          <div class="form-group">
+            <label>头像</label>
+            <div class="avatar-options">
+              <div
+                v-for="emoji in avatarOptions"
+                :key="emoji"
+                class="avatar-option"
+                :class="{ active: editAvatar === emoji }"
+                @click="editAvatar = emoji"
+              >
+                {{ emoji }}
+              </div>
+            </div>
+            <div class="avatar-preview">
+              <div class="user-avatar large">
+                <span>{{ editName.charAt(0) || '?' }}</span>
+              </div>
+              <span>或使用昵称首字</span>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button class="btn-cancel" @click="showEditor = false">取消</button>
+            <button class="btn-save" @click="saveProfile">保存</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </header>
 </template>
 
 <script>
+import { getProfile, setProfile } from '../utils/storage.js'
+
 export default {
   name: 'HeaderNav',
   props: {
     isDark: Boolean
   },
-  emits: ['toggle-theme', 'toggle-sidebar']
+  emits: ['toggle-theme', 'toggle-sidebar'],
+  data() {
+    return {
+      profile: getProfile(),
+      showEditor: false,
+      editName: '',
+      editAvatar: '',
+      avatarOptions: ['🧑‍🔬', '👩‍🔬', '👨‍🔬', '🧑‍💻', '👩‍💻', '👨‍💻', '📚', '🔬', '🧪', '🎯', '🌟', '⚡']
+    }
+  },
+  watch: {
+    showEditor(val) {
+      if (val) {
+        this.editName = this.profile.nickname
+        this.editAvatar = this.profile.avatar
+      }
+    }
+  },
+  methods: {
+    saveProfile() {
+      const nickname = this.editName.trim() || '科研人'
+      this.profile = { nickname, avatar: this.editAvatar }
+      setProfile(this.profile)
+      this.showEditor = false
+    }
+  }
 }
 </script>
 
@@ -95,6 +162,20 @@ export default {
   background: var(--bg-hover);
 }
 
+.user-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius);
+  transition: background 0.2s;
+}
+
+.user-area:hover {
+  background: var(--bg-hover);
+}
+
 .user-avatar {
   width: 36px;
   height: 36px;
@@ -106,11 +187,147 @@ export default {
   justify-content: center;
   font-weight: 600;
   font-size: 14px;
+  overflow: hidden;
+}
+
+.user-avatar.large {
+  width: 64px;
+  height: 64px;
+  font-size: 28px;
+}
+
+.user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.user-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: var(--bg-primary);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  width: 380px;
+  max-width: 90vw;
+}
+
+.modal h3 {
+  margin: 0 0 20px;
+  font-size: 18px;
+  color: var(--text-primary);
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.avatar-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.avatar-option {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  border-radius: var(--radius);
+  border: 2px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.avatar-option:hover {
+  border-color: var(--primary);
+}
+
+.avatar-option.active {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+
+.avatar-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.btn-cancel {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: none;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.btn-save {
+  padding: 8px 16px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--primary);
+  color: white;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.btn-save:hover {
+  opacity: 0.9;
 }
 
 @media (max-width: 900px) {
   .menu-btn {
     display: block;
+  }
+  .user-name {
+    display: none;
   }
 }
 </style>

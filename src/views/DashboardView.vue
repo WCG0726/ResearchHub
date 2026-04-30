@@ -1,6 +1,6 @@
 <template>
   <div class="dashboard">
-    <h1 class="page-title">工作台</h1>
+    <h1 class="page-title">欢迎回来，{{ nickname }}</h1>
 
     <!-- 打卡统计 -->
     <div class="stats-grid">
@@ -70,7 +70,7 @@
 </template>
 
 <script>
-import { getStreak, getRecords, checkinToday } from '../utils/storage'
+import { getStreak, getRecords, checkinToday, getProfile } from '../utils/storage'
 
 const QUOTES = [
   { text: '科学是永无止境的，它是一个永恒之谜。', author: '爱因斯坦' },
@@ -87,6 +87,7 @@ export default {
   name: 'DashboardView',
   data() {
     return {
+      nickname: getProfile().nickname,
       streak: { current: 0, longest: 0, total: 0 },
       records: [],
       isCheckedIn: false,
