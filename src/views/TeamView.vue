@@ -112,7 +112,14 @@
 </template>
 
 <script>
-import { getCheckins, getStreak, getRecords, getWritingProgress, getExperiments, getLitNotes, getMeetings, getInspirations, getPomodoroStats } from '../utils/storage'
+import { useCheckinsStore } from '../stores/checkins'
+import { useRecordsStore } from '../stores/records'
+import { useExperimentsStore } from '../stores/experiments'
+import { useLitNotesStore } from '../stores/litNotes'
+import { useMeetingsStore } from '../stores/meetings'
+import { useInspirationsStore } from '../stores/inspirations'
+import { usePomodoroStore } from '../stores/pomodoro'
+import { useWritingStore } from '../stores/writing'
 import { getCurrentUser } from '../utils/auth'
 import { getAllPresence } from '../utils/presence'
 import { formatDate } from '../utils/date'
@@ -121,6 +128,14 @@ export default {
   name: 'TeamView',
   data() {
     return {
+      _checkinsStore: useCheckinsStore(),
+      _recordsStore: useRecordsStore(),
+      _experimentsStore: useExperimentsStore(),
+      _litNotesStore: useLitNotesStore(),
+      _meetingsStore: useMeetingsStore(),
+      _inspirationsStore: useInspirationsStore(),
+      _pomodoroStore: usePomodoroStore(),
+      _writingStore: useWritingStore(),
       rankBy: 'streak',
       rankTabs: [
         { key: 'streak', label: '连续打卡' },
@@ -216,24 +231,23 @@ export default {
       }
 
       // 计算当前用户统计
-      const streak = getStreak()
-      const records = getRecords()
-      const experiments = getExperiments()
-      const litNotes = getLitNotes()
-      const pomodoro = getPomodoroStats()
-      const inspirations = getInspirations()
-      const meetings = getMeetings()
-      const totalCheckins = Object.keys(getCheckins()).length
+      this._checkinsStore.load()
+      this._recordsStore.load()
+      this._experimentsStore.load()
+      this._litNotesStore.load()
+      this._pomodoroStore.load()
+      this._inspirationsStore.load()
+      this._meetingsStore.load()
 
       const myData = {
-        streak: streak.current,
-        total: totalCheckins,
-        records: records.length,
-        experiments: experiments.length,
-        litNotes: litNotes.length,
-        pomodoro: pomodoro.total || 0,
-        inspirations: inspirations.length,
-        meetings: meetings.length
+        streak: this._checkinsStore.streak.current,
+        total: Object.keys(this._checkinsStore.checkins).length,
+        records: this._recordsStore.recordCount,
+        experiments: this._experimentsStore.experimentCount,
+        litNotes: this._litNotesStore.noteCount,
+        pomodoro: this._pomodoroStore.total || 0,
+        inspirations: this._inspirationsStore.inspirationCount,
+        meetings: this._meetingsStore.meetingCount
       }
       this.myStats = { ...myData, totalCheckins }
 

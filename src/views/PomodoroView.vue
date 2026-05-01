@@ -56,13 +56,14 @@
 </template>
 
 <script>
-import { getPomodoroStats, addPomodoroSession } from '../utils/storage'
+import { usePomodoroStore } from '../stores/pomodoro'
 import { formatDateTime } from '../utils/date'
 
 export default {
   name: 'PomodoroView',
   data() {
     return {
+      pomodoroStore: usePomodoroStore(),
       workMin: 25,
       breakMin: 5,
       remaining: 25 * 60,
@@ -118,7 +119,8 @@ export default {
       this.running = false
       this.paused = false
       if (!this.isBreak) {
-        this.stats = addPomodoroSession(this.workMin)
+        this.pomodoroStore.addSession(this.workMin)
+        this.stats = this.pomodoroStore.stats
         this.isBreak = true
         this.remaining = this.breakMin * 60
         this.notify('专注完成！休息一下吧 🎉')
@@ -142,7 +144,8 @@ export default {
     }
   },
   mounted() {
-    this.stats = getPomodoroStats()
+    this.pomodoroStore.load()
+    this.stats = this.pomodoroStore.stats
     this.remaining = this.workMin * 60
   },
   beforeUnmount() {

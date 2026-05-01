@@ -97,13 +97,14 @@
 </template>
 
 <script>
-import { getMeetings, addMeeting, updateMeeting, deleteMeeting } from '../utils/storage'
+import { useMeetingsStore } from '../stores/meetings'
 import { generateMeetingMinutes, isAIConfigured } from '../utils/ai'
 
 export default {
   name: 'MeetingView',
   data() {
     return {
+      meetingsStore: useMeetingsStore(),
       meetings: [],
       search: '',
       showForm: false,
@@ -124,9 +125,9 @@ export default {
     emptyForm() { return { date: new Date().toISOString().split('T')[0], type: '组会', topics: '', feedback: '', todos: '', notes: '' } },
     saveMeeting() {
       if (!this.form.date) return alert('请选择日期')
-      if (this.editing) { updateMeeting(this.editing, this.form) }
-      else { addMeeting(this.form) }
-      this.meetings = getMeetings()
+      if (this.editing) { this.meetingsStore.update(this.editing, this.form) }
+      else { this.meetingsStore.add(this.form) }
+      this.meetings = this.meetingsStore.meetings
       this.cancelEdit()
     },
     editMeeting(m) { this.editing = m.id; this.form = { ...m }; this.showForm = true },
@@ -146,9 +147,9 @@ export default {
         this.aiLoading = false
       }
     },
-    removeMeeting(id) { if (!confirm('确定删除？')) return; deleteMeeting(id); this.meetings = getMeetings() }
+    removeMeeting(id) { if (!confirm('确定删除？')) return; this.meetingsStore.remove(id); this.meetings = this.meetingsStore.meetings }
   },
-  mounted() { this.meetings = getMeetings() }
+  mounted() { this.meetingsStore.load(); this.meetings = this.meetingsStore.meetings }
 }
 </script>
 

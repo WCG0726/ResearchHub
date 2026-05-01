@@ -100,7 +100,7 @@
 </template>
 
 <script>
-import { getRecords, addRecord, updateRecord, deleteRecord as removeRecord } from '../utils/storage'
+import { useRecordsStore } from '../stores/records'
 import { formatDate } from '../utils/date'
 import { suggestTags, generateSummary, isAIConfigured } from '../utils/ai'
 
@@ -108,6 +108,7 @@ export default {
   name: 'RecordsView',
   data() {
     return {
+      recordsStore: useRecordsStore(),
       records: [],
       searchQuery: '',
       selectedTags: [],
@@ -165,9 +166,9 @@ export default {
       }
 
       if (this.editingId) {
-        updateRecord(this.editingId, data)
+        this.recordsStore.update(this.editingId, data)
       } else {
-        addRecord(data)
+        this.recordsStore.add(data)
       }
 
       this.closeEditor()
@@ -175,8 +176,8 @@ export default {
     },
     deleteRecord(id) {
       if (confirm('确定删除这条记录？')) {
-        removeRecord(id)
-        this.loadData()
+        this.recordsStore.remove(id)
+        this.records = this.recordsStore.records
       }
     },
     closeEditor() {
@@ -220,11 +221,12 @@ export default {
       return str && str.length > len ? str.slice(0, len) + '...' : str
     },
     loadData() {
-      this.records = getRecords()
+      this.records = this.recordsStore.records
     }
   },
   mounted() {
-    this.loadData()
+    this.recordsStore.load()
+    this.records = this.recordsStore.records
   }
 }
 </script>

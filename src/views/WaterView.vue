@@ -64,13 +64,14 @@
 </template>
 
 <script>
-import { getWater, addWaterCup, removeWaterCup, setWaterGoal } from '../utils/storage'
+import { useWaterStore } from '../stores/water'
 
 export default {
   name: 'WaterView',
   data() {
     return {
-      water: getWater()
+      waterStore: useWaterStore(),
+      water: { cups: 0, goal: 8 }
     }
   },
   computed: {
@@ -80,15 +81,21 @@ export default {
   },
   methods: {
     addCup() {
-      this.water = addWaterCup()
+      this.waterStore.addCup()
+      this.water = this.waterStore.todayData
     },
     removeCup() {
-      this.water = removeWaterCup()
+      this.waterStore.removeCup()
+      this.water = this.waterStore.todayData
     },
     setGoal(g) {
-      setWaterGoal(g)
-      this.water = getWater()
+      this.waterStore.setGoal(g)
+      this.water = this.waterStore.todayData
     }
+  },
+  created() {
+    this.waterStore.load()
+    this.water = this.waterStore.todayData
   }
 }
 </script>

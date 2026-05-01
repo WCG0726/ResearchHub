@@ -94,12 +94,13 @@
 </template>
 
 <script>
-import { getWritingProgress, setWritingProgress } from '../utils/storage'
+import { useWritingStore } from '../stores/writing'
 
 export default {
   name: 'WritingView',
   data() {
     return {
+      writingStore: useWritingStore(),
       papers: [],
       selectedPaper: null,
       showEditor: false,
@@ -138,14 +139,13 @@ export default {
       this.closeEditor()
     },
     savePapers() {
-      // 更新论文状态
       this.papers.forEach(p => {
         if (p.sections) {
           const completed = p.sections.filter(s => s.status === '已完成').length
           p.progress = Math.round((completed / p.sections.length) * 100)
         }
       })
-      setWritingProgress({ papers: this.papers })
+      this.writingStore.save({ papers: this.papers })
     },
     closeEditor() {
       this.showEditor = false
@@ -156,8 +156,8 @@ export default {
       return map[status] || 'primary'
     },
     loadData() {
-      const data = getWritingProgress()
-      this.papers = data.papers || []
+      this.writingStore.load()
+      this.papers = this.writingStore.papers || []
     }
   },
   mounted() {

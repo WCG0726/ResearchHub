@@ -61,23 +61,23 @@ export default {
   name: 'ProgressView',
   data() {
     return {
+      _recordsStore: useRecordsStore(),
+      _litNotesStore: useLitNotesStore(),
+      _experimentsStore: useExperimentsStore(),
+      _inspirationsStore: useInspirationsStore(),
+      _meetingsStore: useMeetingsStore(),
+      _plansStore: usePlansStore(),
       viewMode: 'week'
     }
   },
   computed: {
     modules() {
-      const recordsStore = useRecordsStore()
-      const litNotesStore = useLitNotesStore()
-      const experimentsStore = useExperimentsStore()
-      const inspirationsStore = useInspirationsStore()
-      const meetingsStore = useMeetingsStore()
-      const plansStore = usePlansStore()
-      recordsStore.load()
-      litNotesStore.load()
-      experimentsStore.load()
-      inspirationsStore.load()
-      meetingsStore.load()
-      plansStore.load()
+      const recordsStore = this._recordsStore
+      const litNotesStore = this._litNotesStore
+      const experimentsStore = this._experimentsStore
+      const inspirationsStore = this._inspirationsStore
+      const meetingsStore = this._meetingsStore
+      const plansStore = this._plansStore
 
       const total = recordsStore.recordCount + litNotesStore.noteCount + experimentsStore.experimentCount + inspirationsStore.inspirationCount + meetingsStore.meetingCount + plansStore.planCount
       const pct = (count) => total > 0 ? Math.round(count / total * 100) : 0
@@ -101,16 +101,11 @@ export default {
       }
 
       const items = []
-      const recordsStore = useRecordsStore()
-      const litNotesStore = useLitNotesStore()
-      const experimentsStore = useExperimentsStore()
-      const inspirationsStore = useInspirationsStore()
-      const meetingsStore = useMeetingsStore()
-      recordsStore.load()
-      litNotesStore.load()
-      experimentsStore.load()
-      inspirationsStore.load()
-      meetingsStore.load()
+      const recordsStore = this._recordsStore
+      const litNotesStore = this._litNotesStore
+      const experimentsStore = this._experimentsStore
+      const inspirationsStore = this._inspirationsStore
+      const meetingsStore = this._meetingsStore
 
       for (const r of recordsStore.records) {
         const d = new Date(r.createdAt)
@@ -153,6 +148,14 @@ export default {
       }
       return Object.values(groups)
     }
+  },
+  created() {
+    this._recordsStore.load()
+    this._litNotesStore.load()
+    this._experimentsStore.load()
+    this._inspirationsStore.load()
+    this._meetingsStore.load()
+    this._plansStore.load()
   }
 }
 </script>

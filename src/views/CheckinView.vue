@@ -125,7 +125,8 @@
 </template>
 
 <script>
-import { getCheckins, getStreak, clockIn, clockOut, getTodayClockStatus, getCalendarEvents, addCalendarEvent, deleteCalendarEvent, getEventsForDate } from '../utils/storage'
+import { useCheckinsStore } from '../stores/checkins'
+import { useCalendarEventsStore } from '../stores/calendarEvents'
 import { toDateString, formatTime } from '../utils/date'
 
 export default {
@@ -133,6 +134,8 @@ export default {
   data() {
     const now = new Date()
     return {
+      _checkinsStore: useCheckinsStore(),
+      _calendarEventsStore: useCalendarEventsStore(),
       clockStatus: { clockedIn: false, clockedOut: false },
       streak: { current: 0, longest: 0, total: 0 },
       checkins: {},
@@ -182,7 +185,7 @@ export default {
     },
     dayEvents() {
       if (!this.selectedDay) return []
-      return getEventsForDate(this.selectedDay.fullDate)
+      return this._calendarEventsStore.eventsForDate(this.selectedDay.fullDate)
     }
   },
   methods: {
@@ -230,32 +233,34 @@ export default {
     },
     addEvent() {
       if (!this.newEventText.trim() || !this.selectedDay) return
-      addCalendarEvent(this.selectedDay.fullDate, {
+      this._calendarEventsStore.add(this.selectedDay.fullDate, {
         text: this.newEventText.trim(),
         color: this.newEventColor,
         recurring: this.newEventRecurring
       })
-      this.events = getCalendarEvents()
+      this.events = this._calendarEventsStore.events
       this.newEventText = ''
       this.newEventRecurring = false
     },
     removeEvent(eventId, originalDate) {
       if (!this.selectedDay) return
       const date = originalDate || this.selectedDay.fullDate
-      deleteCalendarEvent(date, eventId)
-      this.events = getCalendarEvents()
+      this._calendarEventsStore.remove(date, eventId)
+      this.events = this._calendarEventsStore.events
     },
     doClockIn() {
-      if (clockIn()) this.loadData()
+      if (this._checkinsStore.clockIn()) this.loadData()
     },
     doClockOut() {
-      if (clockOut()) this.loadData()
+      if (this._checkinsStore.clockOut()) this.loadData()
     },
     loadData() {
-      this.checkins = getCheckins()
-      this.streak = getStreak()
-      this.clockStatus = getTodayClockStatus()
-      this.events = getCalendarEvents()
+      this._checkinsStore.forceLoad()
+      this._calendarEventsStore.forceLoad()
+      this.checkins = this._checkinsStore.checkins
+      this.streak = this._checkinsStore.streak
+      this.clockStatus = this._checkinsStore.clockStatus
+      this.events = this._calendarEventsStore.events
     }
   },
   mounted() {

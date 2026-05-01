@@ -25,7 +25,7 @@ import HeaderNav from './components/HeaderNav.vue'
 import SidebarNav from './components/SidebarNav.vue'
 import ErrorBoundary from './components/ErrorBoundary.vue'
 import QuickNote from './components/QuickNote.vue'
-import { getTheme, setTheme } from './utils/storage'
+import { useProfileStore } from './stores/profile'
 import { getCurrentUser } from './utils/auth'
 import { initPresence, stopPresence } from './utils/presence'
 
@@ -34,7 +34,8 @@ export default {
   components: { HeaderNav, SidebarNav, ErrorBoundary, QuickNote },
   data() {
     return {
-      isDark: getTheme() === 'dark',
+      _profileStore: useProfileStore(),
+      isDark: false,
       sidebarOpen: false,
       showQuickNote: false
     }
@@ -53,7 +54,7 @@ export default {
   methods: {
     toggleTheme() {
       this.isDark = !this.isDark
-      setTheme(this.isDark ? 'dark' : 'light')
+      this._profileStore.toggleTheme()
     },
     manageHeartbeat() {
       const user = getCurrentUser()
@@ -90,8 +91,12 @@ export default {
       }
     }
   },
+  created() {
+    this._profileStore.load()
+    this.isDark = this._profileStore.theme === 'dark'
+    this._profileStore.setTheme(this._profileStore.theme)
+  },
   mounted() {
-    setTheme(this.isDark ? 'dark' : 'light')
     this.manageHeartbeat()
     document.addEventListener('keydown', this.handleKeydown)
   },

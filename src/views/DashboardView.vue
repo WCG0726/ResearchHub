@@ -239,7 +239,7 @@
 
 <script>
 import { formatDate, toDateString } from '../utils/date'
-import { getCalendarEvents } from '../utils/storage'
+import { useCalendarEventsStore } from '../stores/calendarEvents'
 import { generateCalendarDays } from '../utils/calendar'
 import { getRandomQuote } from '../data/quotes'
 import { useRecordsStore } from '../stores/records'
@@ -254,64 +254,51 @@ export default {
   data() {
     const now = new Date()
     return {
+      _profileStore: useProfileStore(),
+      _checkinsStore: useCheckinsStore(),
+      _recordsStore: useRecordsStore(),
+      _inspirationsStore: useInspirationsStore(),
+      _litNotesStore: useLitNotesStore(),
+      _plansStore: usePlansStore(),
       quote: getRandomQuote(),
       currentTime: now.toLocaleTimeString('zh-CN'),
       miniYear: now.getFullYear(),
       miniMonth: now.getMonth() + 1,
+      calendarEventsStore: useCalendarEventsStore(),
       events: {},
       _clockTimer: null
     }
   },
   computed: {
     nickname() {
-      const profileStore = useProfileStore()
-      profileStore.load()
-      return profileStore.profile.nickname
+      return this._profileStore.profile.nickname
     },
     streak() {
-      const store = useCheckinsStore()
-      store.load()
-      return store.streak
+      return this._checkinsStore.streak
     },
     clockStatus() {
-      const store = useCheckinsStore()
-      store.load()
-      return store.clockStatus
+      return this._checkinsStore.clockStatus
     },
     records() {
-      const store = useRecordsStore()
-      store.load()
-      return store.records
+      return this._recordsStore.records
     },
     recentRecords() {
-      const store = useRecordsStore()
-      store.load()
-      return store.recentRecords
+      return this._recordsStore.recentRecords
     },
     inspirations() {
-      const store = useInspirationsStore()
-      store.load()
-      return store.inspirations
+      return this._inspirationsStore.inspirations
     },
     recentInspirations() {
-      const store = useInspirationsStore()
-      store.load()
-      return store.recentInspirations
+      return this._inspirationsStore.recentInspirations
     },
     litNotes() {
-      const store = useLitNotesStore()
-      store.load()
-      return store.notes
+      return this._litNotesStore.notes
     },
     recentLitNotes() {
-      const store = useLitNotesStore()
-      store.load()
-      return store.recentNotes
+      return this._litNotesStore.recentNotes
     },
     todos() {
-      const store = usePlansStore()
-      store.load()
-      return store.todos
+      return this._plansStore.todos
     },
     greeting() {
       const h = new Date().getHours()
@@ -329,9 +316,7 @@ export default {
       return '星期' + ['日', '一', '二', '三', '四', '五', '六'][new Date().getDay()]
     },
     miniCalendarDays() {
-      const checkinsStore = useCheckinsStore()
-      checkinsStore.load()
-      return generateCalendarDays(this.miniYear, this.miniMonth - 1, checkinsStore.checkins, this.events)
+      return generateCalendarDays(this.miniYear, this.miniMonth - 1, this._checkinsStore.checkins, this.events)
     },
     upcomingEvents() {
       const today = new Date()
@@ -365,13 +350,22 @@ export default {
       else this.miniMonth++
     },
     loadData() {
-      this.events = getCalendarEvents()
+      this.calendarEventsStore.load()
+      this.events = this.calendarEventsStore.events
     },
     startClock() {
       this._clockTimer = setInterval(() => {
         this.currentTime = new Date().toLocaleTimeString('zh-CN')
       }, 1000)
     }
+  },
+  created() {
+    this._profileStore.load()
+    this._checkinsStore.load()
+    this._recordsStore.load()
+    this._inspirationsStore.load()
+    this._litNotesStore.load()
+    this._plansStore.load()
   },
   mounted() {
     this.loadData()

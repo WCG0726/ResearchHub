@@ -2,7 +2,12 @@
  * 多用户登录管理
  */
 
-import { setProfile } from './storage'
+import { getStorage, setStorage } from './storage'
+
+function setProfile(updates) {
+  const current = getStorage('profile', { nickname: '科研人', avatar: '', avatarData: '' })
+  setStorage('profile', { ...current, ...updates })
+}
 
 const USERS_KEY = 'research_hub_users'
 const SESSION_KEY = 'research_hub_session'

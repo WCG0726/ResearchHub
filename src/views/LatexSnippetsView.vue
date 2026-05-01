@@ -60,34 +60,14 @@
 </template>
 
 <script>
-import { getLatexSnippets, addLatexSnippet, deleteLatexSnippet } from '../utils/storage'
-
-const BUILT_IN = [
-  { name: '行内公式', category: '数学公式', code: '$E = mc^2$' },
-  { name: '行间公式', category: '数学公式', code: '$$\nE = mc^2\n$$' },
-  { name: '多行对齐', category: '数学公式', code: '\\begin{align}\na &= b + c \\\\\nd &= e + f\n\\end{align}' },
-  { name: '上下标', category: '数学公式', code: '$x^{2}_{i}$' },
-  { name: '希腊字母', category: '数学公式', code: '$\\alpha \\beta \\gamma \\delta \\epsilon \\theta \\lambda \\mu \\sigma \\omega$' },
-  { name: '求和/积分', category: '数学公式', code: '$\\sum_{i=1}^{n} x_i$  $\\int_{0}^{\\infty} f(x)dx$' },
-  { name: '分数', category: '数学公式', code: '$\\frac{a}{b}$' },
-  { name: '矩阵', category: '数学公式', code: '\\begin{bmatrix}\na & b \\\\\nc & d\n\\end{bmatrix}' },
-  { name: '三线表', category: '表格', code: '\\begin{table}[htbp]\n\\centering\n\\caption{表格标题}\n\\label{tab:example}\n\\begin{tabular}{ccc}\n\\hline\n列1 & 列2 & 列3 \\\\\n\\hline\n数据1 & 数据2 & 数据3 \\\\\n数据4 & 数据5 & 数据6 \\\\\n\\hline\n\\end{tabular}\n\\end{table}' },
-  { name: '图片插入', category: '图片', code: '\\begin{figure}[htbp]\n\\centering\n\\includegraphics[width=0.8\\textwidth]{filename.eps}\n\\caption{图片说明}\n\\label{fig:example}\n\\end{figure}' },
-  { name: '并排图片', category: '图片', code: '\\begin{figure}[htbp]\n\\centering\n\\begin{subfigure}{0.48\\textwidth}\n\\includegraphics[width=\\textwidth]{a.eps}\n\\caption{子图A}\n\\end{subfigure}\n\\hfill\n\\begin{subfigure}{0.48\\textwidth}\n\\includegraphics[width=\\textwidth]{b.eps}\n\\caption{子图B}\n\\end{subfigure}\n\\caption{总说明}\n\\end{figure}' },
-  { name: '参考文献引用', category: '引用', code: '文献~\\cite{author2024}' },
-  { name: '脚注', category: '引用', code: '文字内容\\footnote{脚注内容}' },
-  { name: '定理环境', category: '结构', code: '\\newtheorem{theorem}{定理}\n\\begin{theorem}\n定理内容...\n\\end{theorem}' },
-  { name: '列表', category: '结构', code: '\\begin{itemize}\n\\item 第一项\n\\item 第二项\n\\end{itemize}' },
-  { name: '枚举', category: '结构', code: '\\begin{enumerate}\n\\item 第一点\n\\item 第二点\n\\end{enumerate}' },
-  { name: '超链接', category: '其他', code: '\\usepackage{hyperref}\n\\href{https://example.com}{链接文字}' },
-  { name: '化学式', category: '其他', code: '\\usepackage{mhchem}\n\\ce{CO2}, \\ce{H2O}, \\ce{Bi2Te3}' },
-  { name: '单位', category: '其他', code: '\\usepackage{siunitx}\n\\SI{300}{K}, \\SI{1.5}{eV}, \\SI{5}{W.m^{-1}.K^{-1}}' },
-]
+import { useLatexSnippetsStore } from '../stores/latexSnippets'
+import { LATEX_SNIPPETS } from '../data/latexSnippets'
 
 export default {
   name: 'LatexSnippetsView',
   data() {
     return {
+      latexSnippetsStore: useLatexSnippetsStore(),
       customSnippets: [],
       search: '',
       filterCat: '',
@@ -99,7 +79,7 @@ export default {
   },
   computed: {
     allSnippets() {
-      const built = BUILT_IN.map(s => ({ ...s, custom: false }))
+      const built = LATEX_SNIPPETS.map(s => ({ ...s, custom: false }))
       const custom = this.customSnippets.map(s => ({ ...s, custom: true }))
       return [...built, ...custom]
     },
@@ -135,15 +115,16 @@ export default {
     },
     saveSnippet() {
       if (!this.form.name.trim() || !this.form.code.trim()) return alert('请填写名称和代码')
-      addLatexSnippet(this.form)
-      this.customSnippets = getLatexSnippets()
+      this.latexSnippetsStore.add(this.form)
+      this.customSnippets = this.latexSnippetsStore.snippets
       this.showForm = false
       this.form = { name: '', category: '自定义', code: '' }
     },
-    removeSnippet(id) { if (!confirm('确定删除？')) return; deleteLatexSnippet(id); this.customSnippets = getLatexSnippets() }
+    removeSnippet(id) { if (!confirm('确定删除？')) return; this.latexSnippetsStore.remove(id); this.customSnippets = this.latexSnippetsStore.snippets }
   },
   mounted() {
-    this.customSnippets = getLatexSnippets()
+    this.latexSnippetsStore.load()
+    this.customSnippets = this.latexSnippetsStore.snippets
     this.openCats = { '数学公式': true, '表格': true }
   }
 }

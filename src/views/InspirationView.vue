@@ -63,13 +63,14 @@
 </template>
 
 <script>
-import { getInspirations, addInspiration, updateInspiration, deleteInspiration } from '../utils/storage'
+import { useInspirationsStore } from '../stores/inspirations'
 import { expandInspiration, isAIConfigured } from '../utils/ai'
 
 export default {
   name: 'InspirationView',
   data() {
     return {
+      inspirationsStore: useInspirationsStore(),
       items: [],
       search: '',
       filterColor: '',
@@ -104,28 +105,28 @@ export default {
     formatDate(iso) { return new Date(iso).toLocaleDateString('zh-CN') },
     saveInspiration() {
       if (!this.form.title.trim()) return alert('请输入标题')
-      addInspiration(this.form)
-      this.items = getInspirations()
+      this.inspirationsStore.add(this.form)
+      this.items = this.inspirationsStore.inspirations
       this.showForm = false
       this.form = { title: '', content: '', tags: '', color: '#6366f1' }
     },
-    togglePin(item) { updateInspiration(item.id, { pinned: !item.pinned }); this.items = getInspirations() },
+    togglePin(item) { this.inspirationsStore.update(item.id, { pinned: !item.pinned }); this.items = this.inspirationsStore.inspirations },
     async aiExpand(item) {
       if (!isAIConfigured()) { alert('请先在"翻译"页面配置 API Key'); return }
       this.expandingId = item.id
       try {
         const result = await expandInspiration(item.title, item.content)
-        updateInspiration(item.id, { content: (item.content ? item.content + '\n\n' : '') + '【AI 扩展分析】\n' + result })
-        this.items = getInspirations()
+        this.inspirationsStore.update(item.id, { content: (item.content ? item.content + '\n\n' : '') + '【AI 扩展分析】\n' + result })
+        this.items = this.inspirationsStore.inspirations
       } catch (e) {
         alert(e.message)
       } finally {
         this.expandingId = null
       }
     },
-    removeItem(id) { if (!confirm('确定删除？')) return; deleteInspiration(id); this.items = getInspirations() }
+    removeItem(id) { if (!confirm('确定删除？')) return; this.inspirationsStore.remove(id); this.items = this.inspirationsStore.inspirations }
   },
-  mounted() { this.items = getInspirations() }
+  mounted() { this.inspirationsStore.load(); this.items = this.inspirationsStore.inspirations }
 }
 </script>
 

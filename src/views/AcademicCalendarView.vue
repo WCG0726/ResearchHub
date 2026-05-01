@@ -93,12 +93,13 @@
 </template>
 
 <script>
-import { getAcademicEvents, addAcademicEvent, deleteAcademicEvent } from '../utils/storage'
+import { useAcademicEventsStore } from '../stores/academicEvents'
 
 export default {
   name: 'AcademicCalendarView',
   data() {
     return {
+      academicEventsStore: useAcademicEventsStore(),
       events: [],
       filterType: '',
       showForm: false,
@@ -131,14 +132,14 @@ export default {
     },
     saveEvent() {
       if (!this.form.name.trim() || !this.form.date) return alert('请填写名称和日期')
-      addAcademicEvent(this.form)
-      this.events = getAcademicEvents()
+      this.academicEventsStore.add(this.form)
+      this.events = this.academicEventsStore.events
       this.showForm = false
       this.form = { name: '', date: '', type: '会议截稿', importance: 'normal', notes: '' }
     },
-    removeEvent(id) { if (!confirm('确定删除？')) return; deleteAcademicEvent(id); this.events = getAcademicEvents() }
+    removeEvent(id) { if (!confirm('确定删除？')) return; this.academicEventsStore.remove(id); this.events = this.academicEventsStore.events }
   },
-  mounted() { this.events = getAcademicEvents() }
+  mounted() { this.academicEventsStore.load(); this.events = this.academicEventsStore.events }
 }
 </script>
 

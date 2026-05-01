@@ -95,12 +95,13 @@
 </template>
 
 <script>
-import { getMilestones, addMilestone, updateMilestone, deleteMilestone } from '../utils/storage'
+import { useMilestonesStore } from '../stores/milestones'
 
 export default {
   name: 'MilestoneView',
   data() {
     return {
+      milestonesStore: useMilestonesStore(),
       milestones: [],
       showForm: false,
       form: { name: '', deadline: '', stage: '研究阶段', priority: 'medium', description: '' }
@@ -118,15 +119,15 @@ export default {
     priorityClass(p) { return { high: 'tag-danger', medium: 'tag-warning', low: 'tag-success' }[p] || 'tag-primary' },
     saveMilestone() {
       if (!this.form.name.trim()) return alert('请输入名称')
-      addMilestone(this.form)
-      this.milestones = getMilestones()
+      this.milestonesStore.add(this.form)
+      this.milestones = this.milestonesStore.milestones
       this.showForm = false
       this.form = { name: '', deadline: '', stage: '研究阶段', priority: 'medium', description: '' }
     },
-    toggleDone(m) { updateMilestone(m.id, { done: !m.done }); this.milestones = getMilestones() },
-    removeMilestone(id) { if (!confirm('确定删除？')) return; deleteMilestone(id); this.milestones = getMilestones() }
+    toggleDone(m) { this.milestonesStore.update(m.id, { done: !m.done }); this.milestones = this.milestonesStore.milestones },
+    removeMilestone(id) { if (!confirm('确定删除？')) return; this.milestonesStore.remove(id); this.milestones = this.milestonesStore.milestones }
   },
-  mounted() { this.milestones = getMilestones() }
+  mounted() { this.milestonesStore.load(); this.milestones = this.milestonesStore.milestones }
 }
 </script>
 

@@ -69,13 +69,14 @@
 </template>
 
 <script>
-import { getPlans, addPlan, togglePlan, deletePlan } from '../utils/storage'
+import { usePlansStore } from '../stores/plans'
 
 export default {
   name: 'PlanView',
   data() {
     return {
-      plans: getPlans(),
+      plansStore: usePlansStore(),
+      plans: [],
       newText: '',
       newPriority: 'medium',
       newDate: new Date().toISOString().split('T')[0],
@@ -104,21 +105,25 @@ export default {
   methods: {
     addTask() {
       if (!this.newText.trim()) return
-      addPlan({ text: this.newText.trim(), priority: this.newPriority, date: this.newDate })
-      this.plans = getPlans()
+      this.plansStore.add({ text: this.newText.trim(), priority: this.newPriority, date: this.newDate })
+      this.plans = this.plansStore.plans
       this.newText = ''
     },
     toggle(id) {
-      togglePlan(id)
-      this.plans = getPlans()
+      this.plansStore.toggle(id)
+      this.plans = this.plansStore.plans
     },
     remove(id) {
-      deletePlan(id)
-      this.plans = getPlans()
+      this.plansStore.remove(id)
+      this.plans = this.plansStore.plans
     },
     priorityLabel(p) {
       return { high: '紧急', medium: '一般', low: '不急' }[p]
     }
+  },
+  created() {
+    this.plansStore.load()
+    this.plans = this.plansStore.plans
   }
 }
 </script>

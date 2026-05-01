@@ -102,12 +102,13 @@
 </template>
 
 <script>
-import { getExperiments, addExperiment, updateExperiment, deleteExperiment } from '../utils/storage'
+import { useExperimentsStore } from '../stores/experiments'
 
 export default {
   name: 'ExperimentView',
   data() {
     return {
+      experimentsStore: useExperimentsStore(),
       experiments: [],
       search: '',
       filterStatus: '',
@@ -134,16 +135,16 @@ export default {
     },
     saveExp() {
       if (!this.form.sampleId.trim() || !this.form.name.trim()) return alert('请填写样品编号和实验名称')
-      if (this.editing) { updateExperiment(this.editing, this.form) }
-      else { addExperiment(this.form) }
-      this.experiments = getExperiments()
+      if (this.editing) { this.experimentsStore.update(this.editing, this.form) }
+      else { this.experimentsStore.add(this.form) }
+      this.experiments = this.experimentsStore.experiments
       this.cancelEdit()
     },
     editExp(exp) { this.editing = exp.id; this.form = { ...exp }; this.showForm = true },
     cancelEdit() { this.showForm = false; this.editing = null; this.form = this.emptyForm() },
-    removeExp(id) { if (!confirm('确定删除？')) return; deleteExperiment(id); this.experiments = getExperiments() }
+    removeExp(id) { if (!confirm('确定删除？')) return; this.experimentsStore.remove(id); this.experiments = this.experimentsStore.experiments }
   },
-  mounted() { this.experiments = getExperiments() }
+  mounted() { this.experimentsStore.load(); this.experiments = this.experimentsStore.experiments }
 }
 </script>
 

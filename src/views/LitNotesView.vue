@@ -116,7 +116,7 @@
 </template>
 
 <script>
-import { getLitNotes, addLitNote, updateLitNote, deleteLitNote } from '../utils/storage'
+import { useLitNotesStore } from '../stores/litNotes'
 import { formatDate } from '../utils/date'
 import { generateLitNoteTemplate, isAIConfigured } from '../utils/ai'
 
@@ -124,6 +124,7 @@ export default {
   name: 'LitNotesView',
   data() {
     return {
+      litNotesStore: useLitNotesStore(),
       notes: [],
       search: '',
       filterTag: '',
@@ -159,11 +160,11 @@ export default {
     saveNote() {
       if (!this.form.title.trim()) return alert('请输入论文标题')
       if (this.editing) {
-        updateLitNote(this.editing, this.form)
+        this.litNotesStore.update(this.editing, this.form)
       } else {
-        addLitNote(this.form)
+        this.litNotesStore.add(this.form)
       }
-      this.notes = getLitNotes()
+      this.notes = this.litNotesStore.notes
       this.cancelEdit()
     },
     editNote(note) {
@@ -208,12 +209,13 @@ export default {
     },
     removeNote(id) {
       if (!confirm('确定删除？')) return
-      deleteLitNote(id)
-      this.notes = getLitNotes()
+      this.litNotesStore.remove(id)
+      this.notes = this.litNotesStore.notes
     }
   },
   mounted() {
-    this.notes = getLitNotes()
+    this.litNotesStore.load()
+    this.notes = this.litNotesStore.notes
   }
 }
 </script>

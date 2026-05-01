@@ -69,20 +69,13 @@
 
 <script>
 import { LINK_GROUPS } from '../data/links'
-
-const CUSTOM_KEY = 'research_hub_custom_links'
-
-function getCustomLinks() {
-  try {
-    return JSON.parse(localStorage.getItem(CUSTOM_KEY) || '[]')
-  } catch { return [] }
-}
+import { getStorage, setStorage } from '../utils/storage'
 
 export default {
   name: 'LinksView',
   data() {
     return {
-      customLinks: getCustomLinks(),
+      customLinks: getStorage('custom_links', []),
       showAdd: false,
       newName: '',
       newUrl: '',
@@ -95,7 +88,7 @@ export default {
       if (!this.newName || !this.newUrl) return
       const url = this.newUrl.startsWith('http') ? this.newUrl : 'https://' + this.newUrl
       this.customLinks.push({ name: this.newName, url, desc: this.newDesc || '' })
-      localStorage.setItem(CUSTOM_KEY, JSON.stringify(this.customLinks))
+      setStorage('custom_links', this.customLinks)
       this.newName = ''
       this.newUrl = ''
       this.newDesc = ''
@@ -103,7 +96,7 @@ export default {
     },
     removeCustom(url) {
       this.customLinks = this.customLinks.filter(l => l.url !== url)
-      localStorage.setItem(CUSTOM_KEY, JSON.stringify(this.customLinks))
+      setStorage('custom_links', this.customLinks)
     }
   }
 }
