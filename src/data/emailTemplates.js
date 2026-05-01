@@ -119,5 +119,84 @@ Thank you for your time.
 
 Best regards,
 [Your Name]`
+  },
+  {
+    name: '申请访问学者',
+    category: '学术交流',
+    content: `Dear Prof. [Name],
+
+I am [Your Name], a [position] at [Your Institution] in China, specializing in [research area].
+
+I am writing to inquire about the possibility of joining your research group as a visiting scholar for [duration, e.g., 6-12 months], starting from [preferred date].
+
+My current research focuses on [brief description]. I believe that working in your lab would greatly benefit my research on [specific topic], particularly in [specific technique/method your lab excels at].
+
+I have published [X] papers in journals including [Journal Names]. My CV and a list of selected publications are attached for your reference.
+
+I would be grateful if you could consider my application. I am flexible with the timing and can discuss the details at your convenience.
+
+Thank you for your consideration.
+
+Best regards,
+[Your Name]`
+  },
+  {
+    name: '请求审稿',
+    category: '学术交流',
+    content: `Dear Prof. [Name],
+
+I hope this email finds you well. I am writing to invite you to serve as a reviewer for a manuscript submitted to [Journal/Conference Name].
+
+Manuscript Title: "[Title]"
+Manuscript ID: [ID]
+Topic: [Brief description of the paper's topic]
+
+Given your expertise in [specific field], we believe you would be an ideal reviewer for this work. The review deadline is [Date], and we would appreciate it if you could complete the review within [X] weeks.
+
+If you are willing to review this manuscript, please let me know, and I will send you the full paper. If you are unable to review, we would be grateful if you could suggest an alternative reviewer.
+
+Thank you for your contribution to the scientific community.
+
+Best regards,
+[Your Name]
+[Your Title/Position]`
+  },
+  {
+    name: '会议邀请回复（接受）',
+    category: '学术会议',
+    content: `Dear [Organizer Name],
+
+Thank you for inviting me to [give a talk / present at / chair a session at] [Conference Name] on [Date].
+
+I am pleased to accept your invitation. I plan to present on the topic of "[Title/Topic]".
+
+Please let me know the following details:
+1. The allocated time for my presentation (including Q&A)
+2. The format of the session (oral / poster / panel)
+3. Any specific requirements for the presentation slides
+4. Travel and accommodation arrangements
+
+I look forward to participating in the conference.
+
+Best regards,
+[Your Name]`
+  },
+  {
+    name: '论文合作邀请',
+    category: '学术交流',
+    content: `Dear Prof. [Name],
+
+I am [Your Name], a [position] at [Your Institution]. I am writing to propose a potential collaboration on [specific research topic].
+
+I have been following your work on [their research area], particularly your recent paper on "[Paper Title]" published in [Journal]. Your findings on [specific result] are closely related to our ongoing research on [your topic].
+
+I believe a collaboration between our groups could lead to significant advances in [field]. Specifically, I propose that we could [specific collaboration idea, e.g., combine your expertise in X with our capabilities in Y].
+
+I have attached my recent publication list and a brief research summary for your reference. I would be delighted to discuss this further via email or a video call at your convenience.
+
+Thank you for considering this proposal.
+
+Best regards,
+[Your Name]`
   }
 ]

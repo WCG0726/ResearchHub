@@ -24,7 +24,6 @@ const InspirationView = () => import('../views/InspirationView.vue')
 const MilestoneView = () => import('../views/MilestoneView.vue')
 const PomodoroView = () => import('../views/PomodoroView.vue')
 const EmailTemplatesView = () => import('../views/EmailTemplatesView.vue')
-const LatexEditorView = () => import('../views/LatexEditorView.vue')
 const AcademicCalendarView = () => import('../views/AcademicCalendarView.vue')
 const ProgressView = () => import('../views/ProgressView.vue')
 const SettingsView = () => import('../views/SettingsView.vue')
@@ -55,7 +54,6 @@ const routes = [
   { path: '/milestone', name: 'milestone', component: MilestoneView, meta: { requiresAuth: true } },
   { path: '/pomodoro', name: 'pomodoro', component: PomodoroView, meta: { requiresAuth: true } },
   { path: '/email-templates', name: 'email-templates', component: EmailTemplatesView, meta: { requiresAuth: true } },
-  { path: '/latex-editor', name: 'latex-editor', component: LatexEditorView, meta: { requiresAuth: true } },
   { path: '/academic-calendar', name: 'academic-calendar', component: AcademicCalendarView, meta: { requiresAuth: true } },
   { path: '/progress', name: 'progress', component: ProgressView, meta: { requiresAuth: true } },
   { path: '/settings', name: 'settings', component: SettingsView, meta: { requiresAuth: true } },
@@ -96,13 +94,12 @@ router.beforeEach((to) => {
     'lit-notes': '文献笔记',
     experiment: '实验记录',
     'plot-tips': '绘图技巧',
-    'latex-snippets': 'LaTeX 片段',
+    'latex-snippets': 'LaTeX',
     meeting: '组会记录',
     inspiration: '灵感板',
     milestone: '里程碑',
     pomodoro: '番茄钟',
     'email-templates': '邮件模板',
-    'latex-editor': 'LaTeX 编辑器',
     'academic-calendar': '学术日历',
     progress: '科研进度',
     settings: '设置',

@@ -18,4 +18,19 @@ export const LATEX_SNIPPETS = [
   { name: '超链接', category: '其他', code: '\\usepackage{hyperref}\n\\href{https://example.com}{链接文字}' },
   { name: '化学式', category: '其他', code: '\\usepackage{mhchem}\n\\ce{CO2}, \\ce{H2O}, \\ce{Bi2Te3}' },
   { name: '单位', category: '其他', code: '\\usepackage{siunitx}\n\\SI{300}{K}, \\SI{1.5}{eV}, \\SI{5}{W.m^{-1}.K^{-1}}' },
+  // 算法伪代码
+  { name: '算法伪代码', category: '算法', code: '\\usepackage{algorithm}\n\\usepackage{algpseudocode}\n\\begin{algorithm}\n\\caption{算法名称}\n\\begin{algorithmic}[1]\n\\State 输入: 参数 $x$\n\\State 输出: 结果 $y$\n\\State $y \\gets 0$\n\\For{$i = 1$ to $n$}\n  \\State $y \\gets y + f(x_i)$\n\\EndFor\n\\State \\Return $y$\n\\end{algorithmic}\n\\end{algorithm}' },
+  { name: 'If-Else 条件', category: '算法', code: '\\If{条件}\n  \\State 语句1\n\\Else\n  \\State 语句2\n\\EndIf' },
+  { name: 'While 循环', category: '算法', code: '\\While{条件}\n  \\State 循环体\n\\EndWhile' },
+  // 化学方程式
+  { name: '化学方程式 (mhchem)', category: '化学', code: '\\usepackage{mhchem}\n\\ce{CO2 + H2O -> H2CO3}\n\\ce{Bi2Te3 <=> 2Bi + 3Te}' },
+  { name: '化学式上下标', category: '化学', code: '\\ce{H2O}, \\ce{CO2}, \\ce{SO4^{2-}}, \\ce{Fe^{3+}}' },
+  { name: '热化学方程式', category: '化学', code: '\\ce{CH4(g) + 2O2(g) -> CO2(g) + 2H2O(l)}\n\\quad $\\Delta H = -890.3$ kJ/mol' },
+  // 参考文献格式
+  { name: 'natbib 引用', category: '参考文献', code: '\\usepackage{numbib}\n% 上标引用\n\\cite{key}  % 或 \\supercite{key}\n% 作者-年\n\\citet{key}  % 文内引用\n\\citep{key}  % 括号引用' },
+  { name: 'BibTeX 条目模板', category: '参考文献', code: '@article{key,\n  author  = {Author, A. and Author, B.},\n  title   = {Paper Title},\n  journal = {Journal Name},\n  year    = {2024},\n  volume  = {10},\n  pages   = {123--130},\n  doi     = {10.xxxx/xxxxx}\n}' },
+  // Beamer 幻灯片
+  { name: 'Beamer 基本模板', category: 'Beamer', code: '\\documentclass{beamer}\n\\usetheme{Madrid}\n\\usecolortheme{default}\n\n\\title{报告标题}\n\\author{作者}\n\\institute{单位}\n\\date{\\today}\n\n\\begin{document}\n\n\\begin{frame}\n\\titlepage\n\\end{frame}\n\n\\begin{frame}{Outline}\n\\tableofcontents\n\\end{frame}\n\n\\section{第一部分}\n\\begin{frame}{页面标题}\n内容\n\\end{frame}\n\n\\end{document}' },
+  { name: 'Beamer 列表与图片', category: 'Beamer', code: '\\begin{frame}{要点}\n\\begin{itemize}\n\\item 第一点\n\\item 第二点\n\\end{itemize}\n\\end{frame}\n\n\\begin{frame}{结果}\n\\begin{figure}\n\\centering\n\\includegraphics[width=0.8\\textwidth]{fig.png}\n\\end{figure}\n\\end{frame}' },
+  { name: 'Beamer 分栏', category: 'Beamer', code: '\\begin{frame}{双栏布局}\n\\begin{columns}\n\\column{0.5\\textwidth}\n左栏内容\n\\column{0.5\\textwidth}\n右栏内容\n\\end{columns}\n\\end{frame}' },
 ]

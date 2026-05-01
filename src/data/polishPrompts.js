@@ -333,6 +333,86 @@ Please write in publication-ready English with appropriate citations placeholder
 每个方案请说明优缺点。`
   },
   {
+    id: 24, cat: 'polish', title: '方法论描述润色',
+    desc: '专门润色 Methods 部分的实验描述',
+    text: `Please polish the following Methods section text. Focus on:
+1. Use passive voice consistently ("The samples were prepared..." not "We prepared...")
+2. Ensure sufficient detail for reproducibility
+3. Include instrument model numbers and parameters
+4. Specify reagent sources and purity
+5. Use precise scientific terminology
+6. Maintain logical flow (preparation → characterization → testing)
+
+Output only the polished version.
+
+Methods text:
+[Paste your Methods text here]`
+  },
+  {
+    id: 25, cat: 'polish', title: '图表说明文字润色',
+    desc: '润色 Figure Captions 和 Table Notes',
+    text: `Please polish the following figure captions and table descriptions. Requirements:
+1. Figure captions should be self-contained — a reader should understand the figure without reading the main text
+2. Define all abbreviations and symbols used in the figure
+3. Include key quantitative information (e.g., "peak ZT of 1.5 at 773 K")
+4. Use consistent formatting: "Figure X. Description of what is shown."
+5. For multi-panel figures: "(a) ... (b) ... (c) ..."
+6. Table notes should explain any special symbols or abbreviations
+
+Original captions:
+[Paste your figure captions / table notes here]`
+  },
+  {
+    id: 26, cat: 'polish', title: 'Discussion 部分润色',
+    desc: '专门润色讨论部分的分析和解释',
+    text: `Please polish the following Discussion section. Focus on:
+1. Strengthen causal explanations (use "can be attributed to", "is primarily due to")
+2. Add appropriate hedging ("likely", "may", "suggests that")
+3. Improve comparison with literature ("consistent with", "in contrast to")
+4. Ensure logical transitions between paragraphs
+5. Avoid simply restating results — focus on interpretation
+6. Use present tense for general interpretations
+
+Discussion text:
+[Paste your Discussion text here]`
+  },
+  {
+    id: 27, cat: 'response', title: '逐条回复审稿意见（模板）',
+    desc: '结构化的审稿意见逐条回复格式',
+    text: `Please help me format a point-by-point response to the following reviewer comments. For each comment, use this format:
+
+**Reviewer Comment [X]:**
+[Quote the reviewer's comment]
+
+**Response:**
+We thank the reviewer for this insightful comment. [Your response/explanation of changes made]
+
+**Changes made:** [Describe specific changes, referencing page/line numbers in the revised manuscript]
+
+If you disagree with a comment, use this format:
+**Response:**
+We appreciate the reviewer's suggestion. However, [respectful explanation of why the suggestion was not fully adopted, with supporting evidence]. We hope this clarification addresses the reviewer's concern.
+
+Reviewer comments:
+[Paste all reviewer comments here]`
+  },
+  {
+    id: 28, cat: 'response', title: 'Cover Letter 润色',
+    desc: '优化投稿 Cover Letter 的表达',
+    text: `Please polish the following cover letter for a journal submission. Focus on:
+1. Opening: Clearly state the manuscript title and target journal
+2. Motivation: Explain why the research is important and timely
+3. Key findings: Highlight 2-3 most significant results with quantitative data
+4. Novelty: Clearly state what is new compared to existing literature
+5. Fit: Explain why this journal is appropriate for the work
+6. Closing: Professional and concise
+
+Maintain a confident but not arrogant tone. Avoid excessive self-praise.
+
+Cover letter:
+[Paste your cover letter here]`
+  },
+  {
     id: 23, cat: 'cn_paper', title: '中英文对照翻译',
     desc: '中文学术文本翻译为英文（逐句对照）',
     text: `请将以下中文学术文本翻译为英文，要求：

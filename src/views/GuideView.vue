@@ -746,7 +746,213 @@
         </div>
       </div>
 
-      <!-- ===== 8. 写作工具 ===== -->
+      <!-- ===== 8. 文献检索技巧 ===== -->
+      <div v-if="activeCategory === 'search'" class="guide-section">
+        <h2>文献检索技巧</h2>
+
+        <div class="guide-card">
+          <h3>🔍 Google Scholar 高级搜索</h3>
+          <div class="tip-block">
+            <p class="tip-title">常用搜索语法</p>
+            <div class="table-block">
+              <table>
+                <thead>
+                  <tr><th>语法</th><th>功能</th><th>示例</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>"..."</td><td>精确匹配短语</td><td>"thermoelectric performance"</td></tr>
+                  <tr><td>author:</td><td>按作者搜索</td><td>author:"J He"</td></tr>
+                  <tr><td>intitle:</td><td>标题包含关键词</td><td>intitle:thermoelectric ZT</td></tr>
+                  <tr><td>site:</td><td>限定网站</td><td>site:nature.com thermoelectric</td></tr>
+                  <tr><td>-</td><td>排除关键词</td><td>thermoelectric -bismuth</td></tr>
+                  <tr><td>OR</td><td>二选一</td><td>"Seebeck coefficient" OR "thermopower"</td></tr>
+                  <tr><td>*</td><td>通配符</td><td>"thermoelectric * materials"</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="tip-title">实用技巧</p>
+            <ul class="tip-list">
+              <li>点击"被引用次数"查看引用该文章的后续研究</li>
+              <li>点击"相关文章"发现同领域文献</li>
+              <li>设置"创建快讯"跟踪新文献（邮件提醒）</li>
+              <li>使用"时间范围"筛选近 5 年文献</li>
+              <li>点击 📥 图标获取免费 PDF（如果有）</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="guide-card">
+          <h3>🔬 Web of Science / Scopus</h3>
+          <div class="tip-block">
+            <p class="tip-title">Web of Science 高级检索</p>
+            <ul class="tip-list">
+              <li><strong>TS=</strong> 主题检索（标题+摘要+关键词）</li>
+              <li><strong>TI=</strong> 标题检索</li>
+              <li><strong>AU=</strong> 作者检索</li>
+              <li><strong>SO=</strong> 期刊名检索</li>
+              <li>示例：TS=(thermoelectric AND "SnSe" AND ZT) AND PY=2020-2024</li>
+            </ul>
+            <p class="tip-title">引文分析功能</p>
+            <ul class="tip-list">
+              <li><strong>Cited References：</strong>查看该文章引用了哪些文献（追溯上游）</li>
+              <li><strong>Times Cited：</strong>查看谁引用了该文章（追踪下游）</li>
+              <li><strong>Related Records：</strong>找到引用相同文献的文章（同领域）</li>
+              <li><strong>创建引文报告：</strong>分析 H-index、年引用趋势</li>
+            </ul>
+            <p class="tip-title">Scopus 特色</p>
+            <ul class="tip-list">
+              <li>覆盖范围更广（包含更多会议论文）</li>
+              <li>作者档案页面展示完整的发表记录和引用统计</li>
+              <li>SciVal 分析工具：机构/国家层面的科研产出分析</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="guide-card">
+          <h3>📚 专业数据库</h3>
+          <div class="table-block">
+            <table>
+              <thead>
+                <tr><th>数据库</th><th>学科领域</th><th>特色</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>PubMed</td><td>生物医学</td><td>免费，MeSH 主题词检索</td></tr>
+                <tr><td>IEEE Xplore</td><td>电子/计算机</td><td>IEEE 会议和期刊</td></tr>
+                <tr><td>ACS Publications</td><td>化学</td><td>ACS 旗下期刊全文</td></tr>
+                <tr><td>SpringerLink</td><td>综合</td><td>Springer 期刊和图书</td></tr>
+                <tr><td>ScienceDirect</td><td>综合</td><td>Elsevier 期刊全文</td></tr>
+                <tr><td>arXiv</td><td>物理/数学/CS</td><td>预印本，最新研究</td></tr>
+                <tr><td>CNKI / 万方</td><td>中文学术</td><td>中文期刊和学位论文</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="guide-card">
+          <h3>📋 文献管理最佳实践</h3>
+          <div class="tip-block">
+            <p class="tip-title">Zotero 使用技巧</p>
+            <ul class="tip-list">
+              <li>安装浏览器插件，一键抓取网页文献信息</li>
+              <li>使用文件夹和标签分类管理文献</li>
+              <li>利用"笔记"功能记录阅读心得</li>
+              <li>使用 Zotero Connector 在线保存 PDF</li>
+              <li>通过 Groups 功能与团队共享文献库</li>
+            </ul>
+            <p class="tip-title">文献阅读策略</p>
+            <ul class="tip-list">
+              <li><strong>第一遍：</strong>读标题、摘要、结论（5 分钟判断相关性）</li>
+              <li><strong>第二遍：</strong>读图表和关键段落（15 分钟理解主要内容）</li>
+              <li><strong>第三遍：</strong>精读方法和讨论（深入理解细节）</li>
+              <li>建立文献笔记模板：研究问题 / 方法 / 关键发现 / 局限性 / 对我的启发</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== 9. 学术社交 ===== -->
+      <div v-if="activeCategory === 'social'" class="guide-section">
+        <h2>学术社交与职业发展</h2>
+
+        <div class="guide-card">
+          <h3>🌐 学术社交平台</h3>
+          <div class="tip-block">
+            <p class="tip-title">ResearchGate</p>
+            <ul class="tip-list">
+              <li>创建个人档案，上传已发表论文（注意版权政策）</li>
+              <li>关注同领域研究者，追踪其最新工作</li>
+              <li>在"Questions"板块提问和回答学术问题</li>
+              <li>查看论文的阅读量和引用数据</li>
+              <li>Request full-text 功能获取全文</li>
+            </ul>
+            <p class="tip-title">Google Scholar Profile</p>
+            <ul class="tip-list">
+              <li>创建个人学术档案，自动追踪引用</li>
+              <li>验证机构邮箱，确保文章归属正确</li>
+              <li>定期检查合并重复条目</li>
+              <li>H-index 和 i10-index 是重要的学术指标</li>
+            </ul>
+            <p class="tip-title">ORCID</p>
+            <ul class="tip-list">
+              <li>全球唯一的研究者标识符</li>
+              <li>投稿时很多期刊要求填写 ORCID</li>
+              <li>自动关联你的发表记录</li>
+              <li>注册地址：orcid.org（免费）</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="guide-card">
+          <h3>🎤 学术会议技巧</h3>
+          <div class="tip-block">
+            <p class="tip-title">会前准备</p>
+            <ul class="tip-list">
+              <li>提前研究会议日程，标记感兴趣的报告</li>
+              <li>准备 30 秒的"电梯演讲"（Elevator Pitch）介绍自己的研究</li>
+              <li>打印名片或准备电子名片（含 ORCID 二维码）</li>
+              <li>准备 Poster 或 Talk 的英文版本</li>
+              <li>预约想见面的研究者（提前发邮件）</li>
+            </ul>
+            <p class="tip-title">Poster 展示技巧</p>
+            <ul class="tip-list">
+              <li>站在 Poster 旁主动与参观者交流</li>
+              <li>用 2-3 分钟简要介绍核心发现</li>
+              <li>准备常见问题的回答（方法细节、未来计划等）</li>
+              <li>准备名片或小纸条供参观者带走</li>
+            </ul>
+            <p class="tip-title">会后跟进</p>
+            <ul class="tip-list">
+              <li>24-48 小时内发邮件感谢交流</li>
+              <li>附上你的论文或 Poster PDF</li>
+              <li>在 LinkedIn 或 ResearchGate 添加联系</li>
+              <li>记录讨论的要点和后续行动</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="guide-card">
+          <h3>📧 学术邮件礼仪</h3>
+          <div class="tip-block">
+            <p class="tip-title">邮件格式规范</p>
+            <ul class="tip-list">
+              <li><strong>主题行：</strong>简洁明了，如 "Regarding collaboration on thermoelectric research"</li>
+              <li><strong>称呼：</strong>Dear Prof. / Dr. + 姓（不要用名，除非对方允许）</li>
+              <li><strong>正文：</strong>简短、有重点，每段不超过 3-4 句</li>
+              <li><strong>签名：</strong>包含姓名、职位、单位、邮箱</li>
+            </ul>
+            <p class="tip-title">常见错误</p>
+            <ul class="tip-list">
+              <li>❌ "Dear Teacher" → ✅ "Dear Prof. Smith"</li>
+              <li>❌ 写太长（教授没有时间读长邮件）</li>
+              <li>❌ 没有说明来意就要求帮助</li>
+              <li>❌ 忘记附上提到的附件</li>
+              <li>❌ 使用过于随意的语气（Hey, What's up）</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="guide-card">
+          <h3>📝 科研时间管理</h3>
+          <div class="tip-block">
+            <p class="tip-title">番茄工作法在科研中的应用</p>
+            <ul class="tip-list">
+              <li>25 分钟专注 + 5 分钟休息为一个番茄钟</li>
+              <li>适合：论文写作、数据分析、文献阅读</li>
+              <li>不适合：实验操作（需要连续时间）</li>
+              <li>每天设定番茄钟目标（如 8-10 个）</li>
+            </ul>
+            <p class="tip-title">每周计划模板</p>
+            <ul class="tip-list">
+              <li><strong>周一：</strong>制定本周目标，安排实验</li>
+              <li><strong>周二-周四：</strong>集中实验和数据处理</li>
+              <li><strong>周五：</strong>整理数据、写周报、规划下周</li>
+              <li>每天留 1-2 小时用于论文写作（不要等到实验全部完成）</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== 10. 写作工具 ===== -->
       <div v-if="activeCategory === 'tools'" class="guide-section">
         <h2>写作工具推荐</h2>
 
@@ -821,6 +1027,8 @@ export default {
         { id: 'submission', name: '投稿回复', icon: '📮' },
         { id: 'thermoelectric', name: '热电专用', icon: '🔬' },
         { id: 'chinese', name: '中文论文', icon: '🇨🇳' },
+        { id: 'search', name: '文献检索', icon: '🔍' },
+        { id: 'social', name: '学术社交', icon: '🤝' },
         { id: 'tools', name: '写作工具', icon: '🛠️' },
       ],
       phraseGroups: [

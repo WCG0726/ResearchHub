@@ -7,24 +7,37 @@
         <span class="nav-text">工作台</span>
       </router-link>
 
-      <div v-for="section in sections" :key="section.key" class="nav-group">
-        <div class="nav-section" @click="toggleSection(section.key)">
-          <span class="section-arrow" :class="{ open: isOpen(section.key) }">▶</span>
-          {{ section.label }}
+      <template v-for="section in sections" :key="section.key">
+        <!-- 单项目分组：直链 -->
+        <router-link
+          v-if="section.items.length === 1"
+          :to="section.items[0].to"
+          class="nav-item"
+          :class="{ active: $route.name === section.items[0].name }"
+        >
+          <span class="nav-icon">{{ section.items[0].icon }}</span>
+          <span class="nav-text">{{ section.items[0].text }}</span>
+        </router-link>
+        <!-- 多项目分组：折叠 -->
+        <div v-else class="nav-group">
+          <div class="nav-section" @click="toggleSection(section.key)">
+            <span class="section-arrow" :class="{ open: isOpen(section.key) }">▶</span>
+            {{ section.label }}
+          </div>
+          <div v-show="isOpen(section.key)" class="nav-group-body">
+            <router-link
+              v-for="item in section.items"
+              :key="item.to"
+              :to="item.to"
+              class="nav-item"
+              :class="{ active: $route.name === item.name }"
+            >
+              <span class="nav-icon">{{ item.icon }}</span>
+              <span class="nav-text">{{ item.text }}</span>
+            </router-link>
+          </div>
         </div>
-        <div v-show="isOpen(section.key)" class="nav-group-body">
-          <router-link
-            v-for="item in section.items"
-            :key="item.to"
-            :to="item.to"
-            class="nav-item"
-            :class="{ active: $route.name === item.name }"
-          >
-            <span class="nav-icon">{{ item.icon }}</span>
-            <span class="nav-text">{{ item.text }}</span>
-          </router-link>
-        </div>
-      </div>
+      </template>
     </nav>
 
     <div class="sidebar-footer">
@@ -56,8 +69,7 @@ const SECTIONS = [
       { to: '/translate', name: 'translate', icon: '🌐', text: '翻译' },
       { to: '/polish', name: 'polish', icon: '✨', text: '润色提示词' },
       { to: '/plot-tips', name: 'plot-tips', icon: '📐', text: '绘图技巧' },
-      { to: '/latex-snippets', name: 'latex-snippets', icon: 'Σ', text: 'LaTeX 片段' },
-      { to: '/latex-editor', name: 'latex-editor', icon: '🖊️', text: 'LaTeX 编辑' },
+      { to: '/latex-snippets', name: 'latex-snippets', icon: 'Σ', text: 'LaTeX' },
       { to: '/email-templates', name: 'email-templates', icon: '📧', text: '邮件模板' },
     ]
   },

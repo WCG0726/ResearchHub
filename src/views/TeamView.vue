@@ -249,7 +249,7 @@ export default {
         inspirations: this._inspirationsStore.inspirationCount,
         meetings: this._meetingsStore.meetingCount
       }
-      this.myStats = { ...myData, totalCheckins }
+      this.myStats = { ...myData, totalCheckins: myData.total }
 
       // 为所有成员生成排行数据（仅当前用户有本地数据，其他用户显示在线状态）
       this.allStats = {}

@@ -362,6 +362,108 @@ with open('band.yaml') as f:
 \\end{axis}</code></pre>
 <p><strong>技巧：</strong>用 \\pgfplotstableset 设置数据格式，支持误差棒</p>`,
     tools: ['LaTeX', 'pgfplots']
+  },
+  {
+    category: 'Python 绘图',
+    title: 'Matplotlib 常用图表模板',
+    content: `<p><strong>散点图 + 拟合线：</strong></p>
+<pre><code>import numpy as np
+import matplotlib.pyplot as plt
+from numpy.polynomial.polynomial import polyfit
+
+x, y = np.random.rand(2, 50)
+b, m = polyfit(x, y, 1)
+fig, ax = plt.subplots(figsize=(6, 4))
+ax.scatter(x, y, c='#4DBBD5', s=40, alpha=0.7, edgecolors='k', lw=0.5)
+ax.plot(x, b + m * x, 'r--', lw=1.5, label=f'y = {m:.2f}x + {b:.2f}')
+ax.set_xlabel('X label', fontsize=12)
+ax.set_ylabel('Y label', fontsize=12)
+ax.legend()
+plt.tight_layout()
+plt.savefig('scatter.pdf', dpi=300)</code></pre>
+<p><strong>柱状图（带误差棒）：</strong></p>
+<pre><code>labels = ['A', 'B', 'C', 'D']
+values = [2.3, 3.1, 1.8, 4.2]
+errors = [0.2, 0.3, 0.15, 0.25]
+fig, ax = plt.subplots(figsize=(6, 4))
+ax.bar(labels, values, yerr=errors, capsize=5, color='#E64B35', edgecolor='k', lw=0.8)
+ax.set_ylabel('ZT')
+plt.tight_layout()</code></pre>`,
+    tools: ['Python', 'Matplotlib']
+  },
+  {
+    category: 'Graphical Abstract',
+    title: 'Graphical Abstract 制作要点',
+    content: `<p><strong>什么是 Graphical Abstract：</strong></p>
+<ul>
+<li>期刊要求的图片摘要，一图概括论文核心发现</li>
+<li>尺寸通常 530 × 600 pixels（看期刊要求）</li>
+</ul>
+<p><strong>设计原则：</strong></p>
+<ul>
+<li><strong>简洁：</strong>只展示最核心的信息，避免文字过多</li>
+<li><strong>视觉层次：</strong>用箭头、颜色引导阅读顺序</li>
+<li><strong>配色：</strong>与论文配色一致，不超过 3-4 种颜色</li>
+<li><strong>字体：</strong>清晰可读，最小 10pt</li>
+<li><strong>背景：</strong>白色或浅色，避免花哨</li>
+</ul>
+<p><strong>制作工具：</strong></p>
+<ul>
+<li>PowerPoint（最常用，导出高分辨率 PNG）</li>
+<li>Adobe Illustrator（专业矢量图）</li>
+<li>Biorender（生物/化学领域模板丰富）</li>
+<li>Canva（快速出图）</li>
+</ul>
+<p><strong>常见结构：</strong>左→右 或 上→下 流程图，展示"问题→方法→结果"</p>`,
+    tools: ['PowerPoint', 'Illustrator', 'Biorender', 'Canva']
+  },
+  {
+    category: '图表选择',
+    title: '常见图表类型选择指南',
+    content: `<p><strong>根据数据类型选择图表：</strong></p>
+<table>
+<tr><th>数据类型</th><th>推荐图表</th><th>适用场景</th></tr>
+<tr><td>趋势变化</td><td>折线图</td><td>温度-性能曲线、时间序列</td></tr>
+<tr><td>分类比较</td><td>柱状图</td><td>不同样品性能对比</td></tr>
+<tr><td>分布关系</td><td>散点图</td><td>相关性分析、数据分布</td></tr>
+<tr><td>占比构成</td><td>饼图/环形图</td><td>成分比例（谨慎使用）</td></tr>
+<tr><td>多维数据</td><td>热图 (heatmap)</td><td>参数优化、矩阵数据</td></tr>
+<tr><td>层级关系</td><td>堆叠柱状图</td><td>热导率分解（晶格+电子）</td></tr>
+<tr><td>三维数据</td><td>等高线图/3D surface</td><td>相图、参数空间扫描</td></tr>
+</table>
+<p><strong>注意事项：</strong></p>
+<ul>
+<li>避免 3D 图（除非必要），2D 更清晰</li>
+<li>饼图慎用，柱状图通常更清晰</li>
+<li>双 Y 轴图容易误导，尽量避免</li>
+<li>箱线图适合展示数据分布和离群值</li>
+</ul>`,
+    tools: ['Origin', 'Python', 'Excel']
+  },
+  {
+    category: 'Origin 绘图',
+    title: 'Origin 模板与批量绑图',
+    content: `<p><strong>保存和使用模板：</strong></p>
+<ol>
+<li>做好一张满意的图后：File → Save Template As (.otp)</li>
+<li>下次使用：File → New → Graph from Template</li>
+<li>模板保存了坐标轴样式、配色、字体等所有设置</li>
+</ol>
+<p><strong>批量处理多个数据：</strong></p>
+<ul>
+<li>选中多个工作表 → Plot → Multi-Curve → 系列自动绑图</li>
+<li>使用 Analysis → Batch Processing 批量分析</li>
+<li>用 LabTalk 脚本自动化重复操作</li>
+</ul>
+<p><strong>Origin 快捷操作：</strong></p>
+<ul>
+<li>双击坐标轴 → 打开坐标轴设置</li>
+<li>双击图例 → 编辑图例内容</li>
+<li>Ctrl+T → 快速添加文本标注</li>
+<li>右键曲线 → Properties → 修改样式</li>
+</ul>
+<p><strong>导出设置：</strong>File → Export Graph → 格式选 TIFF/EPS，分辨率 300+ dpi</p>`,
+    tools: ['Origin']
   }
 ]
 

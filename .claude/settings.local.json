@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(curl -s http://localhost:5173/ResearchHub/)",
+      "mcp__playwright__browser_navigate",
+      "Bash(node -e ' *)",
+      "Bash(git commit -m ' *)"
+    ]
+  }
+}
