@@ -29,7 +29,7 @@
 
     <div class="sidebar-footer">
       <button class="btn-logout" @click="handleLogout">退出登录</button>
-      <div class="version">v2.4.0</div>
+      <div class="version">v2.5.0</div>
     </div>
   </aside>
 </template>
@@ -46,6 +46,7 @@ const SECTIONS = [
       { to: '/lit-notes', name: 'lit-notes', icon: '📖', text: '文献笔记' },
       { to: '/experiment', name: 'experiment', icon: '🔬', text: '实验记录' },
       { to: '/writing', name: 'writing', icon: '📄', text: '论文写作' },
+      { to: '/progress', name: 'progress', icon: '📈', text: '科研进度' },
       { to: '/guide', name: 'guide', icon: '📚', text: '写作指南' },
     ]
   },

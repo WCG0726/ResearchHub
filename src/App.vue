@@ -5,32 +5,38 @@
       <div class="layout">
         <SidebarNav :open="sidebarOpen" @close="sidebarOpen = false" />
         <main class="main" @click="sidebarOpen = false">
-          <router-view v-slot="{ Component }">
-            <transition name="page" mode="out-in">
-              <component :is="Component" />
-            </transition>
-          </router-view>
+          <ErrorBoundary>
+            <router-view v-slot="{ Component }">
+              <transition name="page" mode="out-in">
+                <component :is="Component" />
+              </transition>
+            </router-view>
+          </ErrorBoundary>
         </main>
       </div>
     </template>
     <router-view v-else />
+    <QuickNote v-if="!isLoginPage" :show="showQuickNote" @close="showQuickNote = false" />
   </div>
 </template>
 
 <script>
 import HeaderNav from './components/HeaderNav.vue'
 import SidebarNav from './components/SidebarNav.vue'
+import ErrorBoundary from './components/ErrorBoundary.vue'
+import QuickNote from './components/QuickNote.vue'
 import { getTheme, setTheme } from './utils/storage'
 import { getCurrentUser } from './utils/auth'
 import { initPresence, stopPresence } from './utils/presence'
 
 export default {
   name: 'App',
-  components: { HeaderNav, SidebarNav },
+  components: { HeaderNav, SidebarNav, ErrorBoundary, QuickNote },
   data() {
     return {
       isDark: getTheme() === 'dark',
-      sidebarOpen: false
+      sidebarOpen: false,
+      showQuickNote: false
     }
   },
   computed: {
@@ -76,6 +82,11 @@ export default {
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'D') {
         e.preventDefault()
         this.toggleTheme()
+      }
+      // Ctrl+Shift+N: 快捷笔记
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'N') {
+        e.preventDefault()
+        this.showQuickNote = !this.showQuickNote
       }
     }
   },

@@ -238,40 +238,81 @@
 </template>
 
 <script>
-import { getStreak, getRecords, getProfile, getTodayClockStatus, getPlans, getCheckins, getCalendarEvents, getInspirations, getLitNotes } from '../utils/storage'
-import { getCurrentUser } from '../utils/auth'
-import { formatDate, toDateString, getToday } from '../utils/date'
-
-const QUOTES = [
-  { text: '科学是永无止境的，它是一个永恒之谜。', author: '爱因斯坦' },
-  { text: '研究要有恒心，有志者事竟成。', author: '钱学森' },
-  { text: '在科学上没有平坦的大道，只有不畏劳苦沿着陡峭山路攀登的人，才有希望达到光辉的顶点。', author: '马克思' },
-  { text: '好奇心是科学工作者产生无穷毅力和耐心的源泉。', author: '爱因斯坦' },
-  { text: '一切推理都必须从观察与实验中得来。', author: '伽利略' },
-  { text: '纸上得来终觉浅，绝知此事要躬行。', author: '陆游' },
-]
+import { formatDate, toDateString } from '../utils/date'
+import { getCalendarEvents } from '../utils/storage'
+import { generateCalendarDays } from '../utils/calendar'
+import { getRandomQuote } from '../data/quotes'
+import { useRecordsStore } from '../stores/records'
+import { useLitNotesStore } from '../stores/litNotes'
+import { useInspirationsStore } from '../stores/inspirations'
+import { usePlansStore } from '../stores/plans'
+import { useCheckinsStore } from '../stores/checkins'
+import { useProfileStore } from '../stores/profile'
 
 export default {
   name: 'DashboardView',
   data() {
     const now = new Date()
     return {
-      nickname: getProfile().nickname,
-      streak: { current: 0, longest: 0, total: 0 },
-      records: [],
-      inspirations: [],
-      litNotes: [],
-      todos: [],
-      clockStatus: { clockedIn: false, clockedOut: false },
-      quote: QUOTES[Math.floor(Math.random() * QUOTES.length)],
+      quote: getRandomQuote(),
       currentTime: now.toLocaleTimeString('zh-CN'),
       miniYear: now.getFullYear(),
       miniMonth: now.getMonth() + 1,
-      checkins: {},
-      events: {}
+      events: {},
+      _clockTimer: null
     }
   },
   computed: {
+    nickname() {
+      const profileStore = useProfileStore()
+      profileStore.load()
+      return profileStore.profile.nickname
+    },
+    streak() {
+      const store = useCheckinsStore()
+      store.load()
+      return store.streak
+    },
+    clockStatus() {
+      const store = useCheckinsStore()
+      store.load()
+      return store.clockStatus
+    },
+    records() {
+      const store = useRecordsStore()
+      store.load()
+      return store.records
+    },
+    recentRecords() {
+      const store = useRecordsStore()
+      store.load()
+      return store.recentRecords
+    },
+    inspirations() {
+      const store = useInspirationsStore()
+      store.load()
+      return store.inspirations
+    },
+    recentInspirations() {
+      const store = useInspirationsStore()
+      store.load()
+      return store.recentInspirations
+    },
+    litNotes() {
+      const store = useLitNotesStore()
+      store.load()
+      return store.notes
+    },
+    recentLitNotes() {
+      const store = useLitNotesStore()
+      store.load()
+      return store.recentNotes
+    },
+    todos() {
+      const store = usePlansStore()
+      store.load()
+      return store.todos
+    },
     greeting() {
       const h = new Date().getHours()
       if (h < 6) return '夜深了'
@@ -287,40 +328,10 @@ export default {
     weekdayText() {
       return '星期' + ['日', '一', '二', '三', '四', '五', '六'][new Date().getDay()]
     },
-    recentRecords() {
-      return this.records.slice(0, 5)
-    },
-    recentInspirations() {
-      return [...this.inspirations].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 4)
-    },
-    recentLitNotes() {
-      return this.litNotes.slice(0, 4)
-    },
     miniCalendarDays() {
-      const year = this.miniYear
-      const month = this.miniMonth - 1
-      const firstDay = new Date(year, month, 1)
-      const lastDay = new Date(year, month + 1, 0)
-      const today = new Date().toISOString().split('T')[0]
-      const days = []
-      const start = firstDay.getDay()
-      for (let i = start - 1; i >= 0; i--) {
-        const d = new Date(year, month, -i)
-        const ds = this.fmtDate(d)
-        days.push({ date: d.getDate(), currentMonth: false, isToday: ds === today, isChecked: !!this.checkins[ds], hasEvent: !!(this.events[ds]?.length), isWeekend: d.getDay() === 0 || d.getDay() === 6 })
-      }
-      for (let i = 1; i <= lastDay.getDate(); i++) {
-        const d = new Date(year, month, i)
-        const ds = this.fmtDate(d)
-        days.push({ date: i, currentMonth: true, isToday: ds === today, isChecked: !!this.checkins[ds], hasEvent: !!(this.events[ds]?.length), isWeekend: d.getDay() === 0 || d.getDay() === 6 })
-      }
-      const rem = 42 - days.length
-      for (let i = 1; i <= rem; i++) {
-        const d = new Date(year, month + 1, i)
-        const ds = this.fmtDate(d)
-        days.push({ date: i, currentMonth: false, isToday: ds === today, isChecked: !!this.checkins[ds], hasEvent: !!(this.events[ds]?.length), isWeekend: d.getDay() === 0 || d.getDay() === 6 })
-      }
-      return days
+      const checkinsStore = useCheckinsStore()
+      checkinsStore.load()
+      return generateCalendarDays(this.miniYear, this.miniMonth - 1, checkinsStore.checkins, this.events)
     },
     upcomingEvents() {
       const today = new Date()
@@ -328,7 +339,7 @@ export default {
       for (let i = 0; i < 30; i++) {
         const d = new Date(today)
         d.setDate(d.getDate() + i)
-        const ds = this.fmtDate(d)
+        const ds = toDateString(d)
         const evs = this.events[ds]
         if (evs) {
           for (const ev of evs) {
@@ -344,9 +355,6 @@ export default {
     }
   },
   methods: {
-    fmtDate(d) {
-      return toDateString(d)
-    },
     formatDate,
     miniPrev() {
       if (this.miniMonth === 1) { this.miniMonth = 12; this.miniYear-- }
@@ -357,21 +365,12 @@ export default {
       else this.miniMonth++
     },
     loadData() {
-      this.streak = getStreak()
-      this.records = getRecords()
-      this.clockStatus = getTodayClockStatus()
-      this.todos = getPlans().slice(0, 5)
-      this.checkins = getCheckins()
       this.events = getCalendarEvents()
-      this.inspirations = getInspirations()
-      this.litNotes = getLitNotes()
     },
     startClock() {
-      const update = () => {
+      this._clockTimer = setInterval(() => {
         this.currentTime = new Date().toLocaleTimeString('zh-CN')
-        this._clockRaf = requestAnimationFrame(update)
-      }
-      this._clockRaf = requestAnimationFrame(update)
+      }, 1000)
     }
   },
   mounted() {
@@ -379,7 +378,7 @@ export default {
     this.startClock()
   },
   beforeUnmount() {
-    if (this._clockRaf) cancelAnimationFrame(this._clockRaf)
+    if (this._clockTimer) clearInterval(this._clockTimer)
   }
 }
 </script>

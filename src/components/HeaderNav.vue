@@ -115,8 +115,13 @@
 </template>
 
 <script>
-import { getProfile, setProfile, getRecords, getLitNotes, getInspirations, getMeetings, getExperiments } from '../utils/storage.js'
 import { getCurrentUser } from '../utils/auth.js'
+import { useProfileStore } from '../stores/profile.js'
+import { useRecordsStore } from '../stores/records.js'
+import { useLitNotesStore } from '../stores/litNotes.js'
+import { useInspirationsStore } from '../stores/inspirations.js'
+import { useMeetingsStore } from '../stores/meetings.js'
+import { useExperimentsStore } from '../stores/experiments.js'
 
 export default {
   name: 'HeaderNav',
@@ -125,13 +130,7 @@ export default {
   },
   emits: ['toggle-theme', 'toggle-sidebar'],
   data() {
-    const user = getCurrentUser()
-    const profile = getProfile()
-    if (user && user.nickname) {
-      profile.nickname = user.nickname
-    }
     return {
-      profile,
       showEditor: false,
       editName: '',
       editAvatar: '',
@@ -139,7 +138,60 @@ export default {
       avatarOptions: ['🧑‍🔬', '👩‍🔬', '👨‍🔬', '🧑‍💻', '👩‍💻', '👨‍💻', '📚', '🔬', '🧪', '🎯', '🌟', '⚡'],
       showSearch: false,
       searchQuery: '',
-      selectedIndex: 0
+      debouncedQuery: '',
+      selectedIndex: 0,
+      _searchTimer: null
+    }
+  },
+  computed: {
+    profile() {
+      const profileStore = useProfileStore()
+      profileStore.load()
+      const user = getCurrentUser()
+      const p = { ...profileStore.profile }
+      if (user && user.nickname) p.nickname = user.nickname
+      return p
+    },
+    searchResults() {
+      const q = this.debouncedQuery.toLowerCase()
+      if (!q) return []
+      const results = []
+      const recordsStore = useRecordsStore()
+      const litNotesStore = useLitNotesStore()
+      const inspirationsStore = useInspirationsStore()
+      const meetingsStore = useMeetingsStore()
+      const experimentsStore = useExperimentsStore()
+      recordsStore.load()
+      litNotesStore.load()
+      inspirationsStore.load()
+      meetingsStore.load()
+      experimentsStore.load()
+      for (const r of recordsStore.records) {
+        if ((r.title && r.title.toLowerCase().includes(q)) || (r.content && r.content.toLowerCase().includes(q))) {
+          results.push({ key: 'record-' + r.id, icon: '📝', title: r.title, meta: (r.content || '').slice(0, 60), type: '记录', to: '/records' })
+        }
+      }
+      for (const n of litNotesStore.notes) {
+        if ((n.title && n.title.toLowerCase().includes(q)) || (n.authors && n.authors.toLowerCase().includes(q))) {
+          results.push({ key: 'lit-' + n.id, icon: '📖', title: n.title, meta: n.authors || '', type: '笔记', to: '/lit-notes' })
+        }
+      }
+      for (const i of inspirationsStore.inspirations) {
+        if ((i.title && i.title.toLowerCase().includes(q)) || (i.content && i.content.toLowerCase().includes(q))) {
+          results.push({ key: 'insp-' + i.id, icon: '💡', title: i.title, meta: (i.content || '').slice(0, 60), type: '灵感', to: '/inspiration' })
+        }
+      }
+      for (const m of meetingsStore.meetings) {
+        if ((m.topics && m.topics.toLowerCase().includes(q)) || (m.feedback && m.feedback.toLowerCase().includes(q))) {
+          results.push({ key: 'meet-' + m.id, icon: '🗣️', title: m.date + ' ' + (m.type || ''), meta: (m.topics || '').slice(0, 60), type: '会议', to: '/meeting' })
+        }
+      }
+      for (const e of experimentsStore.experiments) {
+        if ((e.title && e.title.toLowerCase().includes(q)) || (e.content && e.content.toLowerCase().includes(q))) {
+          results.push({ key: 'exp-' + e.id, icon: '🔬', title: e.title, meta: (e.content || '').slice(0, 60), type: '实验', to: '/experiment' })
+        }
+      }
+      return results.slice(0, 12)
     }
   },
   watch: {
@@ -153,50 +205,17 @@ export default {
     showSearch(val) {
       if (val) {
         this.searchQuery = ''
+        this.debouncedQuery = ''
         this.selectedIndex = 0
         this.$nextTick(() => this.$refs.searchInput?.focus())
       }
     },
-    searchQuery() {
+    searchQuery(val) {
       this.selectedIndex = 0
-    }
-  },
-  computed: {
-    searchResults() {
-      const q = this.searchQuery.toLowerCase()
-      if (!q) return []
-      const results = []
-      // 搜索科研记录
-      for (const r of getRecords()) {
-        if ((r.title && r.title.toLowerCase().includes(q)) || (r.content && r.content.toLowerCase().includes(q))) {
-          results.push({ key: 'record-' + r.id, icon: '📝', title: r.title, meta: (r.content || '').slice(0, 60), type: '记录', to: '/records' })
-        }
-      }
-      // 搜索文献笔记
-      for (const n of getLitNotes()) {
-        if ((n.title && n.title.toLowerCase().includes(q)) || (n.authors && n.authors.toLowerCase().includes(q))) {
-          results.push({ key: 'lit-' + n.id, icon: '📖', title: n.title, meta: n.authors || '', type: '笔记', to: '/lit-notes' })
-        }
-      }
-      // 搜索灵感
-      for (const i of getInspirations()) {
-        if ((i.title && i.title.toLowerCase().includes(q)) || (i.content && i.content.toLowerCase().includes(q))) {
-          results.push({ key: 'insp-' + i.id, icon: '💡', title: i.title, meta: (i.content || '').slice(0, 60), type: '灵感', to: '/inspiration' })
-        }
-      }
-      // 搜索会议
-      for (const m of getMeetings()) {
-        if ((m.topics && m.topics.toLowerCase().includes(q)) || (m.feedback && m.feedback.toLowerCase().includes(q))) {
-          results.push({ key: 'meet-' + m.id, icon: '🗣️', title: m.date + ' ' + (m.type || ''), meta: (m.topics || '').slice(0, 60), type: '会议', to: '/meeting' })
-        }
-      }
-      // 搜索实验
-      for (const e of getExperiments()) {
-        if ((e.title && e.title.toLowerCase().includes(q)) || (e.content && e.content.toLowerCase().includes(q))) {
-          results.push({ key: 'exp-' + e.id, icon: '🔬', title: e.title, meta: (e.content || '').slice(0, 60), type: '实验', to: '/experiment' })
-        }
-      }
-      return results.slice(0, 12)
+      clearTimeout(this._searchTimer)
+      this._searchTimer = setTimeout(() => {
+        this.debouncedQuery = val
+      }, 300)
     }
   },
   methods: {
@@ -216,12 +235,12 @@ export default {
     },
     saveProfile() {
       const nickname = this.editName.trim() || '科研人'
-      this.profile = {
+      const profileStore = useProfileStore()
+      profileStore.updateProfile({
         nickname,
         avatar: this.editAvatar,
         avatarData: this.editAvatarData
-      }
-      setProfile(this.profile)
+      })
       this.showEditor = false
     },
     openSearch() {
@@ -245,6 +264,9 @@ export default {
         this.$router.push(r.to)
       }
     }
+  },
+  beforeUnmount() {
+    clearTimeout(this._searchTimer)
   }
 }
 </script>
