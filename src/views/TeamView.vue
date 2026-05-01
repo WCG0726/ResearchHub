@@ -237,13 +237,14 @@ export default {
       }
       this.myStats = { ...myData, totalCheckins }
 
-      // 为所有成员生成排行数据
+      // 为所有成员生成排行数据（仅当前用户有本地数据，其他用户显示在线状态）
       this.allStats = {}
       this.members.forEach(m => {
         if (m.username === this.currentUser) {
           this.allStats[m.username] = myData
         } else {
-          this.allStats[m.username] = myData
+          // 其他浏览器用户的本地数据无法访问，显示 0
+          this.allStats[m.username] = { streak: 0, total: 0, records: 0, experiments: 0, litNotes: 0, pomodoro: 0, inspirations: 0, meetings: 0 }
         }
       })
     }

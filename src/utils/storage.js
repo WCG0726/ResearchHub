@@ -380,7 +380,7 @@ export function deleteExperiment(id) {
   setStorage('experiments', getExperiments().filter(e => e.id !== id))
 }
 
-// 数据分析
+// 绘图技巧
 export function getDatasets() {
   return getStorage('datasets', [])
 }

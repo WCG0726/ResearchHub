@@ -29,7 +29,7 @@
 
     <div class="sidebar-footer">
       <button class="btn-logout" @click="handleLogout">退出登录</button>
-      <div class="version">v2.3.0</div>
+      <div class="version">v2.4.0</div>
     </div>
   </aside>
 </template>

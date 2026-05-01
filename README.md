@@ -15,7 +15,7 @@
 | 实验记录 | 样品编号管理、实验条件/参数、步骤记录、结果记录 |
 | 论文写作 | 项目管理、章节进度追踪、状态管理 |
 | 写作指南 | 英文论文结构、中文论文规范、学术句式库、投稿检查清单 |
-| 数据分析 | 折线图/柱状图/散点图，数据录入与可视化 |
+| 绘图技巧 | Origin/Python/PPT/ImageJ/COMSOL/LaTeX 绑图技巧与自定义笔记 |
 | 润色提示词 | 英文/中文润色、语法检查、中译英、投稿回复等 20+ 提示词模板 |
 | 翻译工具 | 中英文互译、学术术语翻译 |
 | LaTeX 片段 | 20+ 内置公式/表格/图片/引用模板，自定义片段 |
@@ -30,8 +30,8 @@
 | 番茄钟 | 专注计时、休息提醒、累计统计、浏览器通知 |
 | 喝水提醒 | 每日饮水记录与目标追踪 |
 | 吃什么 | 餐食推荐与记录 |
-| 排行榜 | 团队打卡排名、实时在线状态（Firebase 跨浏览器同步） |
-| 学术导航 | 40+ 常用学术网站、自定义收藏链接、玻尔学术等 |
+| 排行榜 | 个人统计展示、团队成员在线状态（Firebase 跨浏览器同步） |
+| 学术导航 | 60+ 常用学术网站、自定义收藏链接、玻尔学术等 |
 
 ## 特色功能
 
@@ -71,8 +71,7 @@ ResearchHub/
 │   ├── assets/styles/          # 全局样式与主题变量
 │   ├── components/
 │   │   ├── HeaderNav.vue       # 顶部导航栏
-│   │   ├── SidebarNav.vue      # 侧边栏导航
-│   │   └── BackgroundDecor.vue # 背景校徽装饰
+│   │   └── SidebarNav.vue      # 侧边栏导航
 │   ├── router/index.js         # 路由配置与鉴权守卫
 │   ├── utils/
 │   │   ├── auth.js             # 用户认证（登录/注册）
@@ -89,7 +88,7 @@ ResearchHub/
 │       ├── ExperimentView.vue     # 实验记录
 │       ├── WritingView.vue        # 论文写作
 │       ├── GuideView.vue          # 写作指南（中英文）
-│       ├── DataAnalysisView.vue   # 数据分析（图表）
+│       ├── PlotTipsView.vue        # 绘图技巧
 │       ├── TranslateView.vue      # 翻译工具
 │       ├── PolishView.vue         # 润色提示词
 │       ├── LatexSnippetsView.vue  # LaTeX 片段库
@@ -110,6 +109,13 @@ ResearchHub/
 ├── index.html
 └── package.json
 ```
+
+## 已知限制
+
+- **数据存储：** 所有数据存储在浏览器 localStorage 中（约 5MB 上限），无云端同步。排行榜仅显示当前用户的统计数据，其他成员仅显示在线状态。
+- **用户认证：** 密码使用 base64 编码存储，仅提供基本的多用户隔离，不提供真正的安全性保障。
+- **LaTeX 预览：** 编辑器的预览功能基于正则表达式解析，仅支持基本命令（`\title`、`\section`、`\textbf` 等），复杂 LaTeX 公式无法正确渲染。
+- **浏览器兼容：** 建议使用 Chrome/Edge/Firefox 最新版本，Safari 部分 CSS 特性可能不支持。
 
 ## 许可证
 
