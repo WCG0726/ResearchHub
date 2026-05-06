@@ -35,18 +35,58 @@
 
     <!-- 选中论文详情 -->
     <div v-if="selectedPaper" class="card paper-detail">
-      <h3 class="card-title">{{ selectedPaper.title }}</h3>
+      <div class="paper-detail-header">
+        <div>
+          <h3 class="card-title">{{ selectedPaper.title }}</h3>
+          <div class="paper-meta">
+            <select v-model="selectedPaper.status" class="paper-status-select" @change="savePapers">
+              <option>构思</option>
+              <option>写作中</option>
+              <option>修改中</option>
+              <option>已投稿</option>
+              <option>已接收</option>
+            </select>
+            <span class="paper-updated">最后更新：{{ formatDateTime(selectedPaper.updatedAt || selectedPaper.createdAt) }}</span>
+          </div>
+        </div>
+        <div class="paper-detail-actions">
+          <button class="btn btn-outline btn-sm" @click="aiGenerateAbstract" :disabled="aiLoading">
+            {{ aiLoading ? '生成中...' : 'AI 生成摘要' }}
+          </button>
+          <button class="btn btn-outline btn-sm btn-danger" @click="deletePaper(selectedPaper.id)">删除论文</button>
+        </div>
+      </div>
+
+      <!-- AI 摘要结果 -->
+      <div v-if="aiAbstractResult" class="ai-result-box">
+        <div class="ai-result-header">
+          <span>AI 生成的摘要</span>
+          <div>
+            <button class="btn btn-primary btn-xs" @click="copyAbstract">复制</button>
+            <button class="btn-close-sm" @click="aiAbstractResult = ''">×</button>
+          </div>
+        </div>
+        <pre class="ai-result-text">{{ aiAbstractResult }}</pre>
+      </div>
 
       <!-- 章节进度 -->
       <div class="sections">
         <div v-for="(section, idx) in selectedPaper.sections" :key="idx" class="section-item">
           <div class="section-header">
             <span class="section-name">{{ section.name }}</span>
-            <select v-model="section.status" class="section-status" @change="savePapers">
-              <option value="未开始">未开始</option>
-              <option value="进行中">进行中</option>
-              <option value="已完成">已完成</option>
-            </select>
+            <div class="section-actions">
+              <button
+                class="btn btn-outline btn-xs"
+                @click="aiDraftSection(idx)"
+                :disabled="aiLoading"
+                title="AI 辅助生成草稿"
+              >AI 辅助</button>
+              <select v-model="section.status" class="section-status" @change="savePapers">
+                <option value="未开始">未开始</option>
+                <option value="进行中">进行中</option>
+                <option value="已完成">已完成</option>
+              </select>
+            </div>
           </div>
           <textarea
             v-model="section.notes"
@@ -76,7 +116,19 @@
 
         <div class="form-group">
           <label>目标期刊</label>
-          <input v-model="newPaper.journal" class="input" placeholder="如: Nature, Science, ACS Nano" />
+          <div class="input-with-btn">
+            <input v-model="newPaper.journal" class="input" placeholder="如: Nature, Science, ACS Nano" />
+            <button class="btn btn-outline btn-sm" @click="aiRecommendJournals" :disabled="aiLoading || !newPaper.title">
+              {{ aiLoading ? '推荐中...' : 'AI 推荐' }}
+            </button>
+          </div>
+          <div v-if="aiJournalResult" class="ai-result-box">
+            <div class="ai-result-header">
+              <span>AI 推荐结果</span>
+              <button class="btn-close-sm" @click="aiJournalResult = ''">×</button>
+            </div>
+            <pre class="ai-result-text">{{ aiJournalResult }}</pre>
+          </div>
         </div>
 
         <div class="form-group">
@@ -95,6 +147,7 @@
 
 <script>
 import { useWritingStore } from '../stores/writing'
+import { recommendJournals, generateAbstract, generateSectionDraft, isAIConfigured } from '../utils/ai'
 
 export default {
   name: 'WritingView',
@@ -108,7 +161,11 @@ export default {
         title: '',
         journal: '',
         topic: ''
-      }
+      },
+      aiLoading: false,
+      aiJournalResult: '',
+      aiAbstractResult: '',
+      aiError: ''
     }
   },
   methods: {
@@ -132,7 +189,8 @@ export default {
           { name: '结论 (Conclusion)', status: '未开始', notes: '' },
           { name: '参考文献 (References)', status: '未开始', notes: '' },
         ],
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       }
       this.papers.unshift(paper)
       this.savePapers()
@@ -144,16 +202,78 @@ export default {
           const completed = p.sections.filter(s => s.status === '已完成').length
           p.progress = Math.round((completed / p.sections.length) * 100)
         }
+        p.updatedAt = new Date().toISOString()
       })
       this.writingStore.save({ papers: this.papers })
+    },
+    deletePaper(id) {
+      if (!confirm('确定删除这篇论文？')) return
+      this.papers = this.papers.filter(p => p.id !== id)
+      this.selectedPaper = null
+      this.savePapers()
     },
     closeEditor() {
       this.showEditor = false
       this.newPaper = { title: '', journal: '', topic: '' }
+      this.aiJournalResult = ''
     },
     getStatusType(status) {
-      const map = { '构思': 'primary', '写作中': 'warning', '修改中': 'info', '已投稿': 'success' }
+      const map = { '构思': 'primary', '写作中': 'warning', '修改中': 'info', '已投稿': 'success', '已接收': 'success' }
       return map[status] || 'primary'
+    },
+    formatDateTime(iso) {
+      if (!iso) return ''
+      const d = new Date(iso)
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+    },
+    async aiRecommendJournals() {
+      if (!isAIConfigured()) { alert('请先在设置中配置 AI API Key'); return }
+      this.aiLoading = true
+      this.aiJournalResult = ''
+      try {
+        this.aiJournalResult = await recommendJournals(this.newPaper.title, '', this.newPaper.topic)
+      } catch (e) {
+        alert('AI 推荐失败：' + e.message)
+      }
+      this.aiLoading = false
+    },
+    async aiDraftSection(idx) {
+      if (!isAIConfigured()) { alert('请先在设置中配置 AI API Key'); return }
+      if (!this.selectedPaper) return
+      const section = this.selectedPaper.sections[idx]
+      this.aiLoading = true
+      try {
+        const sectionName = section.name.replace(/\s*\(.*?\)/, '')
+        const draft = await generateSectionDraft(sectionName, this.selectedPaper.title, section.notes || this.selectedPaper.topic)
+        section.notes = (section.notes ? section.notes + '\n\n' : '') + '--- AI 生成草稿 ---\n' + draft
+        section.status = '进行中'
+        this.savePapers()
+      } catch (e) {
+        alert('AI 生成失败：' + e.message)
+      }
+      this.aiLoading = false
+    },
+    async aiGenerateAbstract() {
+      if (!isAIConfigured()) { alert('请先在设置中配置 AI API Key'); return }
+      if (!this.selectedPaper) return
+      const completedSections = this.selectedPaper.sections
+        .filter(s => s.status === '已完成' && s.notes)
+        .map(s => `## ${s.name}\n${s.notes}`)
+        .join('\n\n')
+      if (!completedSections) { alert('请先完成至少一个章节并填写笔记'); return }
+      this.aiLoading = true
+      this.aiAbstractResult = ''
+      try {
+        this.aiAbstractResult = await generateAbstract(this.selectedPaper.title, completedSections)
+      } catch (e) {
+        alert('AI 生成摘要失败：' + e.message)
+      }
+      this.aiLoading = false
+    },
+    copyAbstract() {
+      navigator.clipboard.writeText(this.aiAbstractResult).then(() => {
+        alert('已复制到剪贴板')
+      })
     },
     loadData() {
       this.writingStore.load()
@@ -352,4 +472,111 @@ export default {
   gap: 12px;
   margin-top: 24px;
 }
+
+.input-with-btn {
+  display: flex;
+  gap: 8px;
+}
+
+.input-with-btn .input { flex: 1; }
+
+.paper-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.paper-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.paper-status-select {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.paper-updated {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.paper-detail-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.btn-danger {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.btn-danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.section-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn-xs {
+  padding: 3px 10px;
+  font-size: 12px;
+  border-radius: var(--radius-sm);
+}
+
+.ai-result-box {
+  margin-top: 12px;
+  padding: 12px;
+  background: rgba(99, 102, 241, 0.05);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  border-radius: var(--radius);
+}
+
+.ai-result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.ai-result-text {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  font-family: inherit;
+  margin: 0;
+}
+
+.btn-close-sm {
+  border: none;
+  background: none;
+  font-size: 18px;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.btn-close-sm:hover { color: var(--text-primary); }
 </style>

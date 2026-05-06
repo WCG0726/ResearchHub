@@ -2,6 +2,11 @@
   <div class="guide-page">
     <h1 class="page-title">科研论文写作指南</h1>
 
+    <!-- 搜索栏 -->
+    <div class="guide-search">
+      <input v-model="searchQuery" class="guide-search-input" placeholder="搜索指南内容..." />
+    </div>
+
     <!-- 分类导航 -->
     <div class="guide-nav">
       <button
@@ -1018,6 +1023,7 @@ export default {
   name: 'GuideView',
   data() {
     return {
+      searchQuery: '',
       activeCategory: 'structure',
       categories: [
         { id: 'structure', name: '论文结构', icon: '📄' },
@@ -1142,6 +1148,28 @@ export default {
   font-size: 28px;
   font-weight: 700;
   margin-bottom: 24px;
+}
+
+.guide-search {
+  margin-bottom: 16px;
+}
+
+.guide-search-input {
+  width: 100%;
+  padding: 10px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.guide-search-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
 .guide-nav {

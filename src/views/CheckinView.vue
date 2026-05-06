@@ -121,12 +121,38 @@
         <div class="stat-label">📊 累计打卡</div>
       </div>
     </div>
+
+    <!-- 学术段位 -->
+    <div class="card rank-card">
+      <div class="rank-display">
+        <span class="rank-big-icon">{{ rankInfo.tier.icon }}</span>
+        <div class="rank-info">
+          <div class="rank-tier-name" :style="{ color: rankInfo.tier.color }">{{ rankInfo.tier.name }}</div>
+          <div class="rank-xp-text">{{ rankInfo.xp }} XP</div>
+          <div v-if="rankInfo.nextTier" class="rank-progress-wrap">
+            <div class="rank-progress-bar-lg">
+              <div class="rank-progress-fill-lg" :style="{ width: (rankInfo.progress * 100) + '%', background: rankInfo.nextTier.color }"></div>
+            </div>
+            <span class="rank-progress-label">距 {{ rankInfo.nextTier.name }} 还需 {{ rankInfo.nextTier.minXP - rankInfo.xp }} XP</span>
+          </div>
+          <div v-else class="rank-max-text">已达到最高段位！</div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 import { useCheckinsStore } from '../stores/checkins'
 import { useCalendarEventsStore } from '../stores/calendarEvents'
+import { usePomodoroStore } from '../stores/pomodoro'
+import { useRecordsStore } from '../stores/records'
+import { useLitNotesStore } from '../stores/litNotes'
+import { useExperimentsStore } from '../stores/experiments'
+import { useMilestonesStore } from '../stores/milestones'
+import { useMeetingsStore } from '../stores/meetings'
+import { useInspirationsStore } from '../stores/inspirations'
+import { calculateFromStores } from '../utils/rank'
 import { toDateString, formatTime } from '../utils/date'
 
 export default {
@@ -136,6 +162,13 @@ export default {
     return {
       _checkinsStore: useCheckinsStore(),
       _calendarEventsStore: useCalendarEventsStore(),
+      _pomodoroStore: usePomodoroStore(),
+      _recordsStore: useRecordsStore(),
+      _litNotesStore: useLitNotesStore(),
+      _experimentsStore: useExperimentsStore(),
+      _milestonesStore: useMilestonesStore(),
+      _meetingsStore: useMeetingsStore(),
+      _inspirationsStore: useInspirationsStore(),
       clockStatus: { clockedIn: false, clockedOut: false },
       streak: { current: 0, longest: 0, total: 0 },
       checkins: {},
@@ -186,7 +219,19 @@ export default {
     dayEvents() {
       if (!this.selectedDay) return []
       return this._calendarEventsStore.eventsForDate(this.selectedDay.fullDate)
-    }
+    },
+    rankInfo() {
+      return calculateFromStores({
+        checkinsStore: this._checkinsStore,
+        pomodoroStore: this._pomodoroStore,
+        recordsStore: this._recordsStore,
+        litNotesStore: this._litNotesStore,
+        experimentsStore: this._experimentsStore,
+        milestonesStore: this._milestonesStore,
+        meetingsStore: this._meetingsStore,
+        inspirationsStore: this._inspirationsStore,
+      })
+    },
   },
   methods: {
     formatDate(d) {
@@ -677,5 +722,60 @@ export default {
   font-size: 14px;
   color: var(--text-secondary);
   margin-top: 4px;
+}
+
+/* 段位卡片 */
+.rank-card {
+  margin-top: 20px;
+  padding: 24px;
+}
+
+.rank-display {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.rank-big-icon { font-size: 48px; }
+
+.rank-info { flex: 1; }
+
+.rank-tier-name {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.rank-xp-text {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.rank-progress-wrap { display: flex; flex-direction: column; gap: 4px; }
+
+.rank-progress-bar-lg {
+  width: 100%;
+  height: 6px;
+  background: var(--bg-secondary);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.rank-progress-fill-lg {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.6s ease;
+}
+
+.rank-progress-label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.rank-max-text {
+  font-size: 14px;
+  color: var(--warning);
+  font-weight: 500;
 }
 </style>

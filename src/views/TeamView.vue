@@ -75,6 +75,7 @@
           <div class="rank-info">
             <div class="rank-name-row">
               <span class="rank-name">{{ entry.nickname }}</span>
+              <span v-if="entry.tier" class="rank-tier-badge" :style="{ color: entry.tier.color }">{{ entry.tier.icon }}</span>
               <span v-if="entry.username === currentUser" class="rank-me-tag">我</span>
             </div>
             <span class="rank-status" :class="{ online: entry.online }">{{ entry.online ? '在线' : entry.lastSeen }}</span>
@@ -120,7 +121,9 @@ import { useMeetingsStore } from '../stores/meetings'
 import { useInspirationsStore } from '../stores/inspirations'
 import { usePomodoroStore } from '../stores/pomodoro'
 import { useWritingStore } from '../stores/writing'
+import { useMilestonesStore } from '../stores/milestones'
 import { getCurrentUser } from '../utils/auth'
+import { calculateXP, getTier } from '../utils/rank'
 import { getAllPresence } from '../utils/presence'
 import { formatDate } from '../utils/date'
 
@@ -136,8 +139,10 @@ export default {
       _inspirationsStore: useInspirationsStore(),
       _pomodoroStore: usePomodoroStore(),
       _writingStore: useWritingStore(),
-      rankBy: 'streak',
+      _milestonesStore: useMilestonesStore(),
+      rankBy: 'xp',
       rankTabs: [
+        { key: 'xp', label: '综合排名' },
         { key: 'streak', label: '连续打卡' },
         { key: 'total', label: '累计打卡' },
         { key: 'records', label: '科研记录' },
@@ -145,7 +150,6 @@ export default {
         { key: 'litNotes', label: '文献笔记' },
         { key: 'pomodoro', label: '番茄钟' },
         { key: 'inspirations', label: '灵感' },
-        { key: 'meetings', label: '会议' },
       ],
       currentUser: '',
       myStats: { streak: 0, totalCheckins: 0, records: 0, experiments: 0, litNotes: 0, pomodoro: 0, inspirations: 0, meetings: 0 },
@@ -156,7 +160,7 @@ export default {
   },
   computed: {
     rankUnit() {
-      const units = { streak: '天', total: '次', records: '条', experiments: '条', litNotes: '篇', pomodoro: '个', inspirations: '条', meetings: '次' }
+      const units = { xp: 'XP', streak: '天', total: '次', records: '条', experiments: '条', litNotes: '篇', pomodoro: '个', inspirations: '条', meetings: '次' }
       return units[this.rankBy] || ''
     },
     rankedList() {
@@ -238,6 +242,7 @@ export default {
       this._pomodoroStore.load()
       this._inspirationsStore.load()
       this._meetingsStore.load()
+      this._milestonesStore.load()
 
       const myData = {
         streak: this._checkinsStore.streak.current,
@@ -249,6 +254,19 @@ export default {
         inspirations: this._inspirationsStore.inspirationCount,
         meetings: this._meetingsStore.meetingCount
       }
+      myData.xp = calculateXP({
+        checkinDays: myData.total,
+        maxStreak: this._checkinsStore.streak.longest,
+        currentStreak: myData.streak,
+        pomodoroCount: myData.pomodoro,
+        recordsCount: myData.records,
+        litNotesCount: myData.litNotes,
+        experimentsCount: myData.experiments,
+        milestonesCount: this._milestonesStore.doneCount,
+        meetingsCount: myData.meetings,
+        inspirationsCount: myData.inspirations,
+      })
+      myData.tier = getTier(myData.xp).tier
       this.myStats = { ...myData, totalCheckins: myData.total }
 
       // 为所有成员生成排行数据（仅当前用户有本地数据，其他用户显示在线状态）
@@ -257,8 +275,7 @@ export default {
         if (m.username === this.currentUser) {
           this.allStats[m.username] = myData
         } else {
-          // 其他浏览器用户的本地数据无法访问，显示 0
-          this.allStats[m.username] = { streak: 0, total: 0, records: 0, experiments: 0, litNotes: 0, pomodoro: 0, inspirations: 0, meetings: 0 }
+          this.allStats[m.username] = { streak: 0, total: 0, records: 0, experiments: 0, litNotes: 0, pomodoro: 0, inspirations: 0, meetings: 0, xp: 0, tier: getTier(0).tier }
         }
       })
     }
@@ -418,6 +435,11 @@ export default {
   color: white;
   font-size: 11px;
   border-radius: 4px;
+}
+
+.rank-tier-badge {
+  font-size: 16px;
+  flex-shrink: 0;
 }
 
 .rank-value {

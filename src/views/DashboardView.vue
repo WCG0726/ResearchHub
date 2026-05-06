@@ -5,6 +5,15 @@
       <div class="welcome-left">
         <h1 class="welcome-title">{{ greeting }}，{{ nickname }}</h1>
         <p class="welcome-date">{{ todayText }} · {{ weekdayText }}</p>
+        <div class="rank-badge" :style="{ '--rank-color': rankInfo.tier.color }">
+          <span class="rank-icon">{{ rankInfo.tier.icon }}</span>
+          <span class="rank-name">{{ rankInfo.tier.name }}</span>
+          <span class="rank-xp">{{ rankInfo.xp }} XP</span>
+          <div v-if="rankInfo.nextTier" class="rank-progress-bar">
+            <div class="rank-progress-fill" :style="{ width: (rankInfo.progress * 100) + '%', background: rankInfo.nextTier.color }"></div>
+          </div>
+          <span v-if="rankInfo.nextTier" class="rank-next">距 {{ rankInfo.nextTier.name }} 还需 {{ rankInfo.nextTier.minXP - rankInfo.xp }} XP</span>
+        </div>
       </div>
       <div class="welcome-right">
         <div class="clock-display">
@@ -34,10 +43,6 @@
             <span class="quick-icon">🍅</span>
             <span>番茄钟</span>
           </router-link>
-          <router-link to="/translate" class="quick-btn" style="--color: #3b82f6">
-            <span class="quick-icon">🌐</span>
-            <span>翻译</span>
-          </router-link>
           <router-link to="/writing" class="quick-btn" style="--color: #06b6d4">
             <span class="quick-icon">📄</span>
             <span>论文</span>
@@ -46,25 +51,13 @@
             <span class="quick-icon">📖</span>
             <span>文献笔记</span>
           </router-link>
-          <router-link to="/meeting" class="quick-btn" style="--color: #ec4899">
-            <span class="quick-icon">🗣️</span>
-            <span>组会</span>
+          <router-link to="/translate" class="quick-btn" style="--color: #3b82f6">
+            <span class="quick-icon">🌐</span>
+            <span>翻译</span>
           </router-link>
           <router-link to="/inspiration" class="quick-btn" style="--color: #f97316">
             <span class="quick-icon">💡</span>
             <span>灵感</span>
-          </router-link>
-          <router-link to="/plan" class="quick-btn" style="--color: #14b8a6">
-            <span class="quick-icon">📋</span>
-            <span>计划</span>
-          </router-link>
-          <router-link to="/links" class="quick-btn" style="--color: #64748b">
-            <span class="quick-icon">🔗</span>
-            <span>导航</span>
-          </router-link>
-          <router-link to="/polish" class="quick-btn" style="--color: #a855f7">
-            <span class="quick-icon">✨</span>
-            <span>润色</span>
           </router-link>
         </div>
 
@@ -248,6 +241,11 @@ import { useInspirationsStore } from '../stores/inspirations'
 import { usePlansStore } from '../stores/plans'
 import { useCheckinsStore } from '../stores/checkins'
 import { useProfileStore } from '../stores/profile'
+import { usePomodoroStore } from '../stores/pomodoro'
+import { useExperimentsStore } from '../stores/experiments'
+import { useMeetingsStore } from '../stores/meetings'
+import { useMilestonesStore } from '../stores/milestones'
+import { calculateFromStores } from '../utils/rank'
 
 export default {
   name: 'DashboardView',
@@ -260,6 +258,10 @@ export default {
       _inspirationsStore: useInspirationsStore(),
       _litNotesStore: useLitNotesStore(),
       _plansStore: usePlansStore(),
+      _pomodoroStore: usePomodoroStore(),
+      _experimentsStore: useExperimentsStore(),
+      _meetingsStore: useMeetingsStore(),
+      _milestonesStore: useMilestonesStore(),
       quote: getRandomQuote(),
       currentTime: now.toLocaleTimeString('zh-CN'),
       miniYear: now.getFullYear(),
@@ -299,6 +301,18 @@ export default {
     },
     todos() {
       return this._plansStore.todos
+    },
+    rankInfo() {
+      return calculateFromStores({
+        checkinsStore: this._checkinsStore,
+        pomodoroStore: this._pomodoroStore,
+        recordsStore: this._recordsStore,
+        litNotesStore: this._litNotesStore,
+        experimentsStore: this._experimentsStore,
+        milestonesStore: this._milestonesStore,
+        meetingsStore: this._meetingsStore,
+        inspirationsStore: this._inspirationsStore,
+      })
     },
     greeting() {
       const h = new Date().getHours()
@@ -366,6 +380,10 @@ export default {
     this._inspirationsStore.load()
     this._litNotesStore.load()
     this._plansStore.load()
+    this._pomodoroStore.load()
+    this._experimentsStore.load()
+    this._meetingsStore.load()
+    this._milestonesStore.load()
   },
   mounted() {
     this.loadData()
@@ -402,6 +420,47 @@ export default {
   font-size: 13px;
   color: var(--text-secondary);
   margin: 0;
+}
+
+.rank-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.rank-icon { font-size: 18px; }
+
+.rank-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--rank-color);
+}
+
+.rank-xp {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.rank-progress-bar {
+  width: 120px;
+  height: 4px;
+  background: var(--bg-secondary);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.rank-progress-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.6s ease;
+}
+
+.rank-next {
+  font-size: 11px;
+  color: var(--text-muted);
 }
 
 .clock-time {

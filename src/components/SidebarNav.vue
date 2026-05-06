@@ -38,6 +38,19 @@
           </div>
         </div>
       </template>
+
+      <div class="nav-divider"></div>
+
+      <router-link
+        v-for="link in directLinks"
+        :key="link.to"
+        :to="link.to"
+        class="nav-item"
+        :class="{ active: $route.name === link.name }"
+      >
+        <span class="nav-icon">{{ link.icon }}</span>
+        <span class="nav-text">{{ link.text }}</span>
+      </router-link>
     </nav>
 
     <div class="sidebar-footer">
@@ -53,64 +66,45 @@ import { stopPresence } from '../utils/presence'
 
 const SECTIONS = [
   {
-    key: 'research', label: '科研',
+    key: 'daily', label: '日常工作', defaultOpen: true,
     items: [
+      { to: '/checkin', name: 'checkin', icon: '✅', text: '打卡' },
+      { to: '/pomodoro', name: 'pomodoro', icon: '🍅', text: '番茄钟' },
       { to: '/records', name: 'records', icon: '📝', text: '科研记录' },
-      { to: '/lit-notes', name: 'lit-notes', icon: '📖', text: '文献笔记' },
       { to: '/experiment', name: 'experiment', icon: '🔬', text: '实验记录' },
       { to: '/writing', name: 'writing', icon: '📄', text: '论文写作' },
-      { to: '/progress', name: 'progress', icon: '📈', text: '科研进度' },
-      { to: '/guide', name: 'guide', icon: '📚', text: '写作指南' },
-    ]
-  },
-  {
-    key: 'tools', label: '工具',
-    items: [
-      { to: '/translate', name: 'translate', icon: '🌐', text: '翻译' },
-      { to: '/polish', name: 'polish', icon: '✨', text: '润色提示词' },
-      { to: '/plot-tips', name: 'plot-tips', icon: '📐', text: '绘图技巧' },
-      { to: '/latex-snippets', name: 'latex-snippets', icon: 'Σ', text: 'LaTeX' },
-      { to: '/email-templates', name: 'email-templates', icon: '📧', text: '邮件模板' },
-    ]
-  },
-  {
-    key: 'literature', label: '文献',
-    items: [
-      { to: '/zotero', name: 'zotero', icon: '📚', text: 'Zotero' },
-      { to: '/links', name: 'links', icon: '🔗', text: '学术导航' },
-      { to: '/academic-calendar', name: 'academic-calendar', icon: '📅', text: '学术日历' },
-    ]
-  },
-  {
-    key: 'project', label: '项目',
-    items: [
-      { to: '/plan', name: 'plan', icon: '📋', text: '计划表' },
-      { to: '/milestone', name: 'milestone', icon: '🎯', text: '里程碑' },
-      { to: '/meeting', name: 'meeting', icon: '🗣️', text: '组会记录' },
+      { to: '/lit-notes', name: 'lit-notes', icon: '📖', text: '文献笔记' },
       { to: '/inspiration', name: 'inspiration', icon: '💡', text: '灵感板' },
     ]
   },
   {
-    key: 'team', label: '团队',
+    key: 'project', label: '项目与团队',
     items: [
+      { to: '/plan', name: 'plan', icon: '📋', text: '计划表' },
+      { to: '/milestone', name: 'milestone', icon: '🎯', text: '里程碑' },
+      { to: '/meeting', name: 'meeting', icon: '🗣️', text: '组会记录' },
+      { to: '/progress', name: 'progress', icon: '📈', text: '科研进度' },
       { to: '/team', name: 'team', icon: '🏆', text: '排行榜' },
     ]
   },
   {
-    key: 'life', label: '生活',
+    key: 'tools', label: '工具箱',
     items: [
-      { to: '/checkin', name: 'checkin', icon: '✅', text: '打卡' },
-      { to: '/pomodoro', name: 'pomodoro', icon: '🍅', text: '番茄钟' },
-      { to: '/water', name: 'water', icon: '💧', text: '喝水' },
-      { to: '/meal', name: 'meal', icon: '🍜', text: '吃什么' },
+      { to: '/translate', name: 'translate', icon: '🌐', text: '翻译' },
+      { to: '/polish', name: 'polish', icon: '✨', text: '润色' },
+      { to: '/latex-snippets', name: 'latex-snippets', icon: 'Σ', text: 'LaTeX' },
+      { to: '/email-templates', name: 'email-templates', icon: '📧', text: '邮件模板' },
+      { to: '/links', name: 'links', icon: '🔗', text: '学术导航' },
+      { to: '/zotero', name: 'zotero', icon: '📚', text: 'Zotero' },
     ]
   },
-  {
-    key: 'system', label: '系统',
-    items: [
-      { to: '/settings', name: 'settings', icon: '⚙️', text: '设置' },
-    ]
-  },
+]
+
+const DIRECT_LINKS = [
+  { to: '/guide', name: 'guide', icon: '📘', text: '写作指南' },
+  { to: '/water', name: 'water', icon: '💧', text: '喝水' },
+  { to: '/meal', name: 'meal', icon: '🍜', text: '吃什么' },
+  { to: '/settings', name: 'settings', icon: '⚙️', text: '设置' },
 ]
 
 export default {
@@ -123,6 +117,7 @@ export default {
     return {
       user: getCurrentUser(),
       sections: SECTIONS,
+      directLinks: DIRECT_LINKS,
       openSections: this.getInitialOpen()
     }
   },
@@ -131,7 +126,7 @@ export default {
       const routeName = this.$route?.name
       const open = {}
       for (const s of SECTIONS) {
-        open[s.key] = s.items.some(i => i.name === routeName)
+        open[s.key] = s.defaultOpen || s.items.some(i => i.name === routeName)
       }
       return open
     },
@@ -235,6 +230,12 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 1px;
+}
+
+.nav-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 8px 12px;
 }
 
 .nav-item {

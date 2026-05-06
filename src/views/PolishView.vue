@@ -27,6 +27,23 @@
       <div v-if="aiError" class="ai-error">{{ aiError }}</div>
     </div>
 
+    <!-- 润色历史 -->
+    <div v-if="history.length" class="card">
+      <div class="card-header">
+        <h3 class="card-title" style="margin-bottom:0">📜 最近润色</h3>
+        <button class="btn-clear" @click="clearHistory">清空</button>
+      </div>
+      <div class="history-list">
+        <div v-for="(h, idx) in history" :key="idx" class="history-item" @click="loadHistory(h)">
+          <div class="history-preview">{{ h.input.slice(0, 80) }}{{ h.input.length > 80 ? '...' : '' }}</div>
+          <div class="history-meta">
+            <span class="tag tag-sm" :class="'tag-' + getStyleTag(h.style)">{{ getStyleName(h.style) }}</span>
+            <span class="history-time">{{ formatTime(h.time) }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="card intro">
       <p>以下提示词也可复制到 ChatGPT / Claude / DeepL Write 等 AI 工具中使用。</p>
     </div>
@@ -59,6 +76,7 @@
 <script>
 import { polishText, isAIConfigured } from '../utils/ai'
 import { POLISH_PROMPTS, POLISH_CATEGORIES } from '../data/polishPrompts'
+import { getStorage, setStorage } from '../utils/storage'
 
 export default {
   name: 'PolishView',
@@ -73,7 +91,8 @@ export default {
       aiResult: '',
       aiError: '',
       aiLoading: false,
-      aiCopied: false
+      aiCopied: false,
+      history: getStorage('polish_history', [])
     }
   },
   computed: {
@@ -93,17 +112,48 @@ export default {
       })
     },
     async runPolish() {
-      if (!isAIConfigured()) { this.aiError = '请先在翻译页面配置 API Key'; return }
+      if (!isAIConfigured()) { this.aiError = '请先在设置中配置 API Key'; return }
       this.aiLoading = true
       this.aiError = ''
       this.aiResult = ''
       try {
         this.aiResult = await polishText(this.aiInput, this.aiStyle)
+        // 保存历史
+        this.history.unshift({ input: this.aiInput, result: this.aiResult, style: this.aiStyle, time: Date.now() })
+        if (this.history.length > 10) this.history = this.history.slice(0, 10)
+        setStorage('polish_history', this.history)
       } catch (e) {
         this.aiError = e.message
       } finally {
         this.aiLoading = false
       }
+    },
+    loadHistory(h) {
+      this.aiInput = h.input
+      this.aiResult = h.result
+      this.aiStyle = h.style
+    },
+    clearHistory() {
+      this.history = []
+      setStorage('polish_history', [])
+    },
+    getStyleName(style) {
+      const map = { academic: '通用', deep: '深度', sci: 'SCI' }
+      return map[style] || style
+    },
+    getStyleTag(style) {
+      const map = { academic: 'primary', deep: 'warning', sci: 'success' }
+      return map[style] || 'primary'
+    },
+    formatTime(ts) {
+      if (!ts) return ''
+      const d = new Date(ts)
+      const now = new Date()
+      const diff = now - d
+      if (diff < 60000) return '刚刚'
+      if (diff < 3600000) return `${Math.floor(diff / 60000)} 分钟前`
+      if (diff < 86400000) return `${Math.floor(diff / 3600000)} 小时前`
+      return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`
     },
     copyResult() {
       navigator.clipboard.writeText(this.aiResult).then(() => {
@@ -226,4 +276,58 @@ export default {
 .ai-result-label { font-size: 13px; font-weight: 600; color: var(--primary); }
 .ai-result-text { margin: 0; font-size: 14px; line-height: 1.7; color: var(--text-primary); white-space: pre-wrap; font-family: inherit; }
 .ai-error { margin-top: 8px; color: var(--danger); font-size: 13px; }
+
+/* 润色历史 */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.btn-clear {
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.btn-clear:hover { color: var(--danger); }
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.history-item {
+  padding: 10px 12px;
+  background: var(--bg-surface);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.history-item:hover { background: var(--bg-hover); }
+
+.history-preview {
+  font-size: 13px;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.history-time { color: var(--text-muted); }
+
+.tag-sm { padding: 2px 6px; font-size: 11px; }
 </style>

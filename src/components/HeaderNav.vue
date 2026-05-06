@@ -61,6 +61,17 @@
               </div>
             </div>
           </div>
+          <div class="form-group">
+            <label>学校/机构</label>
+            <input v-model="editSchool" type="text" placeholder="输入学校名称" list="school-list" />
+            <datalist id="school-list">
+              <option v-for="s in commonSchools" :key="s" :value="s" />
+            </datalist>
+          </div>
+          <div class="form-group">
+            <label>研究方向</label>
+            <input v-model="editResearchField" type="text" placeholder="如：热电材料、机器学习..." />
+          </div>
           <div class="modal-actions">
             <button class="btn-cancel" @click="showEditor = false">取消</button>
             <button class="btn-save" @click="saveProfile">保存</button>
@@ -122,6 +133,9 @@ import { useLitNotesStore } from '../stores/litNotes.js'
 import { useInspirationsStore } from '../stores/inspirations.js'
 import { useMeetingsStore } from '../stores/meetings.js'
 import { useExperimentsStore } from '../stores/experiments.js'
+import { usePlansStore } from '../stores/plans.js'
+import { useMilestonesStore } from '../stores/milestones.js'
+import { useWritingStore } from '../stores/writing.js'
 
 export default {
   name: 'HeaderNav',
@@ -135,7 +149,10 @@ export default {
       editName: '',
       editAvatar: '',
       editAvatarData: '',
+      editSchool: '',
+      editResearchField: '',
       avatarOptions: ['🧑‍🔬', '👩‍🔬', '👨‍🔬', '🧑‍💻', '👩‍💻', '👨‍💻', '📚', '🔬', '🧪', '🎯', '🌟', '⚡'],
+      commonSchools: ['清华大学', '北京大学', '浙江大学', '上海交通大学', '复旦大学', '中国科学技术大学', '南京大学', '武汉大学', '华中科技大学', '中山大学', '哈尔滨工业大学', '西安交通大学', '同济大学', '北京航空航天大学', '东南大学', '北京理工大学', '南开大学', '天津大学', '山东大学', '中南大学', '吉林大学', '大连理工大学', '厦门大学', '华南理工大学', '电子科技大学', '中国科学院大学', '北京科技大学', '华东师范大学', '重庆大学', '兰州大学', '南方科技大学', '苏州大学', '暨南大学', '南京理工大学', '北京交通大学', '西北工业大学'],
       showSearch: false,
       searchQuery: '',
       debouncedQuery: '',
@@ -156,16 +173,54 @@ export default {
       const q = this.debouncedQuery.toLowerCase()
       if (!q) return []
       const results = []
+
+      // 路由快捷跳转
+      const routeHints = [
+        { to: '/', name: 'dashboard', icon: '📊', text: '工作台', keywords: ['工作台', 'dashboard', '首页', '主页'] },
+        { to: '/checkin', name: 'checkin', icon: '✅', text: '打卡', keywords: ['打卡', 'checkin', '签到'] },
+        { to: '/pomodoro', name: 'pomodoro', icon: '🍅', text: '番茄钟', keywords: ['番茄', 'pomodoro', '计时'] },
+        { to: '/records', name: 'records', icon: '📝', text: '科研记录', keywords: ['记录', 'records'] },
+        { to: '/experiment', name: 'experiment', icon: '🔬', text: '实验记录', keywords: ['实验', 'experiment'] },
+        { to: '/writing', name: 'writing', icon: '📄', text: '论文写作', keywords: ['论文', 'writing', '写作'] },
+        { to: '/lit-notes', name: 'lit-notes', icon: '📖', text: '文献笔记', keywords: ['文献', '笔记', 'lit', 'notes'] },
+        { to: '/inspiration', name: 'inspiration', icon: '💡', text: '灵感板', keywords: ['灵感', 'inspiration'] },
+        { to: '/plan', name: 'plan', icon: '📋', text: '计划表', keywords: ['计划', 'plan', 'todo'] },
+        { to: '/milestone', name: 'milestone', icon: '🎯', text: '里程碑', keywords: ['里程碑', 'milestone'] },
+        { to: '/meeting', name: 'meeting', icon: '🗣️', text: '组会记录', keywords: ['组会', 'meeting', '会议'] },
+        { to: '/progress', name: 'progress', icon: '📈', text: '科研进度', keywords: ['进度', 'progress'] },
+        { to: '/team', name: 'team', icon: '🏆', text: '排行榜', keywords: ['排行', 'team', '排名'] },
+        { to: '/translate', name: 'translate', icon: '🌐', text: '翻译', keywords: ['翻译', 'translate'] },
+        { to: '/polish', name: 'polish', icon: '✨', text: '润色', keywords: ['润色', 'polish'] },
+        { to: '/latex-snippets', name: 'latex-snippets', icon: 'Σ', text: 'LaTeX', keywords: ['latex', '公式'] },
+        { to: '/email-templates', name: 'email-templates', icon: '📧', text: '邮件模板', keywords: ['邮件', 'email', '模板'] },
+        { to: '/links', name: 'links', icon: '🔗', text: '学术导航', keywords: ['导航', 'links', '学术网站'] },
+        { to: '/zotero', name: 'zotero', icon: '📚', text: 'Zotero', keywords: ['zotero', '文献管理'] },
+        { to: '/guide', name: 'guide', icon: '📘', text: '写作指南', keywords: ['指南', 'guide', '写作指南'] },
+        { to: '/water', name: 'water', icon: '💧', text: '喝水', keywords: ['喝水', 'water'] },
+        { to: '/meal', name: 'meal', icon: '🍜', text: '吃什么', keywords: ['吃', 'meal', '饭'] },
+        { to: '/settings', name: 'settings', icon: '⚙️', text: '设置', keywords: ['设置', 'settings', '配置'] },
+      ]
+      for (const r of routeHints) {
+        if (r.keywords.some(k => k.includes(q)) || r.text.toLowerCase().includes(q)) {
+          results.push({ key: 'route-' + r.name, icon: r.icon, title: r.text, meta: '跳转到 ' + r.text, type: '页面', to: r.to })
+        }
+      }
       const recordsStore = useRecordsStore()
       const litNotesStore = useLitNotesStore()
       const inspirationsStore = useInspirationsStore()
       const meetingsStore = useMeetingsStore()
       const experimentsStore = useExperimentsStore()
+      const plansStore = usePlansStore()
+      const milestonesStore = useMilestonesStore()
+      const writingStore = useWritingStore()
       recordsStore.load()
       litNotesStore.load()
       inspirationsStore.load()
       meetingsStore.load()
       experimentsStore.load()
+      plansStore.load()
+      milestonesStore.load()
+      writingStore.load()
       for (const r of recordsStore.records) {
         if ((r.title && r.title.toLowerCase().includes(q)) || (r.content && r.content.toLowerCase().includes(q))) {
           results.push({ key: 'record-' + r.id, icon: '📝', title: r.title, meta: (r.content || '').slice(0, 60), type: '记录', to: '/records' })
@@ -191,6 +246,21 @@ export default {
           results.push({ key: 'exp-' + e.id, icon: '🔬', title: e.title, meta: (e.content || '').slice(0, 60), type: '实验', to: '/experiment' })
         }
       }
+      for (const p of plansStore.plans) {
+        if (p.title && p.title.toLowerCase().includes(q)) {
+          results.push({ key: 'plan-' + p.id, icon: '📋', title: p.title, meta: p.done ? '已完成' : '进行中', type: '计划', to: '/plan' })
+        }
+      }
+      for (const m of milestonesStore.milestones) {
+        if (m.title && m.title.toLowerCase().includes(q)) {
+          results.push({ key: 'ms-' + m.id, icon: '🎯', title: m.title, meta: m.done ? '已完成' : '进行中', type: '里程碑', to: '/milestone' })
+        }
+      }
+      for (const w of writingStore.papers) {
+        if (w.title && w.title.toLowerCase().includes(q)) {
+          results.push({ key: 'paper-' + (w.id || w.title), icon: '📄', title: w.title, meta: w.status || '', type: '论文', to: '/writing' })
+        }
+      }
       return results.slice(0, 12)
     }
   },
@@ -200,6 +270,8 @@ export default {
         this.editName = this.profile.nickname
         this.editAvatar = this.profile.avatar || ''
         this.editAvatarData = this.profile.avatarData || ''
+        this.editSchool = this.profile.school || ''
+        this.editResearchField = this.profile.researchField || ''
       }
     },
     showSearch(val) {
@@ -239,7 +311,9 @@ export default {
       profileStore.updateProfile({
         nickname,
         avatar: this.editAvatar,
-        avatarData: this.editAvatarData
+        avatarData: this.editAvatarData,
+        school: this.editSchool.trim(),
+        researchField: this.editResearchField.trim()
       })
       this.showEditor = false
     },

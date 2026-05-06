@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { getStorage, setStorage } from '../utils/storage'
 
-const DEFAULT_PROFILE = { nickname: '科研人', avatar: '', avatarData: '' }
+const DEFAULT_PROFILE = { nickname: '科研人', avatar: '', avatarData: '', school: '', researchField: '' }
 
 export const useProfileStore = defineStore('profile', {
   state: () => ({
