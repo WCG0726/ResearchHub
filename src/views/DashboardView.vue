@@ -59,6 +59,10 @@
             <span class="quick-icon">💡</span>
             <span>灵感</span>
           </router-link>
+          <router-link to="/bug-scanner" class="quick-btn" style="--color: #ef4444">
+            <span class="quick-icon">🔍</span>
+            <span>Bug 检测</span>
+          </router-link>
         </div>
 
         <!-- 打卡统计 -->
@@ -170,6 +174,56 @@
           </div>
         </div>
 
+        <!-- 喝水提醒 -->
+        <div class="card water-card">
+          <div class="card-header">
+            <h3 class="card-title" style="margin-bottom:0">💧 今日喝水</h3>
+            <router-link to="/water" class="view-all-link">详情 →</router-link>
+          </div>
+          <div class="water-mini">
+            <div class="water-cups-row">
+              <span
+                v-for="i in waterData.goal"
+                :key="i"
+                class="water-cup-mini"
+                :class="{ filled: i <= waterData.cups }"
+                @click="i <= waterData.cups ? waterRemove() : waterAdd()"
+              >💧</span>
+            </div>
+            <div class="water-info-row">
+              <span class="water-count-mini">{{ waterData.cups }}/{{ waterData.goal }} 杯</span>
+              <div class="water-progress-mini">
+                <div class="water-progress-fill-mini" :style="{ width: Math.min(100, waterPercent) + '%' }"></div>
+              </div>
+              <span class="water-percent-mini">{{ waterPercent }}%</span>
+            </div>
+            <button class="btn-water-add" @click="waterAdd">💧 喝一杯</button>
+          </div>
+        </div>
+
+        <!-- 项目健康度 -->
+        <div class="card health-card">
+          <div class="card-header">
+            <h3 class="card-title" style="margin-bottom:0">🔍 项目健康度</h3>
+            <router-link to="/bug-scanner" class="view-all-link">详情 →</router-link>
+          </div>
+          <div v-if="bugCounts.total === 0" class="health-good">
+            <span class="health-icon">✨</span>
+            <span class="health-text">未检测到问题，点击详情开始扫描</span>
+          </div>
+          <div v-else class="health-summary">
+            <div class="health-counts">
+              <span v-if="bugCounts.fatal" class="health-badge fatal">{{ bugCounts.fatal }} 致命</span>
+              <span v-if="bugCounts.warning" class="health-badge warning">{{ bugCounts.warning }} 警告</span>
+              <span v-if="bugCounts.info" class="health-badge info">{{ bugCounts.info }} 提示</span>
+            </div>
+          </div>
+          <div v-if="runtimeErrorCount > 0" class="health-runtime">
+            <span class="runtime-dot"></span>
+            {{ runtimeErrorCount }} 个运行时错误
+          </div>
+        </div>
+
         <!-- 近期事件 -->
         <div class="card">
           <h3 class="card-title">📅 近期事件</h3>
@@ -245,7 +299,9 @@ import { usePomodoroStore } from '../stores/pomodoro'
 import { useExperimentsStore } from '../stores/experiments'
 import { useMeetingsStore } from '../stores/meetings'
 import { useMilestonesStore } from '../stores/milestones'
-import { calculateFromStores } from '../utils/rank'
+import { useWaterStore } from '../stores/water'
+import { useBugScannerStore } from '../stores/bugScanner'
+import { calculateXP, getTier } from '../utils/rank'
 
 export default {
   name: 'DashboardView',
@@ -262,6 +318,8 @@ export default {
       _experimentsStore: useExperimentsStore(),
       _meetingsStore: useMeetingsStore(),
       _milestonesStore: useMilestonesStore(),
+      _waterStore: useWaterStore(),
+      _bugScannerStore: useBugScannerStore(),
       quote: getRandomQuote(),
       currentTime: now.toLocaleTimeString('zh-CN'),
       miniYear: now.getFullYear(),
@@ -303,16 +361,34 @@ export default {
       return this._plansStore.todos
     },
     rankInfo() {
-      return calculateFromStores({
-        checkinsStore: this._checkinsStore,
-        pomodoroStore: this._pomodoroStore,
-        recordsStore: this._recordsStore,
-        litNotesStore: this._litNotesStore,
-        experimentsStore: this._experimentsStore,
-        milestonesStore: this._milestonesStore,
-        meetingsStore: this._meetingsStore,
-        inspirationsStore: this._inspirationsStore,
+      // 直接访问 store 属性，确保 Vue 响应式追踪
+      const s = this._checkinsStore.streak
+      const xp = calculateXP({
+        checkinDays: s.total,
+        maxStreak: s.longest,
+        currentStreak: s.current,
+        pomodoroCount: this._pomodoroStore.total,
+        recordsCount: this._recordsStore.records.length,
+        litNotesCount: this._litNotesStore.notes.length,
+        experimentsCount: this._experimentsStore.experiments.length,
+        milestonesCount: this._milestonesStore.milestones.filter(m => m.done).length,
+        meetingsCount: this._meetingsStore.meetings.length,
+        inspirationsCount: this._inspirationsStore.inspirations.length,
       })
+      return getTier(xp)
+    },
+    waterData() {
+      return this._waterStore.todayData
+    },
+    waterPercent() {
+      const d = this._waterStore.todayData
+      return d.goal ? Math.round(d.cups / d.goal * 100) : 0
+    },
+    bugCounts() {
+      return this._bugScannerStore.errorCounts
+    },
+    runtimeErrorCount() {
+      return this._bugScannerStore.runtimeErrors.length
     },
     greeting() {
       const h = new Date().getHours()
@@ -367,6 +443,12 @@ export default {
       this.calendarEventsStore.load()
       this.events = this.calendarEventsStore.events
     },
+    waterAdd() {
+      this._waterStore.addCup()
+    },
+    waterRemove() {
+      this._waterStore.removeCup()
+    },
     startClock() {
       this._clockTimer = setInterval(() => {
         this.currentTime = new Date().toLocaleTimeString('zh-CN')
@@ -384,6 +466,7 @@ export default {
     this._experimentsStore.load()
     this._meetingsStore.load()
     this._milestonesStore.load()
+    this._waterStore.load()
   },
   mounted() {
     this.loadData()
@@ -776,6 +859,138 @@ export default {
 .lit-note-title { font-size: 14px; font-weight: 500; color: var(--text-primary); margin-bottom: 2px; }
 .lit-note-meta { display: flex; gap: 8px; font-size: 12px; color: var(--text-muted); }
 .rating-stars { color: #f59e0b; }
+
+/* 项目健康度 */
+.health-card { }
+
+.health-good {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.health-icon { font-size: 20px; }
+.health-text { font-size: 13px; color: var(--text-muted); }
+
+.health-summary { padding: 4px 0; }
+
+.health-counts {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.health-badge {
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.health-badge.fatal { background: rgba(239,68,68,0.1); color: #ef4444; }
+.health-badge.warning { background: rgba(245,158,11,0.1); color: #f59e0b; }
+.health-badge.info { background: rgba(59,130,246,0.1); color: #3b82f6; }
+
+.health-runtime {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--danger);
+  margin-top: 8px;
+}
+
+.runtime-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ef4444;
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* 喝水 */
+.water-mini { text-align: center; }
+
+.water-cups-row {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.water-cup-mini {
+  font-size: 16px;
+  opacity: 0.3;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.water-cup-mini.filled {
+  opacity: 1;
+  animation: pop 0.3s ease;
+}
+
+@keyframes pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+.water-info-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.water-count-mini {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.water-progress-mini {
+  flex: 1;
+  height: 6px;
+  background: var(--bg-secondary);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.water-progress-fill-mini {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #06b6d4);
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.water-percent-mini {
+  font-size: 12px;
+  color: var(--primary);
+  font-weight: 600;
+  min-width: 32px;
+  text-align: right;
+}
+
+.btn-water-add {
+  width: 100%;
+  padding: 8px;
+  border: 1px dashed #3b82f6;
+  border-radius: var(--radius);
+  background: rgba(59, 130, 246, 0.05);
+  color: #3b82f6;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-water-add:hover {
+  background: rgba(59, 130, 246, 0.12);
+}
 
 /* 语录 */
 .quote-card {

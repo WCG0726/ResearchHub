@@ -96,6 +96,7 @@ const SECTIONS = [
       { to: '/email-templates', name: 'email-templates', icon: '📧', text: '邮件模板' },
       { to: '/links', name: 'links', icon: '🔗', text: '学术导航' },
       { to: '/zotero', name: 'zotero', icon: '📚', text: 'Zotero' },
+      { to: '/bug-scanner', name: 'bug-scanner', icon: '🔍', text: 'Bug 检测' },
     ]
   },
 ]

@@ -27,8 +27,7 @@ const EmailTemplatesView = () => import('../views/EmailTemplatesView.vue')
 const AcademicCalendarView = () => import('../views/AcademicCalendarView.vue')
 const ProgressView = () => import('../views/ProgressView.vue')
 const SettingsView = () => import('../views/SettingsView.vue')
-const NotFoundView = () => import('../views/NotFoundView.vue')
-
+const BugScannerView = () => import('../views/BugScannerView.vue')
 const routes = [
   { path: '/login', name: 'login', component: LoginView },
   { path: '/', name: 'dashboard', component: DashboardView, meta: { requiresAuth: true } },
@@ -57,7 +56,8 @@ const routes = [
   { path: '/academic-calendar', name: 'academic-calendar', component: AcademicCalendarView, meta: { requiresAuth: true } },
   { path: '/progress', name: 'progress', component: ProgressView, meta: { requiresAuth: true } },
   { path: '/settings', name: 'settings', component: SettingsView, meta: { requiresAuth: true } },
-  { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFoundView },
+  { path: '/bug-scanner', name: 'bug-scanner', component: BugScannerView, meta: { requiresAuth: true } },
+  { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
 
 const router = createRouter({
@@ -103,6 +103,7 @@ router.beforeEach((to) => {
     'academic-calendar': '学术日历',
     progress: '科研进度',
     settings: '设置',
+    'bug-scanner': 'Bug 检测',
     'not-found': '页面未找到'
   }
   document.title = titles[to.name] || '科研管理平台'

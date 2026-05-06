@@ -30,6 +30,7 @@ import AmbientBackground from './components/AmbientBackground.vue'
 import { useProfileStore } from './stores/profile'
 import { getCurrentUser } from './utils/auth'
 import { initPresence, stopPresence } from './utils/presence'
+import { useBugScannerStore } from './stores/bugScanner'
 
 export default {
   name: 'App',
@@ -66,6 +67,46 @@ export default {
         stopPresence()
       }
     },
+    _initErrorHandlers() {
+      const scanner = useBugScannerStore()
+      this._onError = (event) => {
+        scanner.addRuntimeError({
+          type: 'error',
+          message: event.message || 'Unknown error',
+          filename: event.filename || '',
+          lineno: event.lineno || 0,
+          colno: event.colno || 0
+        })
+      }
+      this._onUnhandled = (event) => {
+        const msg = event.reason?.message || event.reason?.toString() || 'Unhandled rejection'
+        scanner.addRuntimeError({
+          type: 'unhandledrejection',
+          message: msg,
+          filename: '',
+          lineno: 0
+        })
+      }
+      window.addEventListener('error', this._onError)
+      window.addEventListener('unhandledrejection', this._onUnhandled)
+
+      // Vue errorHandler
+      const app = this.$.appContext.app
+      this._vueErrorHandler = (err, instance, info) => {
+        scanner.addRuntimeError({
+          type: 'vue',
+          message: err.message || String(err),
+          filename: instance?.$options?.name || 'UnknownComponent',
+          lineno: 0,
+          info
+        })
+      }
+      app.config.errorHandler = this._vueErrorHandler
+    },
+    _removeErrorHandlers() {
+      if (this._onError) window.removeEventListener('error', this._onError)
+      if (this._onUnhandled) window.removeEventListener('unhandledrejection', this._onUnhandled)
+    },
     handleKeydown(e) {
       // Ctrl+K: 全局搜索
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
@@ -101,11 +142,13 @@ export default {
   mounted() {
     this.manageHeartbeat()
     document.addEventListener('keydown', this.handleKeydown)
+    this._initErrorHandlers()
   },
   unmounted() {
     const user = getCurrentUser()
     if (user) stopPresence(user.username, user.nickname)
     document.removeEventListener('keydown', this.handleKeydown)
+    this._removeErrorHandlers()
   }
 }
 </script>

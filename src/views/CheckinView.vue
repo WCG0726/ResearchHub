@@ -152,7 +152,7 @@ import { useExperimentsStore } from '../stores/experiments'
 import { useMilestonesStore } from '../stores/milestones'
 import { useMeetingsStore } from '../stores/meetings'
 import { useInspirationsStore } from '../stores/inspirations'
-import { calculateFromStores } from '../utils/rank'
+import { calculateXP, getTier } from '../utils/rank'
 import { toDateString, formatTime } from '../utils/date'
 
 export default {
@@ -221,16 +221,20 @@ export default {
       return this._calendarEventsStore.eventsForDate(this.selectedDay.fullDate)
     },
     rankInfo() {
-      return calculateFromStores({
-        checkinsStore: this._checkinsStore,
-        pomodoroStore: this._pomodoroStore,
-        recordsStore: this._recordsStore,
-        litNotesStore: this._litNotesStore,
-        experimentsStore: this._experimentsStore,
-        milestonesStore: this._milestonesStore,
-        meetingsStore: this._meetingsStore,
-        inspirationsStore: this._inspirationsStore,
+      const s = this._checkinsStore.streak
+      const xp = calculateXP({
+        checkinDays: s.total,
+        maxStreak: s.longest,
+        currentStreak: s.current,
+        pomodoroCount: this._pomodoroStore.total,
+        recordsCount: this._recordsStore.records.length,
+        litNotesCount: this._litNotesStore.notes.length,
+        experimentsCount: this._experimentsStore.experiments.length,
+        milestonesCount: this._milestonesStore.milestones.filter(m => m.done).length,
+        meetingsCount: this._meetingsStore.meetings.length,
+        inspirationsCount: this._inspirationsStore.inspirations.length,
       })
+      return getTier(xp)
     },
   },
   methods: {
