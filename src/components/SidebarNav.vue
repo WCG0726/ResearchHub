@@ -84,7 +84,6 @@ const SECTIONS = [
       { to: '/milestone', name: 'milestone', icon: '🎯', text: '里程碑' },
       { to: '/meeting', name: 'meeting', icon: '🗣️', text: '组会记录' },
       { to: '/progress', name: 'progress', icon: '📈', text: '科研进度' },
-      { to: '/team', name: 'team', icon: '🏆', text: '排行榜' },
     ]
   },
   {
@@ -102,6 +101,7 @@ const SECTIONS = [
 ]
 
 const DIRECT_LINKS = [
+  { to: '/team', name: 'team', icon: '🏆', text: '排行榜' },
   { to: '/guide', name: 'guide', icon: '📘', text: '写作指南' },
   { to: '/water', name: 'water', icon: '💧', text: '喝水' },
   { to: '/meal', name: 'meal', icon: '🍜', text: '吃什么' },
