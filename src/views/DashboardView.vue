@@ -19,6 +19,10 @@
         <div class="clock-display">
           <span class="clock-time">{{ currentTime }}</span>
         </div>
+        <div class="welcome-quote">
+          <span class="welcome-quote-text">"{{ quote.text }}"</span>
+          <span class="welcome-quote-author">—— {{ quote.author }}</span>
+        </div>
       </div>
     </div>
 
@@ -142,6 +146,40 @@
             </router-link>
           </div>
         </div>
+
+        <!-- 最近灵感 -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title" style="margin-bottom:0">💡 最近灵感</h3>
+            <router-link to="/inspiration" class="view-all-link">全部 →</router-link>
+          </div>
+          <div v-if="recentInspirations.length === 0" class="empty-sm">暂无灵感</div>
+          <div v-else class="inspiration-list">
+            <div v-for="insp in recentInspirations" :key="insp.id" class="inspiration-item" :style="{ borderLeft: `3px solid ${insp.color || '#6366f1'}` }">
+              <div class="inspiration-title">{{ insp.title }}</div>
+              <div v-if="insp.content" class="inspiration-content">{{ insp.content.slice(0, 60) }}{{ insp.content.length > 60 ? '...' : '' }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 最近文献笔记 -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title" style="margin-bottom:0">📖 最近笔记</h3>
+            <router-link to="/lit-notes" class="view-all-link">全部 →</router-link>
+          </div>
+          <div v-if="recentLitNotes.length === 0" class="empty-sm">暂无笔记</div>
+          <div v-else class="lit-notes-list">
+            <div v-for="note in recentLitNotes" :key="note.id" class="lit-note-item">
+              <div class="lit-note-title">{{ note.title }}</div>
+              <div class="lit-note-meta">
+                <span v-if="note.journal">{{ note.journal }}</span>
+                <span v-if="note.year">{{ note.year }}</span>
+                <span v-if="note.rating" class="rating-stars">{{ '★'.repeat(note.rating) }}{{ '☆'.repeat(5 - note.rating) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- 右列 -->
@@ -239,46 +277,6 @@
           </div>
         </div>
 
-        <!-- 最近灵感 -->
-        <div class="card">
-          <div class="card-header">
-            <h3 class="card-title" style="margin-bottom:0">💡 最近灵感</h3>
-            <router-link to="/inspiration" class="view-all-link">全部 →</router-link>
-          </div>
-          <div v-if="recentInspirations.length === 0" class="empty-sm">暂无灵感</div>
-          <div v-else class="inspiration-list">
-            <div v-for="insp in recentInspirations" :key="insp.id" class="inspiration-item" :style="{ borderLeft: `3px solid ${insp.color || '#6366f1'}` }">
-              <div class="inspiration-title">{{ insp.title }}</div>
-              <div v-if="insp.content" class="inspiration-content">{{ insp.content.slice(0, 60) }}{{ insp.content.length > 60 ? '...' : '' }}</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 最近文献笔记 -->
-        <div class="card">
-          <div class="card-header">
-            <h3 class="card-title" style="margin-bottom:0">📖 最近笔记</h3>
-            <router-link to="/lit-notes" class="view-all-link">全部 →</router-link>
-          </div>
-          <div v-if="recentLitNotes.length === 0" class="empty-sm">暂无笔记</div>
-          <div v-else class="lit-notes-list">
-            <div v-for="note in recentLitNotes" :key="note.id" class="lit-note-item">
-              <div class="lit-note-title">{{ note.title }}</div>
-              <div class="lit-note-meta">
-                <span v-if="note.journal">{{ note.journal }}</span>
-                <span v-if="note.year">{{ note.year }}</span>
-                <span v-if="note.rating" class="rating-stars">{{ '★'.repeat(note.rating) }}{{ '☆'.repeat(5 - note.rating) }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 激励语录 -->
-        <div class="card quote-card">
-          <div class="quote-mark">"</div>
-          <div class="quote-text">{{ quote.text }}</div>
-          <div class="quote-author">—— {{ quote.author }}</div>
-        </div>
       </div>
     </div>
   </div>
@@ -542,6 +540,30 @@ export default {
 }
 
 .rank-next {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.welcome-quote {
+  margin-top: 10px;
+  padding: 10px 14px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  max-width: 320px;
+}
+
+.welcome-quote-text {
+  display: block;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  font-style: italic;
+  margin-bottom: 4px;
+}
+
+.welcome-quote-author {
   font-size: 11px;
   color: var(--text-muted);
 }
@@ -992,45 +1014,6 @@ export default {
   background: rgba(59, 130, 246, 0.12);
 }
 
-/* 语录 */
-.quote-card {
-  background: var(--gradient-primary);
-  color: white;
-  border: none;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.2), inset 0 1px 0 rgba(255,255,255,0.1);
-}
-
-.quote-card::after {
-  content: '';
-  position: absolute;
-  top: -50%;
-  right: -50%;
-  width: 100%;
-  height: 100%;
-  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-  animation: float 6s ease-in-out infinite;
-}
-
-.quote-mark {
-  font-size: 48px;
-  line-height: 1;
-  opacity: 0.3;
-  font-family: Georgia, serif;
-  margin-bottom: -12px;
-}
-
-.quote-text {
-  font-size: 15px;
-  line-height: 1.7;
-  margin-bottom: 8px;
-}
-
-.quote-author {
-  font-size: 13px;
-  opacity: 0.7;
-}
 
 @media (max-width: 900px) {
   .dashboard-grid { grid-template-columns: 1fr; }
