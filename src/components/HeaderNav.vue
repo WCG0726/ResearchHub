@@ -284,12 +284,22 @@ export default {
   justify-content: space-between;
   padding: 0 24px;
   z-index: 100;
-  backdrop-filter: blur(16px) saturate(180%);
-  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(20px) saturate(180%);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.1), transparent);
 }
 
 .dark .header {
-  background: rgba(15, 23, 42, 0.82);
+  background: rgba(15, 23, 42, 0.70);
   border-bottom-color: rgba(51, 65, 85, 0.6);
 }
 

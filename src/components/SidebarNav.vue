@@ -172,12 +172,22 @@ export default {
   padding: 12px 10px;
   z-index: 90;
   overflow-y: auto;
-  backdrop-filter: blur(16px) saturate(180%);
-  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px) saturate(180%);
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.sidebar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 1px;
+  background: linear-gradient(180deg, rgba(99, 102, 241, 0.12), transparent 50%, rgba(139, 92, 246, 0.08));
 }
 
 .dark .sidebar {
-  background: rgba(15, 23, 42, 0.88);
+  background: rgba(15, 23, 42, 0.76);
 }
 
 .sidebar-nav {
@@ -248,7 +258,7 @@ export default {
 .nav-item.active {
   background: rgba(99, 102, 241, 0.1);
   color: var(--primary);
-  box-shadow: inset 3px 0 0 var(--primary);
+  box-shadow: inset 3px 0 0 var(--primary), 0 0 12px rgba(99, 102, 241, 0.08);
   font-weight: 600;
 }
 

@@ -395,6 +395,7 @@ export default {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   margin: 0 0 2px;
+  text-shadow: 0 0 40px rgba(99, 102, 241, 0.15);
 }
 
 .welcome-date {
@@ -427,14 +428,32 @@ export default {
   align-items: center;
   gap: 6px;
   padding: 14px 10px;
-  background: var(--bg-primary);
-  border: 1px solid var(--border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   text-decoration: none;
   color: var(--text-primary);
   font-size: 12px;
   font-weight: 500;
   transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.quick-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--refraction);
+  opacity: 0;
+  transition: opacity var(--transition);
+  pointer-events: none;
+}
+
+.quick-btn:hover::before {
+  opacity: 1;
 }
 
 .quick-btn:hover {
@@ -463,8 +482,9 @@ export default {
   align-items: center;
   gap: 6px;
   padding: 10px 12px;
-  background: var(--bg-primary);
-  border: 1px solid var(--border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius);
   position: relative;
   overflow: hidden;
@@ -705,6 +725,7 @@ export default {
   border: none;
   position: relative;
   overflow: hidden;
+  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.2), inset 0 1px 0 rgba(255,255,255,0.1);
 }
 
 .quote-card::after {

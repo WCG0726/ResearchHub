@@ -53,6 +53,28 @@
   --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   --spring: 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* 宇宙光晕色板 */
+  --mesh-1: #312e81;
+  --mesh-2: #4c1d95;
+  --mesh-3: #6366f1;
+  --mesh-4: #1e1b4b;
+  --mesh-5: #7c3aed;
+
+  /* 光晕球 */
+  --orb-1: rgba(99, 102, 241, 0.08);
+  --orb-2: rgba(139, 92, 246, 0.06);
+  --orb-3: rgba(124, 58, 237, 0.05);
+  --orb-4: rgba(59, 130, 246, 0.04);
+
+  /* 玻璃效果 */
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.18);
+  --glass-blur: 20px;
+  --glass-saturate: 180%;
+
+  /* 光线折射 */
+  --refraction: linear-gradient(135deg, rgba(255,255,255,0.4), rgba(255,255,255,0) 60%);
 }
 
 /* 深色主题 */
@@ -72,4 +94,15 @@
   --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.25);
   --shadow-glow-lg: 0 0 40px rgba(99, 102, 241, 0.35);
   --gradient-surface: linear-gradient(145deg, rgba(99,102,241,0.06), rgba(139,92,246,0.04));
+
+  /* 深色宇宙光晕 */
+  --orb-1: rgba(99, 102, 241, 0.12);
+  --orb-2: rgba(139, 92, 246, 0.10);
+  --orb-3: rgba(124, 58, 237, 0.08);
+  --orb-4: rgba(59, 130, 246, 0.06);
+  --glass-bg: rgba(15, 23, 42, 0.70);
+  --glass-border: rgba(99, 102, 241, 0.12);
+  --mesh-1: #1e1b4b;
+  --mesh-2: #2e1065;
+  --mesh-4: #0c0a1d;
 }

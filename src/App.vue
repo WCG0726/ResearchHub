@@ -1,5 +1,6 @@
 <template>
   <div class="app" :class="{ 'dark': isDark }">
+    <AmbientBackground :is-login="isLoginPage" />
     <template v-if="!isLoginPage">
       <HeaderNav :is-dark="isDark" @toggle-theme="toggleTheme" @toggle-sidebar="sidebarOpen = !sidebarOpen" />
       <div class="layout">
@@ -25,13 +26,14 @@ import HeaderNav from './components/HeaderNav.vue'
 import SidebarNav from './components/SidebarNav.vue'
 import ErrorBoundary from './components/ErrorBoundary.vue'
 import QuickNote from './components/QuickNote.vue'
+import AmbientBackground from './components/AmbientBackground.vue'
 import { useProfileStore } from './stores/profile'
 import { getCurrentUser } from './utils/auth'
 import { initPresence, stopPresence } from './utils/presence'
 
 export default {
   name: 'App',
-  components: { HeaderNav, SidebarNav, ErrorBoundary, QuickNote },
+  components: { HeaderNav, SidebarNav, ErrorBoundary, QuickNote, AmbientBackground },
   data() {
     return {
       _profileStore: useProfileStore(),
@@ -114,6 +116,7 @@ export default {
 
 .app {
   min-height: 100vh;
+  position: relative;
 }
 
 .layout {
