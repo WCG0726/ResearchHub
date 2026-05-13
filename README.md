@@ -2,7 +2,7 @@
 
 > 打卡、记录、论文写作一站式科研管理工具
 
-**在线访问：[https://hush316.github.io/ResearchHub/](https://hush316.github.io/ResearchHub/)**
+**在线访问：[https://wcg0726.github.io/ResearchHub/](https://wcg0726.github.io/ResearchHub/)**
 
 ## 项目简介
 
