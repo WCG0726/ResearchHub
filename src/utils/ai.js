@@ -2,18 +2,19 @@
  * AI 工具模块 - 统一管理 AI API 调用
  */
 
-import { getStorage } from './storage'
+import { getStorage, setStorage, removeStorage } from './storage'
 
 function getAIConfig() {
-  // 优先读取 ai_config，兼容旧的 translate_config
   const aiConfig = getStorage('ai_config', null)
   if (aiConfig && aiConfig.apiKey) return aiConfig
-  return getStorage('translate_config', {
-    provider: 'openai',
-    apiKey: '',
-    baseUrl: '',
-    model: 'gpt-4o-mini'
-  })
+  // 迁移旧配置
+  const legacy = getStorage('translate_config', null)
+  if (legacy && legacy.apiKey) {
+    setStorage('ai_config', legacy)
+    removeStorage('translate_config')
+    return legacy
+  }
+  return { provider: 'openai', apiKey: '', baseUrl: '', model: 'gpt-4o-mini' }
 }
 
 // 内存缓存：TTL 5分钟，最多 50 条
@@ -41,50 +42,99 @@ export function isAIConfigured() {
   return !!config.apiKey
 }
 
+function getAPIUrl() {
+  const config = getAIConfig()
+  return config.provider === 'openai'
+    ? 'https://api.openai.com/v1/chat/completions'
+    : config.baseUrl
+}
+
+function validateConfig() {
+  const config = getAIConfig()
+  if (!config.apiKey) throw new Error('请先在"设置"页面配置 API Key')
+  if (config.provider === 'deepl') throw new Error('DeepL 不支持 AI 对话，请使用 OpenAI 或自定义 API')
+  return config
+}
+
+function messagesToCacheKey(messages) {
+  return messages.map(m => m.content.slice(0, 80)).join('|')
+}
+
 /**
- * 通用 AI 调用
- * @param {string} systemPrompt - 系统提示词
- * @param {string} userMessage - 用户消息
- * @param {object} options - 额外选项 { temperature, maxTokens }
+ * 多轮对话 AI 调用
+ * @param {Array} messages - [{role, content}] 消息数组
+ * @param {object} options - { temperature, maxTokens, useCache }
  * @returns {Promise<string>} AI 回复
  */
-export async function callAI(systemPrompt, userMessage, options = {}) {
+export async function callAIChat(messages, options = {}) {
   const { temperature = 0.7, maxTokens = 2000, useCache = true } = options
 
-  // 缓存检查
-  const cacheKey = useCache ? `${systemPrompt.slice(0, 60)}|${userMessage.slice(0, 100)}|${temperature}` : null
+  const cacheKey = useCache ? `chat|${messagesToCacheKey(messages)}|${temperature}` : null
   if (cacheKey) {
     const cached = cacheGet(cacheKey)
     if (cached) return cached
   }
 
-  const config = getAIConfig()
-  if (!config.apiKey) {
-    throw new Error('请先在"设置"或"翻译"页面配置 API Key')
-  }
+  const config = validateConfig()
+  const url = getAPIUrl()
 
-  if (config.provider === 'deepl') {
-    throw new Error('DeepL 不支持 AI 对话，请使用 OpenAI 或自定义 API')
-  }
-
-  const url = config.provider === 'openai'
-    ? 'https://api.openai.com/v1/chat/completions'
-    : config.baseUrl
-
-  // 重试逻辑：指数退避，最多 2 次重试
   let lastError
   for (let attempt = 0; attempt <= 2; attempt++) {
-    if (attempt > 0) {
-      await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt - 1)))
-    }
-
+    if (attempt > 0) await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt - 1)))
     try {
       const resp = await fetch(url, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${config.apiKey}`
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}` },
+        body: JSON.stringify({ model: config.model || 'gpt-4o-mini', messages, temperature, max_tokens: maxTokens })
+      })
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}))
+        lastError = new Error(err.error?.message || `API 请求失败 (${resp.status})`)
+        if (resp.status === 429 || resp.status >= 500) continue
+        throw lastError
+      }
+      const data = await resp.json()
+      const result = data.choices[0].message.content.trim()
+      if (cacheKey) cacheSet(cacheKey, result)
+      return result
+    } catch (e) {
+      lastError = e
+      if (e.message.includes('API 请求失败')) continue
+      throw e
+    }
+  }
+  throw lastError
+}
+
+/**
+ * 单轮 AI 调用（callAIChat 的便捷包装）
+ */
+export async function callAI(systemPrompt, userMessage, options = {}) {
+  return callAIChat([
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: userMessage }
+  ], options)
+}
+
+/**
+ * 流式 AI 调用
+ * @param {string} systemPrompt - 系统提示词
+ * @param {string} userMessage - 用户消息
+ * @param {object} options - { temperature, maxTokens, onChunk, signal }
+ * @returns {Promise<string>} 完整回复
+ */
+export async function callAIStream(systemPrompt, userMessage, options = {}) {
+  const { temperature = 0.7, maxTokens = 2000, onChunk, signal } = options
+  const config = validateConfig()
+  const url = getAPIUrl()
+
+  let lastError
+  for (let attempt = 0; attempt <= 2; attempt++) {
+    if (attempt > 0) await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt - 1)))
+    try {
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${config.apiKey}` },
         body: JSON.stringify({
           model: config.model || 'gpt-4o-mini',
           messages: [
@@ -92,23 +142,46 @@ export async function callAI(systemPrompt, userMessage, options = {}) {
             { role: 'user', content: userMessage }
           ],
           temperature,
-          max_tokens: maxTokens
-        })
+          max_tokens: maxTokens,
+          stream: true
+        }),
+        signal
       })
-
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({}))
         lastError = new Error(err.error?.message || `API 请求失败 (${resp.status})`)
-        // 429/5xx 可重试
         if (resp.status === 429 || resp.status >= 500) continue
         throw lastError
       }
 
-      const data = await resp.json()
-      const result = data.choices[0].message.content.trim()
-      if (cacheKey) cacheSet(cacheKey, result)
-      return result
+      const reader = resp.body.getReader()
+      const decoder = new TextDecoder()
+      let fullText = ''
+      let buffer = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue
+          const data = line.slice(6).trim()
+          if (data === '[DONE]') break
+          try {
+            const parsed = JSON.parse(data)
+            const delta = parsed.choices?.[0]?.delta?.content
+            if (delta) {
+              fullText += delta
+              onChunk?.(fullText)
+            }
+          } catch { /* skip malformed chunks */ }
+        }
+      }
+      return fullText
     } catch (e) {
+      if (e.name === 'AbortError') throw e
       lastError = e
       if (e.message.includes('API 请求失败')) continue
       throw e
@@ -300,4 +373,152 @@ For each direction:
 Output in Chinese. Be specific and actionable.`
   const input = `Current Work: ${currentWork}\nField: ${field || 'Not specified'}`
   return callAI(prompt, input, { temperature: 0.7, maxTokens: 800 })
+}
+
+/**
+ * 翻译文本
+ * @param {string} text - 待翻译文本
+ * @param {string} direction - 'en2zh' 或 'zh2en'
+ * @param {string} style - 'academic' | 'natural' | 'formal' | 'simple'
+ * @returns {Promise<string>} 翻译结果
+ */
+export async function translateText(text, direction = 'en2zh', style = 'academic') {
+  const prompts = {
+    en2zh: {
+      academic: 'You are an academic translator. Translate the following text into natural, fluent Chinese suitable for academic papers. Preserve technical terminology. Output only the translation.',
+      natural: 'Translate the following text into natural, fluent Chinese. Output only the translation.',
+      formal: 'Translate the following text into formal business Chinese. Output only the translation.',
+      simple: 'Translate the following text into simple, clear Chinese. Output only the translation.'
+    },
+    zh2en: {
+      academic: 'You are an academic translator. Translate the following text into polished, publication-ready English suitable for academic papers. Preserve technical terminology. Output only the translation.',
+      natural: 'Translate the following text into natural, fluent English. Output only the translation.',
+      formal: 'Translate the following text into formal business English. Output only the translation.',
+      simple: 'Translate the following text into simple, clear English. Output only the translation.'
+    }
+  }
+  const prompt = prompts[direction]?.[style] || prompts.en2zh.academic
+  return callAI(prompt, text, { temperature: 0.3 })
+}
+
+// ===== 文献分析 =====
+
+export async function summarizePaper(title, abstract, fullText) {
+  const prompt = `You are a research paper analyst. Generate a structured summary of this paper in Chinese:
+- 研究问题 (Problem): 1-2 sentences
+- 研究方法 (Methods): 1-2 sentences
+- 关键结果 (Key Results): 2-3 sentences
+- 研究意义 (Significance): 1 sentence
+Be concise and accurate. Output in Chinese.`
+  const input = `Title: ${title}\n${abstract ? `Abstract: ${abstract}\n` : ''}${fullText ? `Full Text: ${fullText}\n` : ''}`
+  return callAI(prompt, input, { temperature: 0.3, maxTokens: 600 })
+}
+
+export async function extractKeyFindings(title, abstract, fullText) {
+  const prompt = `You are a research paper analyst. Extract 3-5 key findings from this paper. Each finding should be one concise sentence in Chinese. Output as a numbered list.`
+  const input = `Title: ${title}\n${abstract ? `Abstract: ${abstract}\n` : ''}${fullText ? `Full Text: ${fullText}\n` : ''}`
+  return callAI(prompt, input, { temperature: 0.2, maxTokens: 400 })
+}
+
+export async function recommendRelatedPapers(title, abstract, field) {
+  const prompt = `You are a research advisor. Based on this paper, suggest 3-5 related research directions or search queries for finding related work. For each suggestion, provide:
+1. Research direction or search query
+2. Why it's relevant
+Output in Chinese.`
+  const input = `Title: ${title}\n${abstract ? `Abstract: ${abstract}\n` : ''}Field: ${field || 'Not specified'}`
+  return callAI(prompt, input, { temperature: 0.5, maxTokens: 500 })
+}
+
+export async function assessReadingDifficulty(title, abstract) {
+  const prompt = `You are a reading advisor. Assess the reading difficulty of this paper:
+- 难度等级 (Difficulty): beginner / intermediate / advanced
+- 前置知识 (Prerequisites): 2-3 bullet points
+- 预计阅读时间 (Estimated Time): in minutes
+- 简要说明 (Rationale): 1 sentence
+Output in Chinese.`
+  const input = `Title: ${title}\n${abstract ? `Abstract: ${abstract}` : '(No abstract available)'}`
+  return callAI(prompt, input, { temperature: 0.3, maxTokens: 300 })
+}
+
+// ===== 格式改写 =====
+
+export async function rewriteFormat(text, sourceFormat, targetFormat, options = {}) {
+  const { restructureParagraphs = true, convertCitations = true, adjustTone = 'formal' } = options
+  const prompt = `You are an academic format editor. Rewrite the following text from "${sourceFormat}" style to "${targetFormat}" style.
+
+Tasks:
+${convertCitations ? '- Convert all citation formats to match the target style' : '- Keep citation formats unchanged'}
+${restructureParagraphs ? '- Restructure paragraphs to fit the target format conventions' : '- Keep paragraph structure unchanged'}
+- Adjust tone to: ${adjustTone}
+- Preserve all technical content and meaning
+- Output only the rewritten text`
+  return callAI(prompt, text, { temperature: 0.3, maxTokens: 2000 })
+}
+
+export async function convertCitations(text, sourceStyle, targetStyle) {
+  const prompt = `You are a citation format specialist. Convert all citations in the following text from "${sourceStyle}" format to "${targetStyle}" format. Only change the citation format, do not modify any other text. Output only the converted text.`
+  return callAI(prompt, text, { temperature: 0.2, maxTokens: 2000 })
+}
+
+// ===== 一键作图 =====
+
+export async function generatePlotCode(description, chartType, dataFormat, outputLang = 'python') {
+  const langGuide = outputLang === 'origin'
+    ? 'Generate Origin LabTalk script (.ogg) with proper Origin commands.'
+    : 'Generate Python code using matplotlib. Include all necessary imports.'
+  const prompt = `You are a scientific plotting expert. Generate complete, runnable ${outputLang} code for the following plot.
+
+Chart type: ${chartType || 'auto-detect the best type'}
+${dataFormat ? `Data format: ${dataFormat}` : ''}
+
+Requirements:
+- ${langGuide}
+- Use publication-quality styling (clear fonts, proper labels, legend if needed)
+- Include comments explaining each section
+- For materials science: use appropriate axis labels, units, and formatting
+- The code should be immediately copy-pasteable and runnable
+
+Output only the code, wrapped in a code block.`
+  return callAI(prompt, description, { temperature: 0.3, maxTokens: 1500 })
+}
+
+export async function suggestChartType(dataDescription) {
+  const prompt = `You are a data visualization expert. Given a description of data, suggest the best chart type and explain why.
+
+Provide:
+1. Recommended chart type
+2. Why it's the best choice
+3. Alternative options
+4. Key styling tips
+
+Output in Chinese. Be concise.`
+  return callAI(prompt, dataDescription, { temperature: 0.3, maxTokens: 400 })
+}
+
+// ===== 增强期刊推荐 =====
+
+export async function recommendJournalsDetailed(title, abstract, field, preferences = {}) {
+  const prefStr = Object.entries(preferences).filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`).join(', ')
+  const prompt = `You are an academic publishing advisor. Recommend 3-5 journals for this paper.
+
+Return a JSON array (no other text, just the JSON):
+[{
+  "name": "Full Journal Name",
+  "abbreviation": "J. Abbrev.",
+  "impactFactor": "11.9",
+  "scope": "Brief scope description",
+  "acceptanceRate": "Easy/Moderate/Difficult",
+  "reviewSpeed": "4-6 weeks",
+  "openAccess": true,
+  "fitScore": 85,
+  "reasoning": "Why this journal fits"
+}]
+
+${prefStr ? `Preferences: ${prefStr}` : ''}`
+  const input = `Title: ${title}\n${abstract ? `Abstract: ${abstract}\n` : ''}Field: ${field || 'Not specified'}`
+  const raw = await callAI(prompt, input, { temperature: 0.5, maxTokens: 1200 })
+  try {
+    const jsonMatch = raw.match(/\[[\s\S]*\]/)
+    return jsonMatch ? JSON.parse(jsonMatch[0]) : raw
+  } catch { return raw }
 }

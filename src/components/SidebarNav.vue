@@ -91,6 +91,7 @@ const SECTIONS = [
     items: [
       { to: '/translate', name: 'translate', icon: '🌐', text: '翻译' },
       { to: '/polish', name: 'polish', icon: '✨', text: '润色' },
+      { to: '/format-rewrite', name: 'format-rewrite', icon: '🔄', text: '格式改写' },
       { to: '/latex-snippets', name: 'latex-snippets', icon: 'Σ', text: 'LaTeX' },
       { to: '/email-templates', name: 'email-templates', icon: '📧', text: '邮件模板' },
       { to: '/links', name: 'links', icon: '🔗', text: '学术导航' },

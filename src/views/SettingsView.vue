@@ -128,7 +128,7 @@ export default {
   },
   methods: {
     loadAIConfig() {
-      const saved = getStorage('translate_config', null)
+      const saved = getStorage('ai_config', null)
       if (saved) {
         this.aiConfig = {
           provider: saved.provider || 'openai',
@@ -139,7 +139,7 @@ export default {
       }
     },
     saveAIConfig() {
-      setStorage('translate_config', this.aiConfig)
+      setStorage('ai_config', this.aiConfig)
       this.aiMsg = '✓ 配置已保存，所有 AI 功能已生效'
       this.aiMsgType = 'success'
     },

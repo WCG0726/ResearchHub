@@ -18,6 +18,7 @@
     </template>
     <router-view v-else />
     <QuickNote v-if="!isLoginPage" :show="showQuickNote" @close="showQuickNote = false" />
+    <AIChatbot v-if="!isLoginPage && aiReady" />
   </div>
 </template>
 
@@ -27,20 +28,23 @@ import SidebarNav from './components/SidebarNav.vue'
 import ErrorBoundary from './components/ErrorBoundary.vue'
 import QuickNote from './components/QuickNote.vue'
 import AmbientBackground from './components/AmbientBackground.vue'
+import AIChatbot from './components/AIChatbot.vue'
 import { useProfileStore } from './stores/profile'
 import { getCurrentUser } from './utils/auth'
 import { initPresence, stopPresence } from './utils/presence'
 import { useBugScannerStore } from './stores/bugScanner'
+import { isAIConfigured } from './utils/ai'
 
 export default {
   name: 'App',
-  components: { HeaderNav, SidebarNav, ErrorBoundary, QuickNote, AmbientBackground },
+  components: { HeaderNav, SidebarNav, ErrorBoundary, QuickNote, AmbientBackground, AIChatbot },
   data() {
     return {
       _profileStore: useProfileStore(),
       isDark: false,
       sidebarOpen: false,
-      showQuickNote: false
+      showQuickNote: false,
+      aiReady: isAIConfigured()
     }
   },
   computed: {

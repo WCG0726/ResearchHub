@@ -2,6 +2,54 @@
   <div class="plot-tips-page">
     <h1 class="page-title">绘图技巧与模板</h1>
 
+    <!-- AI 绑图代码生成器 -->
+    <div class="card ai-plot-card">
+      <h3 class="card-title" @click="showAIPanel = !showAIPanel" style="cursor:pointer">
+        🤖 AI 一键作图
+        <span class="toggle-icon">{{ showAIPanel ? '▲' : '▼' }}</span>
+      </h3>
+      <div v-if="showAIPanel">
+        <div class="ai-plot-form">
+          <div class="form-group">
+            <label>描述你想要的图表</label>
+            <textarea v-model="plotDesc" class="input textarea" rows="3" placeholder="例如：画一个 SnSe、Bi2Te3、PbTe 三种材料的 XRD 叠加图，2theta 范围 20-60°"></textarea>
+          </div>
+          <div class="ai-plot-options">
+            <div class="form-group">
+              <label>输出语言</label>
+              <select v-model="plotLang" class="input">
+                <option value="python">Python (matplotlib)</option>
+                <option value="origin">Origin (LabTalk)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>图表类型</label>
+              <select v-model="plotType" class="input">
+                <option value="auto">自动检测</option>
+                <option value="line">折线图</option>
+                <option value="scatter">散点图</option>
+                <option value="bar">柱状图</option>
+                <option value="heatmap">热力图</option>
+                <option value="XRD">XRD 图谱</option>
+                <option value="stress_strain">应力-应变曲线</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-primary" @click="generatePlot" :disabled="aiPlotLoading || !plotDesc.trim()">
+            {{ aiPlotLoading ? '生成中...' : '生成代码' }}
+          </button>
+        </div>
+        <div v-if="plotCode" class="ai-plot-result">
+          <div class="result-header">
+            <span>生成的代码</span>
+            <button class="btn-icon" @click="copyPlotCode" title="复制">📋</button>
+          </div>
+          <pre class="code-block"><code>{{ plotCode }}</code></pre>
+          <p class="ai-hint">提示：请检查代码后在相应环境中运行，AI 生成的代码可能需要微调</p>
+        </div>
+      </div>
+    </div>
+
     <div class="toolbar">
       <input v-model="search" class="input search-input" placeholder="搜索绘图技巧..." />
       <select v-model="filterCat" class="input filter-select">
@@ -61,6 +109,7 @@
 
 <script>
 import { getStorage, setStorage } from '../utils/storage'
+import { isAIConfigured, generatePlotCode } from '../utils/ai'
 
 const TIPS = [
   {
@@ -476,7 +525,13 @@ export default {
       openCats: {},
       customNotes: [],
       showForm: false,
-      form: { title: '', content: '' }
+      form: { title: '', content: '' },
+      showAIPanel: isAIConfigured(),
+      plotDesc: '',
+      plotLang: 'python',
+      plotType: 'auto',
+      plotCode: '',
+      aiPlotLoading: false
     }
   },
   computed: {
@@ -510,6 +565,22 @@ export default {
       const notes = getStorage('plot_notes', []).filter(n => n.id !== id)
       setStorage('plot_notes', notes)
       this.customNotes = notes
+    },
+    async generatePlot() {
+      this.aiPlotLoading = true
+      this.plotCode = ''
+      try {
+        const raw = await generatePlotCode(this.plotDesc, this.plotType === 'auto' ? '' : this.plotType, '', this.plotLang)
+        // 提取代码块内容
+        const match = raw.match(/```(?:python|origin|labtalk)?\n?([\s\S]*?)```/)
+        this.plotCode = match ? match[1].trim() : raw
+      } catch (e) {
+        this.plotCode = '生成失败: ' + e.message
+      }
+      this.aiPlotLoading = false
+    },
+    copyPlotCode() {
+      if (this.plotCode) navigator.clipboard.writeText(this.plotCode)
     }
   },
   mounted() {
@@ -522,6 +593,32 @@ export default {
 <style scoped>
 .plot-tips-page { max-width: 900px; }
 .toolbar { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+
+.ai-plot-card { margin-bottom: 16px; }
+.card-title { display: flex; align-items: center; gap: 8px; }
+.toggle-icon { font-size: 12px; color: var(--text-muted); margin-left: auto; }
+.ai-plot-form { margin-top: 12px; }
+.ai-plot-options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.form-group { margin-bottom: 12px; }
+.form-group label { display: block; font-size: 13px; font-weight: 500; color: var(--text-secondary); margin-bottom: 4px; }
+.ai-plot-result { margin-top: 16px; }
+.result-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 13px; font-weight: 500; color: var(--text-secondary); }
+.code-block {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  overflow-x: auto;
+  font-size: 13px;
+  line-height: 1.5;
+  max-height: 400px;
+  color: var(--text-primary);
+}
+.ai-hint { font-size: 12px; color: var(--text-muted); margin-top: 8px; }
+.btn { padding: 10px 32px; border: none; border-radius: var(--radius); font-size: 15px; font-weight: 500; cursor: pointer; }
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-icon { background: none; border: none; font-size: 14px; cursor: pointer; padding: 4px; color: var(--text-muted); }
 .search-input { flex: 1; min-width: 200px; }
 .filter-select { width: 130px; }
 .category-section { margin-bottom: 20px; }

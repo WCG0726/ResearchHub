@@ -122,7 +122,29 @@
               {{ aiLoading ? '推荐中...' : 'AI 推荐' }}
             </button>
           </div>
-          <div v-if="aiJournalResult" class="ai-result-box">
+          <div v-if="aiJournalCards.length" class="ai-result-box">
+            <div class="ai-result-header">
+              <span>AI 推荐期刊</span>
+              <button class="btn-close-sm" @click="aiJournalCards = []">×</button>
+            </div>
+            <div class="journal-cards">
+              <div v-for="(j, i) in aiJournalCards" :key="i" class="journal-card">
+                <div class="journal-name">{{ j.name }} <span class="journal-abbr">({{ j.abbreviation }})</span></div>
+                <div class="journal-meta">
+                  <span class="journal-if">IF: {{ j.impactFactor }}</span>
+                  <span class="journal-speed">{{ j.reviewSpeed }}</span>
+                  <span v-if="j.openAccess" class="journal-oa">OA</span>
+                </div>
+                <div class="journal-fit">
+                  <div class="fit-bar"><div class="fit-fill" :style="{ width: j.fitScore + '%' }"></div></div>
+                  <span class="fit-score">匹配度 {{ j.fitScore }}%</span>
+                </div>
+                <div class="journal-reason">{{ j.reasoning }}</div>
+                <button class="btn-select" @click="newPaper.journal = j.abbreviation || j.name">选择此刊</button>
+              </div>
+            </div>
+          </div>
+          <div v-else-if="aiJournalResult" class="ai-result-box">
             <div class="ai-result-header">
               <span>AI 推荐结果</span>
               <button class="btn-close-sm" @click="aiJournalResult = ''">×</button>
@@ -147,7 +169,7 @@
 
 <script>
 import { useWritingStore } from '../stores/writing'
-import { recommendJournals, generateAbstract, generateSectionDraft, isAIConfigured } from '../utils/ai'
+import { recommendJournalsDetailed, generateAbstract, generateSectionDraft, isAIConfigured } from '../utils/ai'
 
 export default {
   name: 'WritingView',
@@ -164,6 +186,7 @@ export default {
       },
       aiLoading: false,
       aiJournalResult: '',
+      aiJournalCards: [],
       aiAbstractResult: '',
       aiError: ''
     }
@@ -216,6 +239,7 @@ export default {
       this.showEditor = false
       this.newPaper = { title: '', journal: '', topic: '' }
       this.aiJournalResult = ''
+      this.aiJournalCards = []
     },
     getStatusType(status) {
       const map = { '构思': 'primary', '写作中': 'warning', '修改中': 'info', '已投稿': 'success', '已接收': 'success' }
@@ -230,8 +254,14 @@ export default {
       if (!isAIConfigured()) { alert('请先在设置中配置 AI API Key'); return }
       this.aiLoading = true
       this.aiJournalResult = ''
+      this.aiJournalCards = []
       try {
-        this.aiJournalResult = await recommendJournals(this.newPaper.title, '', this.newPaper.topic)
+        const result = await recommendJournalsDetailed(this.newPaper.title, '', this.newPaper.topic)
+        if (Array.isArray(result)) {
+          this.aiJournalCards = result
+        } else {
+          this.aiJournalResult = result
+        }
       } catch (e) {
         alert('AI 推荐失败：' + e.message)
       }
@@ -568,6 +598,30 @@ export default {
   font-family: inherit;
   margin: 0;
 }
+
+.journal-cards { display: flex; flex-direction: column; gap: 10px; }
+.journal-card { padding: 12px; background: var(--bg-surface); border-radius: var(--radius); }
+.journal-name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.journal-abbr { font-weight: 400; color: var(--text-secondary); font-size: 13px; }
+.journal-meta { display: flex; gap: 10px; margin: 6px 0; font-size: 12px; }
+.journal-if { padding: 2px 8px; background: rgba(99, 102, 241, 0.1); color: var(--primary); border-radius: 4px; font-weight: 600; }
+.journal-speed { color: var(--text-secondary); }
+.journal-oa { padding: 2px 6px; background: rgba(16, 185, 129, 0.1); color: var(--success); border-radius: 4px; font-size: 11px; font-weight: 600; }
+.journal-fit { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+.fit-bar { flex: 1; height: 6px; background: var(--bg-secondary); border-radius: 3px; overflow: hidden; }
+.fit-fill { height: 100%; background: var(--primary); border-radius: 3px; }
+.fit-score { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+.journal-reason { font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 8px; }
+.btn-select {
+  padding: 4px 12px;
+  border: 1px solid var(--primary);
+  border-radius: var(--radius);
+  background: none;
+  color: var(--primary);
+  font-size: 12px;
+  cursor: pointer;
+}
+.btn-select:hover { background: rgba(99, 102, 241, 0.08); }
 
 .btn-close-sm {
   border: none;

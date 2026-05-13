@@ -84,6 +84,28 @@
             <span v-for="tag in item.tags" :key="tag" class="tag tag-primary">{{ tag }}</span>
           </div>
           <p v-if="item.abstractNote" class="item-abstract">{{ truncate(item.abstractNote, 150) }}</p>
+          <!-- AI 分析按钮 -->
+          <div v-if="aiReady" class="ai-actions">
+            <button class="ai-btn" :class="{ active: getAIResult(item, 'summary') }" :disabled="isLoading(item, 'summary')" @click="runAI(item, 'summary')">
+              {{ isLoading(item, 'summary') ? '分析中...' : '📋 摘要' }}
+            </button>
+            <button class="ai-btn" :class="{ active: getAIResult(item, 'findings') }" :disabled="isLoading(item, 'findings')" @click="runAI(item, 'findings')">
+              {{ isLoading(item, 'findings') ? '分析中...' : '🔍 关键发现' }}
+            </button>
+            <button class="ai-btn" :class="{ active: getAIResult(item, 'related') }" :disabled="isLoading(item, 'related')" @click="runAI(item, 'related')">
+              {{ isLoading(item, 'related') ? '分析中...' : '🔗 相关研究' }}
+            </button>
+            <button class="ai-btn" :class="{ active: getAIResult(item, 'difficulty') }" :disabled="isLoading(item, 'difficulty')" @click="runAI(item, 'difficulty')">
+              {{ isLoading(item, 'difficulty') ? '分析中...' : '📊 难度' }}
+            </button>
+          </div>
+          <!-- AI 结果展示 -->
+          <div v-for="type in ['summary', 'findings', 'related', 'difficulty']" :key="type">
+            <div v-if="getAIResult(item, type)" class="ai-result-box">
+              <div class="ai-result-label">{{ { summary: 'AI 摘要', findings: '关键发现', related: '相关研究', difficulty: '难度评估' }[type] }}</div>
+              <div class="ai-result-text" v-html="formatAIResult(getAIResult(item, type))"></div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -99,6 +121,7 @@
 
 <script>
 import { getZoteroConfig, saveZoteroConfig, detectLocalZotero, getRecentFromLocal, getRecentFromWeb, formatCreators } from '../utils/zotero'
+import { isAIConfigured, summarizePaper, extractKeyFindings, recommendRelatedPapers, assessReadingDifficulty } from '../utils/ai'
 
 export default {
   name: 'ZoteroView',
@@ -113,13 +136,20 @@ export default {
       editApiKey: config.apiKey,
       editUserId: config.userId,
       localStatus: null,
-      webStatus: null
+      webStatus: null,
+      aiReady: isAIConfigured(),
+      aiResults: {},
+      aiLoading: null
     }
   },
   methods: {
     formatAuthors: formatCreators,
     truncate(str, len) {
       return str && str.length > len ? str.slice(0, len) + '...' : str
+    },
+    formatAIResult(text) {
+      if (!text) return ''
+      return text.replace(/\n/g, '<br>').replace(/(\d+\.)\s/g, '<strong>$1</strong> ')
     },
     typeLabel(type) {
       const map = {
@@ -171,6 +201,37 @@ export default {
       } else if (cfg.apiKey && cfg.userId) {
         this.items = await getRecentFromWeb(cfg.apiKey, cfg.userId)
       }
+    },
+    async runAI(item, type) {
+      const key = item.key || item.title
+      const loadingKey = `${key}|${type}`
+      if (this.aiLoading === loadingKey) return
+      this.aiLoading = loadingKey
+      const title = item.title || ''
+      const abstract = item.abstractNote || ''
+      const field = item.tags?.[0] || ''
+      try {
+        let result
+        if (type === 'summary') result = await summarizePaper(title, abstract)
+        else if (type === 'findings') result = await extractKeyFindings(title, abstract)
+        else if (type === 'related') result = await recommendRelatedPapers(title, abstract, field)
+        else if (type === 'difficulty') result = await assessReadingDifficulty(title, abstract)
+        if (!this.aiResults[key]) this.aiResults[key] = {}
+        this.aiResults[key][type] = result
+      } catch (e) {
+        if (!this.aiResults[key]) this.aiResults[key] = {}
+        this.aiResults[key][type] = '错误: ' + e.message
+      } finally {
+        this.aiLoading = null
+      }
+    },
+    getAIResult(item, type) {
+      const key = item.key || item.title
+      return this.aiResults[key]?.[type] || ''
+    },
+    isLoading(item, type) {
+      const key = item.key || item.title
+      return this.aiLoading === `${key}|${type}`
     }
   },
   async mounted() {
@@ -332,5 +393,48 @@ export default {
   color: var(--text-muted);
   line-height: 1.6;
   margin: 6px 0 0;
+}
+
+.ai-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.ai-btn {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ai-btn:hover { border-color: var(--primary); color: var(--primary); }
+.ai-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.ai-btn.active { background: rgba(99, 102, 241, 0.08); border-color: var(--primary); color: var(--primary); }
+
+.ai-result-box {
+  margin-top: 10px;
+  padding: 12px;
+  background: rgba(99, 102, 241, 0.04);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  border-radius: var(--radius);
+}
+
+.ai-result-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+
+.ai-result-text {
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.7;
 }
 </style>

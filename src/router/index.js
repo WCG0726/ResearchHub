@@ -28,6 +28,7 @@ const AcademicCalendarView = () => import('../views/AcademicCalendarView.vue')
 const ProgressView = () => import('../views/ProgressView.vue')
 const SettingsView = () => import('../views/SettingsView.vue')
 const BugScannerView = () => import('../views/BugScannerView.vue')
+const FormatRewriteView = () => import('../views/FormatRewriteView.vue')
 const routes = [
   { path: '/login', name: 'login', component: LoginView },
   { path: '/', name: 'dashboard', component: DashboardView, meta: { requiresAuth: true } },
@@ -57,6 +58,7 @@ const routes = [
   { path: '/progress', name: 'progress', component: ProgressView, meta: { requiresAuth: true } },
   { path: '/settings', name: 'settings', component: SettingsView, meta: { requiresAuth: true } },
   { path: '/bug-scanner', name: 'bug-scanner', component: BugScannerView, meta: { requiresAuth: true } },
+  { path: '/format-rewrite', name: 'format-rewrite', component: FormatRewriteView, meta: { requiresAuth: true } },
   { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
 
@@ -104,6 +106,7 @@ router.beforeEach((to) => {
     progress: '科研进度',
     settings: '设置',
     'bug-scanner': 'Bug 检测',
+    'format-rewrite': '格式改写',
     'not-found': '页面未找到'
   }
   document.title = titles[to.name] || '科研管理平台'

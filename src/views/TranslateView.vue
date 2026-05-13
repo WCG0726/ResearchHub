@@ -2,43 +2,17 @@
   <div class="translate-page">
     <h1 class="page-title">翻译工具</h1>
 
-    <!-- API 配置 -->
-    <div class="card config-card">
-      <div class="config-header" @click="showConfig = !showConfig">
-        <h3 class="card-title">⚙️ API 配置</h3>
-        <span class="toggle-icon">{{ showConfig ? '▲' : '▼' }}</span>
-      </div>
-      <div v-if="showConfig" class="config-body">
-        <div class="form-row">
-          <label>服务商</label>
-          <select v-model="config.provider" class="select">
-            <option value="openai">OpenAI</option>
-            <option value="deepl">DeepL</option>
-            <option value="custom">自定义 API</option>
-          </select>
-        </div>
-        <div class="form-row">
-          <label>API Key</label>
-          <input v-model="config.apiKey" type="password" placeholder="sk-..." class="input" />
-        </div>
-        <div class="form-row" v-if="config.provider === 'custom'">
-          <label>API 地址</label>
-          <input v-model="config.baseUrl" type="text" placeholder="https://api.example.com/v1/chat/completions" class="input" />
-        </div>
-        <div class="form-row" v-if="config.provider === 'openai'">
-          <label>模型</label>
-          <input v-model="config.model" type="text" placeholder="gpt-4o-mini" class="input" />
-        </div>
-        <div class="form-row">
-          <label>提示词风格</label>
-          <select v-model="config.style" class="select">
-            <option value="academic">学术论文</option>
-            <option value="natural">自然流畅</option>
-            <option value="formal">正式商务</option>
-            <option value="simple">简洁明了</option>
-          </select>
-        </div>
-        <button class="btn btn-save" @click="saveConfig">保存配置</button>
+    <div v-if="!aiReady" class="card" style="text-align:center;padding:24px">
+      <p style="color:var(--text-secondary);margin-bottom:12px">请先在「设置」页面配置 API Key 后使用翻译功能</p>
+      <router-link to="/settings" class="btn btn-primary" style="text-decoration:none;display:inline-block;padding:8px 24px">前往设置</router-link>
+    </div>
+
+    <template v-else>
+    <!-- 翻译风格 -->
+    <div class="card" style="margin-bottom:12px">
+      <div class="style-bar">
+        <span class="style-label">翻译风格：</span>
+        <button v-for="s in styles" :key="s.value" class="style-btn" :class="{ active: style === s.value }" @click="style = s.value">{{ s.label }}</button>
       </div>
     </div>
 
@@ -98,42 +72,29 @@
         </div>
       </div>
     </div>
+    </template>
   </div>
 </template>
 
 <script>
-import { getStorage, setStorage } from '../utils/storage'
-
-const STYLE_PROMPTS = {
-  academic: 'You are an academic translator. Translate the following text into natural, fluent Chinese suitable for academic papers. Preserve technical terminology. Output only the translation.',
-  natural: 'Translate the following text into natural, fluent Chinese. Output only the translation.',
-  formal: 'Translate the following text into formal business Chinese. Output only the translation.',
-  simple: 'Translate the following text into simple, clear Chinese. Output only the translation.'
-}
-
-const STYLE_PROMPTS_EN = {
-  academic: 'You are an academic translator. Translate the following text into polished, publication-ready English suitable for academic papers. Preserve technical terminology. Output only the translation.',
-  natural: 'Translate the following text into natural, fluent English. Output only the translation.',
-  formal: 'Translate the following text into formal business English. Output only the translation.',
-  simple: 'Translate the following text into simple, clear English. Output only the translation.'
-}
+import { isAIConfigured, translateText } from '../utils/ai'
 
 export default {
   name: 'TranslateView',
   data() {
     return {
-      config: getStorage('translate_config', {
-        provider: 'openai',
-        apiKey: '',
-        baseUrl: '',
-        model: 'gpt-4o-mini',
-        style: 'academic'
-      }),
-      showConfig: false,
+      aiReady: isAIConfigured(),
       source: '',
       result: '',
       loading: false,
       direction: 'en2zh',
+      style: 'academic',
+      styles: [
+        { value: 'academic', label: '学术论文' },
+        { value: 'natural', label: '自然流畅' },
+        { value: 'formal', label: '正式商务' },
+        { value: 'simple', label: '简洁明了' }
+      ],
       phrases: [
         { en: 'This paper presents a novel approach to...', zh: '本文提出了一种新颖的方法来...' },
         { en: 'The results demonstrate that...', zh: '结果表明...' },
@@ -147,10 +108,6 @@ export default {
     }
   },
   methods: {
-    saveConfig() {
-      setStorage('translate_config', this.config)
-      this.showConfig = false
-    },
     swapLang() {
       this.direction = this.direction === 'en2zh' ? 'zh2en' : 'en2zh'
       if (this.result) {
@@ -159,61 +116,12 @@ export default {
       }
     },
     async translate() {
-      if (!this.config.apiKey) {
-        this.showConfig = true
-        return
-      }
       this.loading = true
       this.result = ''
-
-      const prompt = this.direction === 'en2zh'
-        ? STYLE_PROMPTS[this.config.style]
-        : STYLE_PROMPTS_EN[this.config.style]
-
       try {
-        if (this.config.provider === 'openai' || this.config.provider === 'custom') {
-          const url = this.config.provider === 'openai'
-            ? 'https://api.openai.com/v1/chat/completions'
-            : this.config.baseUrl
-
-          const resp = await fetch(url, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${this.config.apiKey}`
-            },
-            body: JSON.stringify({
-              model: this.config.model || 'gpt-4o-mini',
-              messages: [
-                { role: 'system', content: prompt },
-                { role: 'user', content: this.source }
-              ],
-              temperature: 0.3
-            })
-          })
-          const data = await resp.json()
-          if (data.choices) {
-            this.result = data.choices[0].message.content.trim()
-          } else if (data.error) {
-            this.result = '错误: ' + data.error.message
-          }
-        } else if (this.config.provider === 'deepl') {
-          const resp = await fetch('https://api-free.deepl.com/v2/translate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              auth_key: this.config.apiKey,
-              text: this.source,
-              target_lang: this.direction === 'en2zh' ? 'ZH' : 'EN'
-            })
-          })
-          const data = await resp.json()
-          if (data.translations) {
-            this.result = data.translations[0].text
-          }
-        }
+        this.result = await translateText(this.source, this.direction, this.style)
       } catch (e) {
-        this.result = '请求失败: ' + e.message
+        this.result = '翻译失败: ' + e.message
       } finally {
         this.loading = false
       }
@@ -230,52 +138,30 @@ export default {
 <style scoped>
 .translate-page { max-width: 900px; margin: 0 auto; }
 
-.config-card { margin-bottom: 16px; }
-
-.config-header {
+.style-bar {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  cursor: pointer;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
-.config-header .card-title { margin: 0; }
+.style-label { font-size: 13px; color: var(--text-secondary); white-space: nowrap; }
 
-.toggle-icon { color: var(--text-muted); font-size: 12px; }
-
-.config-body { margin-top: 16px; }
-
-.form-row {
-  margin-bottom: 12px;
-}
-
-.form-row label {
-  display: block;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-secondary);
-  margin-bottom: 4px;
-}
-
-.input, .select {
-  width: 100%;
-  padding: 8px 12px;
+.style-btn {
+  padding: 4px 12px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-  font-size: 14px;
-  box-sizing: border-box;
+  background: none;
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.btn-save {
-  padding: 8px 20px;
-  border: none;
-  border-radius: var(--radius);
+.style-btn.active {
   background: var(--primary);
   color: white;
-  font-size: 14px;
-  cursor: pointer;
+  border-color: var(--primary);
 }
 
 .translate-box { margin-bottom: 16px; }

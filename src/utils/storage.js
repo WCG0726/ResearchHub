@@ -33,7 +33,7 @@ const ALL_KEYS = [
   'calendar_events', 'profile', 'theme', 'lit_notes', 'experiments',
   'datasets', 'latex_snippets', 'meetings', 'inspirations', 'milestones',
   'pomodoro', 'email_templates', 'academic_events', 'translate_config',
-  'custom_links'
+  'custom_links', 'ai_config'
 ]
 
 export function exportAllData() {
