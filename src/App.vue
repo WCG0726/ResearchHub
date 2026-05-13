@@ -22,7 +22,9 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, computed, watch, onMounted, onUnmounted, getCurrentInstance } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import HeaderNav from './components/HeaderNav.vue'
 import SidebarNav from './components/SidebarNav.vue'
 import ErrorBoundary from './components/ErrorBoundary.vue'
@@ -35,126 +37,115 @@ import { initPresence, stopPresence } from './utils/presence'
 import { useBugScannerStore } from './stores/bugScanner'
 import { isAIConfigured } from './utils/ai'
 
-export default {
-  name: 'App',
-  components: { HeaderNav, SidebarNav, ErrorBoundary, QuickNote, AmbientBackground, AIChatbot },
-  data() {
-    return {
-      _profileStore: useProfileStore(),
-      isDark: false,
-      sidebarOpen: false,
-      showQuickNote: false,
-      aiReady: isAIConfigured()
-    }
-  },
-  computed: {
-    isLoginPage() {
-      return this.$route.name === 'login'
-    }
-  },
-  watch: {
-    '$route'() {
-      this.manageHeartbeat()
-      this.sidebarOpen = false
-    }
-  },
-  methods: {
-    toggleTheme() {
-      this.isDark = !this.isDark
-      this._profileStore.toggleTheme()
-    },
-    manageHeartbeat() {
-      const user = getCurrentUser()
-      if (user) {
-        initPresence(user.username, user.nickname)
-      } else {
-        stopPresence()
-      }
-    },
-    _initErrorHandlers() {
-      const scanner = useBugScannerStore()
-      this._onError = (event) => {
-        scanner.addRuntimeError({
-          type: 'error',
-          message: event.message || 'Unknown error',
-          filename: event.filename || '',
-          lineno: event.lineno || 0,
-          colno: event.colno || 0
-        })
-      }
-      this._onUnhandled = (event) => {
-        const msg = event.reason?.message || event.reason?.toString() || 'Unhandled rejection'
-        scanner.addRuntimeError({
-          type: 'unhandledrejection',
-          message: msg,
-          filename: '',
-          lineno: 0
-        })
-      }
-      window.addEventListener('error', this._onError)
-      window.addEventListener('unhandledrejection', this._onUnhandled)
+const route = useRoute()
+const router = useRouter()
+const profileStore = useProfileStore()
 
-      // Vue errorHandler
-      const app = this.$.appContext.app
-      this._vueErrorHandler = (err, instance, info) => {
-        scanner.addRuntimeError({
-          type: 'vue',
-          message: err.message || String(err),
-          filename: instance?.$options?.name || 'UnknownComponent',
-          lineno: 0,
-          info
-        })
-      }
-      app.config.errorHandler = this._vueErrorHandler
-    },
-    _removeErrorHandlers() {
-      if (this._onError) window.removeEventListener('error', this._onError)
-      if (this._onUnhandled) window.removeEventListener('unhandledrejection', this._onUnhandled)
-    },
-    handleKeydown(e) {
-      // Ctrl+K: 全局搜索
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault()
-        document.querySelector('.search-trigger')?.click()
-      }
-      // Ctrl+N: 新建记录
-      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
-        e.preventDefault()
-        if (this.$route.name === 'records') {
-          document.querySelector('.btn-primary')?.click()
-        } else {
-          this.$router.push('/records')
-        }
-      }
-      // Ctrl+Shift+D: 切换主题
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'D') {
-        e.preventDefault()
-        this.toggleTheme()
-      }
-      // Ctrl+Shift+N: 快捷笔记
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'N') {
-        e.preventDefault()
-        this.showQuickNote = !this.showQuickNote
-      }
-    }
-  },
-  created() {
-    this._profileStore.load()
-    this.isDark = this._profileStore.theme === 'dark'
-    this._profileStore.setTheme(this._profileStore.theme)
-  },
-  mounted() {
-    this.manageHeartbeat()
-    document.addEventListener('keydown', this.handleKeydown)
-    this._initErrorHandlers()
-  },
-  unmounted() {
-    const user = getCurrentUser()
-    if (user) stopPresence(user.username, user.nickname)
-    document.removeEventListener('keydown', this.handleKeydown)
-    this._removeErrorHandlers()
+const isDark = ref(false)
+const sidebarOpen = ref(false)
+const showQuickNote = ref(false)
+const aiReady = ref(isAIConfigured())
+
+const isLoginPage = computed(() => route.name === 'login')
+
+// 初始化主题
+profileStore.load()
+isDark.value = profileStore.theme === 'dark'
+profileStore.setTheme(profileStore.theme)
+
+function toggleTheme() {
+  isDark.value = !isDark.value
+  profileStore.toggleTheme()
+}
+
+function manageHeartbeat() {
+  const user = getCurrentUser()
+  if (user) {
+    initPresence(user.username, user.nickname)
+  } else {
+    stopPresence()
   }
 }
+
+// 错误处理
+let onError, onUnhandled, vueErrorHandler
+
+function initErrorHandlers() {
+  const scanner = useBugScannerStore()
+  onError = (event) => {
+    scanner.addRuntimeError({
+      type: 'error',
+      message: event.message || 'Unknown error',
+      filename: event.filename || '',
+      lineno: event.lineno || 0,
+      colno: event.colno || 0
+    })
+  }
+  onUnhandled = (event) => {
+    const msg = event.reason?.message || event.reason?.toString() || 'Unhandled rejection'
+    scanner.addRuntimeError({ type: 'unhandledrejection', message: msg, filename: '', lineno: 0 })
+  }
+  window.addEventListener('error', onError)
+  window.addEventListener('unhandledrejection', onUnhandled)
+
+  const { appContext } = getCurrentInstance()
+  vueErrorHandler = (err, instance, info) => {
+    scanner.addRuntimeError({
+      type: 'vue',
+      message: err.message || String(err),
+      filename: instance?.$options?.name || 'UnknownComponent',
+      lineno: 0,
+      info
+    })
+  }
+  appContext.app.config.errorHandler = vueErrorHandler
+}
+
+function removeErrorHandlers() {
+  if (onError) window.removeEventListener('error', onError)
+  if (onUnhandled) window.removeEventListener('unhandledrejection', onUnhandled)
+}
+
+function handleKeydown(e) {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+    e.preventDefault()
+    document.querySelector('.search-trigger')?.click()
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+    e.preventDefault()
+    if (route.name === 'records') {
+      document.querySelector('.btn-primary')?.click()
+    } else {
+      router.push('/records')
+    }
+  }
+  if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'D') {
+    e.preventDefault()
+    toggleTheme()
+  }
+  if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'N') {
+    e.preventDefault()
+    showQuickNote.value = !showQuickNote.value
+  }
+}
+
+watch(() => route.name, () => {
+  manageHeartbeat()
+  sidebarOpen.value = false
+})
+
+onMounted(() => {
+  manageHeartbeat()
+  document.addEventListener('keydown', handleKeydown)
+  initErrorHandlers()
+})
+
+onUnmounted(() => {
+  const user = getCurrentUser()
+  if (user) stopPresence(user.username, user.nickname)
+  document.removeEventListener('keydown', handleKeydown)
+  removeErrorHandlers()
+})
 </script>
 
 <style>
