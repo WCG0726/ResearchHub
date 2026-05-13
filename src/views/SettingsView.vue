@@ -101,149 +101,148 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, reactive, onMounted } from 'vue'
 import { exportAllData, importAllData, getStorage, setStorage } from '../utils/storage'
 
-export default {
-  name: 'SettingsView',
-  data() {
-    return {
-      msg: '',
-      msgType: '',
-      importPreview: null,
-      importMode: 'merge',
-      importFile: null,
-      storageUsed: '',
-      storageTotal: '5 MB',
-      storagePercent: 0,
-      aiConfig: { provider: 'openai', apiKey: '', baseUrl: '', model: 'gpt-4o-mini' },
-      aiMsg: '',
-      aiMsgType: '',
-      aiTesting: false
-    }
-  },
-  mounted() {
-    this.calcStorage()
-    this.loadAIConfig()
-  },
-  methods: {
-    loadAIConfig() {
-      const saved = getStorage('ai_config', null)
-      if (saved) {
-        this.aiConfig = {
-          provider: saved.provider || 'openai',
-          apiKey: saved.apiKey || '',
-          baseUrl: saved.baseUrl || '',
-          model: saved.model || 'gpt-4o-mini'
-        }
-      }
-    },
-    saveAIConfig() {
-      setStorage('ai_config', this.aiConfig)
-      this.aiMsg = '✓ 配置已保存，所有 AI 功能已生效'
-      this.aiMsgType = 'success'
-    },
-    onProviderChange() {
-      if (this.aiConfig.provider === 'openai') {
-        this.aiConfig.baseUrl = ''
-        if (!this.aiConfig.model) this.aiConfig.model = 'gpt-4o-mini'
-      }
-    },
-    async testAIConfig() {
-      if (!this.aiConfig.apiKey) { this.aiMsg = '请填写 API Key'; this.aiMsgType = 'error'; return }
-      this.aiTesting = true
-      this.aiMsg = ''
-      try {
-        const url = this.aiConfig.provider === 'openai'
-          ? 'https://api.openai.com/v1/chat/completions'
-          : this.aiConfig.baseUrl
-        const resp = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.aiConfig.apiKey}` },
-          body: JSON.stringify({
-            model: this.aiConfig.model || 'gpt-4o-mini',
-            messages: [{ role: 'user', content: 'Say "ok"' }],
-            max_tokens: 5
-          })
-        })
-        if (resp.ok) {
-          this.aiMsg = '✓ 连接成功，API 可用'
-          this.aiMsgType = 'success'
-        } else {
-          const err = await resp.json().catch(() => ({}))
-          this.aiMsg = '连接失败：' + (err.error?.message || `HTTP ${resp.status}`)
-          this.aiMsgType = 'error'
-        }
-      } catch (e) {
-        this.aiMsg = '连接失败：' + e.message
-        this.aiMsgType = 'error'
-      } finally {
-        this.aiTesting = false
-      }
-    },
-    exportData() {
-      try {
-        const data = exportAllData()
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `researchhub-backup-${new Date().toISOString().split('T')[0]}.json`
-        a.click()
-        URL.revokeObjectURL(url)
-        this.msg = '✓ 数据已导出'
-        this.msgType = 'success'
-      } catch (e) {
-        this.msg = '导出失败：' + e.message
-        this.msgType = 'error'
-      }
-    },
-    importData(e) {
-      const file = e.target.files[0]
-      if (!file) return
-      const reader = new FileReader()
-      reader.onload = (ev) => {
-        try {
-          const json = JSON.parse(ev.target.result)
-          if (!json.data) throw new Error('无效的备份文件')
-          this.importPreview = json
-          this.msg = ''
-        } catch (err) {
-          this.msg = '文件解析失败：' + err.message
-          this.msgType = 'error'
-        }
-      }
-      reader.readAsText(file)
-      e.target.value = ''
-    },
-    confirmImport() {
-      try {
-        importAllData(this.importPreview, this.importMode)
-        this.msg = '✓ 数据导入成功，刷新页面后生效'
-        this.msgType = 'success'
-        this.importPreview = null
-        this.calcStorage()
-      } catch (e) {
-        this.msg = '导入失败：' + e.message
-        this.msgType = 'error'
-      }
-    },
-    calcStorage() {
-      let total = 0
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i)
-        total += (key.length + (localStorage.getItem(key) || '').length) * 2
-      }
-      const kb = total / 1024
-      if (kb > 1024) {
-        this.storageUsed = (kb / 1024).toFixed(1) + ' MB'
-      } else {
-        this.storageUsed = kb.toFixed(1) + ' KB'
-      }
-      this.storagePercent = Math.min(100, Math.round((total / (5 * 1024 * 1024)) * 100))
-    }
+const msg = ref('')
+const msgType = ref('')
+const importPreview = ref(null)
+const importMode = ref('merge')
+const importFile = ref(null)
+const storageUsed = ref('')
+const storageTotal = ref('5 MB')
+const storagePercent = ref(0)
+const aiConfig = reactive({ provider: 'openai', apiKey: '', baseUrl: '', model: 'gpt-4o-mini' })
+const aiMsg = ref('')
+const aiMsgType = ref('')
+const aiTesting = ref(false)
+
+function loadAIConfig() {
+  const saved = getStorage('ai_config', null)
+  if (saved) {
+    aiConfig.provider = saved.provider || 'openai'
+    aiConfig.apiKey = saved.apiKey || ''
+    aiConfig.baseUrl = saved.baseUrl || ''
+    aiConfig.model = saved.model || 'gpt-4o-mini'
   }
 }
+
+function saveAIConfig() {
+  setStorage('ai_config', aiConfig)
+  aiMsg.value = '✓ 配置已保存，所有 AI 功能已生效'
+  aiMsgType.value = 'success'
+}
+
+function onProviderChange() {
+  if (aiConfig.provider === 'openai') {
+    aiConfig.baseUrl = ''
+    if (!aiConfig.model) aiConfig.model = 'gpt-4o-mini'
+  }
+}
+
+async function testAIConfig() {
+  if (!aiConfig.apiKey) { aiMsg.value = '请填写 API Key'; aiMsgType.value = 'error'; return }
+  aiTesting.value = true
+  aiMsg.value = ''
+  try {
+    const url = aiConfig.provider === 'openai'
+      ? 'https://api.openai.com/v1/chat/completions'
+      : aiConfig.baseUrl
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${aiConfig.apiKey}` },
+      body: JSON.stringify({
+        model: aiConfig.model || 'gpt-4o-mini',
+        messages: [{ role: 'user', content: 'Say "ok"' }],
+        max_tokens: 5
+      })
+    })
+    if (resp.ok) {
+      aiMsg.value = '✓ 连接成功，API 可用'
+      aiMsgType.value = 'success'
+    } else {
+      const err = await resp.json().catch(() => ({}))
+      aiMsg.value = '连接失败：' + (err.error?.message || `HTTP ${resp.status}`)
+      aiMsgType.value = 'error'
+    }
+  } catch (e) {
+    aiMsg.value = '连接失败：' + e.message
+    aiMsgType.value = 'error'
+  } finally {
+    aiTesting.value = false
+  }
+}
+
+function exportData() {
+  try {
+    const data = exportAllData()
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `researchhub-backup-${new Date().toISOString().split('T')[0]}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+    msg.value = '✓ 数据已导出'
+    msgType.value = 'success'
+  } catch (e) {
+    msg.value = '导出失败：' + e.message
+    msgType.value = 'error'
+  }
+}
+
+function importData(e) {
+  const file = e.target.files[0]
+  if (!file) return
+  const reader = new FileReader()
+  reader.onload = (ev) => {
+    try {
+      const json = JSON.parse(ev.target.result)
+      if (!json.data) throw new Error('无效的备份文件')
+      importPreview.value = json
+      msg.value = ''
+    } catch (err) {
+      msg.value = '文件解析失败：' + err.message
+      msgType.value = 'error'
+    }
+  }
+  reader.readAsText(file)
+  e.target.value = ''
+}
+
+function confirmImport() {
+  try {
+    importAllData(importPreview.value, importMode.value)
+    msg.value = '✓ 数据导入成功，刷新页面后生效'
+    msgType.value = 'success'
+    importPreview.value = null
+    calcStorage()
+  } catch (e) {
+    msg.value = '导入失败：' + e.message
+    msgType.value = 'error'
+  }
+}
+
+function calcStorage() {
+  let total = 0
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i)
+    total += (key.length + (localStorage.getItem(key) || '').length) * 2
+  }
+  const kb = total / 1024
+  if (kb > 1024) {
+    storageUsed.value = (kb / 1024).toFixed(1) + ' MB'
+  } else {
+    storageUsed.value = kb.toFixed(1) + ' KB'
+  }
+  storagePercent.value = Math.min(100, Math.round((total / (5 * 1024 * 1024)) * 100))
+}
+
+onMounted(() => {
+  calcStorage()
+  loadAIConfig()
+})
 </script>
 
 <style scoped>

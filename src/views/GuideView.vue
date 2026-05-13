@@ -8,7 +8,7 @@
 
     <div class="guide-nav">
       <button
-        v-for="cat in categories"
+        v-for="cat in filteredCategories"
         :key="cat.id"
         class="guide-nav-btn"
         :class="{ active: activeCategory === cat.id }"
@@ -34,7 +34,7 @@
 </template>
 
 <script setup>
-import { ref, defineAsyncComponent } from 'vue'
+import { ref, computed, defineAsyncComponent } from 'vue'
 
 const GuideStructure = defineAsyncComponent(() => import('./guide/GuideStructure.vue'))
 const GuideEnglish = defineAsyncComponent(() => import('./guide/GuideEnglish.vue'))
@@ -51,17 +51,26 @@ const searchQuery = ref('')
 const activeCategory = ref('structure')
 
 const categories = [
-  { id: 'structure', name: '论文结构', icon: '📄' },
-  { id: 'english', name: '英文规范', icon: '✍️' },
-  { id: 'phrases', name: '句式库', icon: '💬' },
-  { id: 'figures', name: '图表文献', icon: '📊' },
-  { id: 'submission', name: '投稿回复', icon: '📮' },
-  { id: 'thermoelectric', name: '热电专用', icon: '🔬' },
-  { id: 'chinese', name: '中文论文', icon: '🇨🇳' },
-  { id: 'search', name: '文献检索', icon: '🔍' },
-  { id: 'social', name: '学术社交', icon: '🤝' },
-  { id: 'tools', name: '写作工具', icon: '🛠️' },
+  { id: 'structure', name: '论文结构', icon: '📄', keywords: ['title', 'abstract', 'introduction', 'methods', 'results', 'discussion', 'conclusion', '摘要', '引言', '方法', '结果', '讨论', '结论', '结构', 'IMRD'] },
+  { id: 'english', name: '英文规范', icon: '✍️', keywords: ['tense', 'voice', 'article', 'grammar', '时态', '语态', '冠词', '语法', '连接词', 'passive', 'active'] },
+  { id: 'phrases', name: '句式库', icon: '💬', keywords: ['phrase', 'sentence', '句式', '模板', '常用表达', 'background', 'method', 'result', 'conclusion'] },
+  { id: 'figures', name: '图表文献', icon: '📊', keywords: ['figure', 'table', 'reference', '图', '表', '参考文献', '分辨率', 'dpi', 'Zotero', 'EndNote'] },
+  { id: 'submission', name: '投稿回复', icon: '📮', keywords: ['cover letter', 'response', 'reviewer', '投稿', '回复', '审稿', '检查清单', 'checklist'] },
+  { id: 'thermoelectric', name: '热电专用', icon: '🔬', keywords: ['thermoelectric', 'ZT', 'Seebeck', '热电', '电导率', '热导率', '功率因子', 'phonon'] },
+  { id: 'chinese', name: '中文论文', icon: '🇨🇳', keywords: ['中文', 'chinese', '摘要', '标点', 'GB/T', '参考文献格式', '国标'] },
+  { id: 'search', name: '文献检索', icon: '🔍', keywords: ['Google Scholar', 'Web of Science', 'Scopus', '检索', '搜索', '数据库', '文献管理', 'Zotero'] },
+  { id: 'social', name: '学术社交', icon: '🤝', keywords: ['ResearchGate', 'ORCID', '会议', 'poster', '邮件', '时间管理', '番茄'] },
+  { id: 'tools', name: '写作工具', icon: '🛠️', keywords: ['Grammarly', 'Origin', 'matplotlib', 'Overleaf', 'LaTeX', '工具', '软件', 'AI'] },
 ]
+
+const filteredCategories = computed(() => {
+  const q = searchQuery.value.toLowerCase().trim()
+  if (!q) return categories
+  return categories.filter(cat =>
+    cat.name.toLowerCase().includes(q) ||
+    cat.keywords.some(k => k.toLowerCase().includes(q))
+  )
+})
 </script>
 
 <style scoped>

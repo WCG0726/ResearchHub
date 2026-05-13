@@ -119,127 +119,131 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, onMounted } from 'vue'
 import { getZoteroConfig, saveZoteroConfig, detectLocalZotero, getRecentFromLocal, getRecentFromWeb, formatCreators } from '../utils/zotero'
 import { isAIConfigured, summarizePaper, extractKeyFindings, recommendRelatedPapers, assessReadingDifficulty } from '../utils/ai'
 
-export default {
-  name: 'ZoteroView',
-  data() {
-    const config = getZoteroConfig()
-    return {
-      config,
-      connected: config.connected,
-      items: [],
-      showConfig: false,
-      configTab: 'local',
-      editApiKey: config.apiKey,
-      editUserId: config.userId,
-      localStatus: null,
-      webStatus: null,
-      aiReady: isAIConfigured(),
-      aiResults: {},
-      aiLoading: null
-    }
-  },
-  methods: {
-    formatAuthors: formatCreators,
-    truncate(str, len) {
-      return str && str.length > len ? str.slice(0, len) + '...' : str
-    },
-    formatAIResult(text) {
-      if (!text) return ''
-      return text.replace(/\n/g, '<br>').replace(/(\d+\.)\s/g, '<strong>$1</strong> ')
-    },
-    typeLabel(type) {
-      const map = {
-        journalArticle: '期刊',
-        conferencePaper: '会议',
-        book: '图书',
-        bookSection: '书章',
-        thesis: '学位论文',
-        preprint: '预印本',
-        report: '报告',
-        webpage: '网页'
-      }
-      return map[type] || type
-    },
-    async connectLocal() {
-      this.localStatus = null
-      const ok = await detectLocalZotero()
-      if (ok) {
-        saveZoteroConfig({ useLocal: true, connected: true })
-        this.config = getZoteroConfig()
-        this.connected = true
-        this.localStatus = { ok: true, msg: '连接成功！' }
-        await this.fetchItems()
-      } else {
-        this.localStatus = { ok: false, msg: '未检测到本地 Zotero，请确保 Zotero 已启动' }
-      }
-    },
-    async connectWeb() {
-      this.webStatus = null
-      if (!this.editApiKey || !this.editUserId) {
-        this.webStatus = { ok: false, msg: '请填写 API Key 和 User ID' }
-        return
-      }
-      try {
-        const items = await getRecentFromWeb(this.editApiKey, this.editUserId)
-        saveZoteroConfig({ apiKey: this.editApiKey, userId: this.editUserId, useLocal: false, connected: true })
-        this.config = getZoteroConfig()
-        this.connected = true
-        this.items = items
-        this.webStatus = { ok: true, msg: `连接成功！获取到 ${items.length} 篇文献` }
-      } catch {
-        this.webStatus = { ok: false, msg: '连接失败，请检查 API Key 和 User ID' }
-      }
-    },
-    async fetchItems() {
-      const cfg = getZoteroConfig()
-      if (cfg.useLocal) {
-        this.items = await getRecentFromLocal()
-      } else if (cfg.apiKey && cfg.userId) {
-        this.items = await getRecentFromWeb(cfg.apiKey, cfg.userId)
-      }
-    },
-    async runAI(item, type) {
-      const key = item.key || item.title
-      const loadingKey = `${key}|${type}`
-      if (this.aiLoading === loadingKey) return
-      this.aiLoading = loadingKey
-      const title = item.title || ''
-      const abstract = item.abstractNote || ''
-      const field = item.tags?.[0] || ''
-      try {
-        let result
-        if (type === 'summary') result = await summarizePaper(title, abstract)
-        else if (type === 'findings') result = await extractKeyFindings(title, abstract)
-        else if (type === 'related') result = await recommendRelatedPapers(title, abstract, field)
-        else if (type === 'difficulty') result = await assessReadingDifficulty(title, abstract)
-        if (!this.aiResults[key]) this.aiResults[key] = {}
-        this.aiResults[key][type] = result
-      } catch (e) {
-        if (!this.aiResults[key]) this.aiResults[key] = {}
-        this.aiResults[key][type] = '错误: ' + e.message
-      } finally {
-        this.aiLoading = null
-      }
-    },
-    getAIResult(item, type) {
-      const key = item.key || item.title
-      return this.aiResults[key]?.[type] || ''
-    },
-    isLoading(item, type) {
-      const key = item.key || item.title
-      return this.aiLoading === `${key}|${type}`
-    }
-  },
-  async mounted() {
-    if (this.connected) {
-      await this.fetchItems()
-    }
+const initialConfig = getZoteroConfig()
+
+const config = ref(initialConfig)
+const connected = ref(initialConfig.connected)
+const items = ref([])
+const showConfig = ref(false)
+const configTab = ref('local')
+const editApiKey = ref(initialConfig.apiKey)
+const editUserId = ref(initialConfig.userId)
+const localStatus = ref(null)
+const webStatus = ref(null)
+const aiReady = ref(isAIConfigured())
+const aiResults = ref({})
+const aiLoading = ref(null)
+
+const formatAuthors = formatCreators
+
+function truncate(str, len) {
+  return str && str.length > len ? str.slice(0, len) + '...' : str
+}
+
+function formatAIResult(text) {
+  if (!text) return ''
+  return text.replace(/\n/g, '<br>').replace(/(\d+\.)\s/g, '<strong>$1</strong> ')
+}
+
+function typeLabel(type) {
+  const map = {
+    journalArticle: '期刊',
+    conferencePaper: '会议',
+    book: '图书',
+    bookSection: '书章',
+    thesis: '学位论文',
+    preprint: '预印本',
+    report: '报告',
+    webpage: '网页'
+  }
+  return map[type] || type
+}
+
+async function fetchItems() {
+  const cfg = getZoteroConfig()
+  if (cfg.useLocal) {
+    items.value = await getRecentFromLocal()
+  } else if (cfg.apiKey && cfg.userId) {
+    items.value = await getRecentFromWeb(cfg.apiKey, cfg.userId)
   }
 }
+
+async function connectLocal() {
+  localStatus.value = null
+  const ok = await detectLocalZotero()
+  if (ok) {
+    saveZoteroConfig({ useLocal: true, connected: true })
+    config.value = getZoteroConfig()
+    connected.value = true
+    localStatus.value = { ok: true, msg: '连接成功！' }
+    await fetchItems()
+  } else {
+    localStatus.value = { ok: false, msg: '未检测到本地 Zotero，请确保 Zotero 已启动' }
+  }
+}
+
+async function connectWeb() {
+  webStatus.value = null
+  if (!editApiKey.value || !editUserId.value) {
+    webStatus.value = { ok: false, msg: '请填写 API Key 和 User ID' }
+    return
+  }
+  try {
+    const fetchedItems = await getRecentFromWeb(editApiKey.value, editUserId.value)
+    saveZoteroConfig({ apiKey: editApiKey.value, userId: editUserId.value, useLocal: false, connected: true })
+    config.value = getZoteroConfig()
+    connected.value = true
+    items.value = fetchedItems
+    webStatus.value = { ok: true, msg: `连接成功！获取到 ${fetchedItems.length} 篇文献` }
+  } catch {
+    webStatus.value = { ok: false, msg: '连接失败，请检查 API Key 和 User ID' }
+  }
+}
+
+async function runAI(item, type) {
+  const key = item.key || item.title
+  const loadingKey = `${key}|${type}`
+  if (aiLoading.value === loadingKey) return
+  aiLoading.value = loadingKey
+  const title = item.title || ''
+  const abstract = item.abstractNote || ''
+  const field = item.tags?.[0] || ''
+  try {
+    let result
+    if (type === 'summary') result = await summarizePaper(title, abstract)
+    else if (type === 'findings') result = await extractKeyFindings(title, abstract)
+    else if (type === 'related') result = await recommendRelatedPapers(title, abstract, field)
+    else if (type === 'difficulty') result = await assessReadingDifficulty(title, abstract)
+    if (!aiResults.value[key]) aiResults.value[key] = {}
+    aiResults.value[key][type] = result
+  } catch (e) {
+    if (!aiResults.value[key]) aiResults.value[key] = {}
+    aiResults.value[key][type] = '错误: ' + e.message
+  } finally {
+    aiLoading.value = null
+  }
+}
+
+function getAIResult(item, type) {
+  const key = item.key || item.title
+  return aiResults.value[key]?.[type] || ''
+}
+
+function isLoading(item, type) {
+  const key = item.key || item.title
+  return aiLoading.value === `${key}|${type}`
+}
+
+onMounted(async () => {
+  if (connected.value) {
+    await fetchItems()
+  }
+})
 </script>
 
 <style scoped>

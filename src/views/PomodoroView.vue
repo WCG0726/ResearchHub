@@ -55,103 +55,105 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { usePomodoroStore } from '../stores/pomodoro'
 import { formatDateTime } from '../utils/date'
 
-export default {
-  name: 'PomodoroView',
-  data() {
-    return {
-      pomodoroStore: usePomodoroStore(),
-      workMin: 25,
-      breakMin: 5,
-      remaining: 25 * 60,
-      running: false,
-      paused: false,
-      isBreak: false,
-      timer: null,
-      stats: { total: 0, today: 0, todayDate: '', history: [] }
+const pomodoroStore = usePomodoroStore()
+
+const workMin = ref(25)
+const breakMin = ref(5)
+const remaining = ref(25 * 60)
+const running = ref(false)
+const paused = ref(false)
+const isBreak = ref(false)
+const timer = ref(null)
+const stats = ref({ total: 0, today: 0, todayDate: '', history: [] })
+
+const displayTime = computed(() => {
+  const m = Math.floor(remaining.value / 60)
+  const s = remaining.value % 60
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+})
+
+const todayMinutes = computed(() => {
+  const today = new Date().toISOString().split('T')[0]
+  return stats.value.history.filter(h => h.date === today).reduce((sum, h) => sum + h.minutes, 0)
+})
+
+const recentHistory = computed(() => {
+  return [...stats.value.history].reverse().slice(0, 20)
+})
+
+function start() {
+  if (paused.value) {
+    paused.value = false
+  }
+  running.value = true
+  timer.value = setInterval(() => {
+    if (remaining.value > 0) {
+      remaining.value--
+    } else {
+      finishSession()
     }
-  },
-  computed: {
-    displayTime() {
-      const m = Math.floor(this.remaining / 60)
-      const s = this.remaining % 60
-      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
-    },
-    todayMinutes() {
-      const today = new Date().toISOString().split('T')[0]
-      return this.stats.history.filter(h => h.date === today).reduce((sum, h) => sum + h.minutes, 0)
-    },
-    recentHistory() {
-      return [...this.stats.history].reverse().slice(0, 20)
-    }
-  },
-  methods: {
-    start() {
-      if (this.paused) {
-        this.paused = false
-      }
-      this.running = true
-      this.timer = setInterval(() => {
-        if (this.remaining > 0) {
-          this.remaining--
-        } else {
-          this.finishSession()
-        }
-      }, 1000)
-    },
-    pause() {
-      this.running = false
-      this.paused = true
-      clearInterval(this.timer)
-    },
-    reset() {
-      this.running = false
-      this.paused = false
-      this.isBreak = false
-      clearInterval(this.timer)
-      this.remaining = this.workMin * 60
-    },
-    finishSession() {
-      clearInterval(this.timer)
-      this.running = false
-      this.paused = false
-      if (!this.isBreak) {
-        this.pomodoroStore.addSession(this.workMin)
-        this.stats = this.pomodoroStore.stats
-        this.isBreak = true
-        this.remaining = this.breakMin * 60
-        this.notify('专注完成！休息一下吧 🎉')
-      } else {
-        this.isBreak = false
-        this.remaining = this.workMin * 60
-        this.notify('休息结束，继续加油！💪')
-      }
-    },
-    notify(msg) {
-      if (Notification.permission === 'granted') {
-        new Notification('番茄钟', { body: msg })
-      } else if (Notification.permission !== 'denied') {
-        Notification.requestPermission()
-      }
-      alert(msg)
-    },
-    formatTime(iso) {
-      const d = new Date(iso)
-      return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`
-    }
-  },
-  mounted() {
-    this.pomodoroStore.load()
-    this.stats = this.pomodoroStore.stats
-    this.remaining = this.workMin * 60
-  },
-  beforeUnmount() {
-    clearInterval(this.timer)
+  }, 1000)
+}
+
+function pause() {
+  running.value = false
+  paused.value = true
+  clearInterval(timer.value)
+}
+
+function reset() {
+  running.value = false
+  paused.value = false
+  isBreak.value = false
+  clearInterval(timer.value)
+  remaining.value = workMin.value * 60
+}
+
+function finishSession() {
+  clearInterval(timer.value)
+  running.value = false
+  paused.value = false
+  if (!isBreak.value) {
+    pomodoroStore.addSession(workMin.value)
+    stats.value = pomodoroStore.stats
+    isBreak.value = true
+    remaining.value = breakMin.value * 60
+    notify('专注完成！休息一下吧 🎉')
+  } else {
+    isBreak.value = false
+    remaining.value = workMin.value * 60
+    notify('休息结束，继续加油！💪')
   }
 }
+
+function notify(msg) {
+  if (Notification.permission === 'granted') {
+    new Notification('番茄钟', { body: msg })
+  } else if (Notification.permission !== 'denied') {
+    Notification.requestPermission()
+  }
+  alert(msg)
+}
+
+function formatTime(iso) {
+  const d = new Date(iso)
+  return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+
+onMounted(() => {
+  pomodoroStore.load()
+  stats.value = pomodoroStore.stats
+  remaining.value = workMin.value * 60
+})
+
+onUnmounted(() => {
+  clearInterval(timer.value)
+})
 </script>
 
 <style scoped>

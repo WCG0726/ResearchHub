@@ -101,51 +101,65 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, computed, onMounted } from 'vue'
 import { useExperimentsStore } from '../stores/experiments'
 
-export default {
-  name: 'ExperimentView',
-  data() {
-    return {
-      experimentsStore: useExperimentsStore(),
-      experiments: [],
-      search: '',
-      filterStatus: '',
-      showForm: false,
-      editing: null,
-      form: this.emptyForm()
-    }
-  },
-  computed: {
-    filtered() {
-      return this.experiments.filter(e => {
-        const matchSearch = !this.search || [e.sampleId, e.name, e.params, e.results].some(f => f && f.toLowerCase().includes(this.search.toLowerCase()))
-        const matchStatus = !this.filterStatus || e.status === this.filterStatus
-        return matchSearch && matchStatus
-      })
-    }
-  },
-  methods: {
-    emptyForm() {
-      return { sampleId: '', name: '', date: new Date().toISOString().split('T')[0], status: '进行中', params: '', steps: '', results: '', notes: '' }
-    },
-    statusClass(s) {
-      return { '进行中': 'tag-primary', '已完成': 'tag-success', '待分析': 'tag-warning' }[s] || 'tag-primary'
-    },
-    saveExp() {
-      if (!this.form.sampleId.trim() || !this.form.name.trim()) return alert('请填写样品编号和实验名称')
-      if (this.editing) { this.experimentsStore.update(this.editing, this.form) }
-      else { this.experimentsStore.add(this.form) }
-      this.experiments = this.experimentsStore.experiments
-      this.cancelEdit()
-    },
-    editExp(exp) { this.editing = exp.id; this.form = { ...exp }; this.showForm = true },
-    cancelEdit() { this.showForm = false; this.editing = null; this.form = this.emptyForm() },
-    removeExp(id) { if (!confirm('确定删除？')) return; this.experimentsStore.remove(id); this.experiments = this.experimentsStore.experiments }
-  },
-  mounted() { this.experimentsStore.load(); this.experiments = this.experimentsStore.experiments }
+const experimentsStore = useExperimentsStore()
+
+function emptyForm() {
+  return { sampleId: '', name: '', date: new Date().toISOString().split('T')[0], status: '进行中', params: '', steps: '', results: '', notes: '' }
 }
+
+const experiments = ref([])
+const search = ref('')
+const filterStatus = ref('')
+const showForm = ref(false)
+const editing = ref(null)
+const form = ref(emptyForm())
+
+const filtered = computed(() => {
+  return experiments.value.filter(e => {
+    const matchSearch = !search.value || [e.sampleId, e.name, e.params, e.results].some(f => f && f.toLowerCase().includes(search.value.toLowerCase()))
+    const matchStatus = !filterStatus.value || e.status === filterStatus.value
+    return matchSearch && matchStatus
+  })
+})
+
+function statusClass(s) {
+  return { '进行中': 'tag-primary', '已完成': 'tag-success', '待分析': 'tag-warning' }[s] || 'tag-primary'
+}
+
+function saveExp() {
+  if (!form.value.sampleId.trim() || !form.value.name.trim()) return alert('请填写样品编号和实验名称')
+  if (editing.value) { experimentsStore.update(editing.value, form.value) }
+  else { experimentsStore.add(form.value) }
+  experiments.value = experimentsStore.experiments
+  cancelEdit()
+}
+
+function editExp(exp) {
+  editing.value = exp.id
+  form.value = { ...exp }
+  showForm.value = true
+}
+
+function cancelEdit() {
+  showForm.value = false
+  editing.value = null
+  form.value = emptyForm()
+}
+
+function removeExp(id) {
+  if (!confirm('确定删除？')) return
+  experimentsStore.remove(id)
+  experiments.value = experimentsStore.experiments
+}
+
+onMounted(() => {
+  experimentsStore.load()
+  experiments.value = experimentsStore.experiments
+})
 </script>
 
 <style scoped>

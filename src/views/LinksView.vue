@@ -67,38 +67,32 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref } from 'vue'
 import { LINK_GROUPS } from '../data/links'
 import { getStorage, setStorage } from '../utils/storage'
 
-export default {
-  name: 'LinksView',
-  data() {
-    return {
-      customLinks: getStorage('custom_links', []),
-      showAdd: false,
-      newName: '',
-      newUrl: '',
-      newDesc: '',
-      linkGroups: LINK_GROUPS
-    }
-  },
-  methods: {
-    addCustom() {
-      if (!this.newName || !this.newUrl) return
-      const url = this.newUrl.startsWith('http') ? this.newUrl : 'https://' + this.newUrl
-      this.customLinks.push({ name: this.newName, url, desc: this.newDesc || '' })
-      setStorage('custom_links', this.customLinks)
-      this.newName = ''
-      this.newUrl = ''
-      this.newDesc = ''
-      this.showAdd = false
-    },
-    removeCustom(url) {
-      this.customLinks = this.customLinks.filter(l => l.url !== url)
-      setStorage('custom_links', this.customLinks)
-    }
-  }
+const customLinks = ref(getStorage('custom_links', []))
+const showAdd = ref(false)
+const newName = ref('')
+const newUrl = ref('')
+const newDesc = ref('')
+const linkGroups = LINK_GROUPS
+
+function addCustom() {
+  if (!newName.value || !newUrl.value) return
+  const url = newUrl.value.startsWith('http') ? newUrl.value : 'https://' + newUrl.value
+  customLinks.value.push({ name: newName.value, url, desc: newDesc.value || '' })
+  setStorage('custom_links', customLinks.value)
+  newName.value = ''
+  newUrl.value = ''
+  newDesc.value = ''
+  showAdd.value = false
+}
+
+function removeCustom(url) {
+  customLinks.value = customLinks.value.filter(l => l.url !== url)
+  setStorage('custom_links', customLinks.value)
 }
 </script>
 

@@ -92,55 +92,66 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, computed, onMounted } from 'vue'
 import { useAcademicEventsStore } from '../stores/academicEvents'
 
-export default {
-  name: 'AcademicCalendarView',
-  data() {
-    return {
-      academicEventsStore: useAcademicEventsStore(),
-      events: [],
-      filterType: '',
-      showForm: false,
-      form: { name: '', date: '', type: '会议截稿', importance: 'normal', notes: '' }
-    }
-  },
-  computed: {
-    today() { return new Date().toISOString().split('T')[0] },
-    filtered() {
-      let list = this.events
-      if (this.filterType) list = list.filter(e => e.type === this.filterType)
-      return list
-    },
-    upcoming() { return this.filtered.filter(e => e.date >= this.today).sort((a, b) => a.date.localeCompare(b.date)) },
-    past() { return this.filtered.filter(e => e.date < this.today).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 10) }
-  },
-  methods: {
-    daysLeft(e) {
-      const diff = new Date(e.date) - new Date(this.today)
-      return Math.max(0, Math.ceil(diff / 86400000))
-    },
-    countdownClass(e) {
-      const d = this.daysLeft(e)
-      if (d <= 3) return 'countdown-danger'
-      if (d <= 14) return 'countdown-warning'
-      return 'countdown-normal'
-    },
-    typeClass(t) {
-      return { '会议截稿': 'tag-primary', '基金申报': 'tag-warning', '论文截止': 'tag-danger', '答辩': 'tag-success', '其他': 'tag-primary' }[t] || 'tag-primary'
-    },
-    saveEvent() {
-      if (!this.form.name.trim() || !this.form.date) return alert('请填写名称和日期')
-      this.academicEventsStore.add(this.form)
-      this.events = this.academicEventsStore.events
-      this.showForm = false
-      this.form = { name: '', date: '', type: '会议截稿', importance: 'normal', notes: '' }
-    },
-    removeEvent(id) { if (!confirm('确定删除？')) return; this.academicEventsStore.remove(id); this.events = this.academicEventsStore.events }
-  },
-  mounted() { this.academicEventsStore.load(); this.events = this.academicEventsStore.events }
+const academicEventsStore = useAcademicEventsStore()
+const events = ref([])
+const filterType = ref('')
+const showForm = ref(false)
+const form = ref({ name: '', date: '', type: '会议截稿', importance: 'normal', notes: '' })
+
+const today = computed(() => new Date().toISOString().split('T')[0])
+
+const filtered = computed(() => {
+  let list = events.value
+  if (filterType.value) list = list.filter(e => e.type === filterType.value)
+  return list
+})
+
+const upcoming = computed(() =>
+  filtered.value.filter(e => e.date >= today.value).sort((a, b) => a.date.localeCompare(b.date))
+)
+
+const past = computed(() =>
+  filtered.value.filter(e => e.date < today.value).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 10)
+)
+
+function daysLeft(e) {
+  const diff = new Date(e.date) - new Date(today.value)
+  return Math.max(0, Math.ceil(diff / 86400000))
 }
+
+function countdownClass(e) {
+  const d = daysLeft(e)
+  if (d <= 3) return 'countdown-danger'
+  if (d <= 14) return 'countdown-warning'
+  return 'countdown-normal'
+}
+
+function typeClass(t) {
+  return { '会议截稿': 'tag-primary', '基金申报': 'tag-warning', '论文截止': 'tag-danger', '答辩': 'tag-success', '其他': 'tag-primary' }[t] || 'tag-primary'
+}
+
+function saveEvent() {
+  if (!form.value.name.trim() || !form.value.date) return alert('请填写名称和日期')
+  academicEventsStore.add(form.value)
+  events.value = academicEventsStore.events
+  showForm.value = false
+  form.value = { name: '', date: '', type: '会议截稿', importance: 'normal', notes: '' }
+}
+
+function removeEvent(id) {
+  if (!confirm('确定删除？')) return
+  academicEventsStore.remove(id)
+  events.value = academicEventsStore.events
+}
+
+onMounted(() => {
+  academicEventsStore.load()
+  events.value = academicEventsStore.events
+})
 </script>
 
 <style scoped>

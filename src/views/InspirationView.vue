@@ -62,72 +62,81 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, computed, onMounted } from 'vue'
 import { useInspirationsStore } from '../stores/inspirations'
 import { expandInspiration, isAIConfigured } from '../utils/ai'
 
-export default {
-  name: 'InspirationView',
-  data() {
-    return {
-      inspirationsStore: useInspirationsStore(),
-      items: [],
-      search: '',
-      filterColor: '',
-      showForm: false,
-      form: { title: '', content: '', tags: '', color: '#6366f1' },
-      colors: [
-        { value: '#6366f1', label: '紫' },
-        { value: '#10b981', label: '绿' },
-        { value: '#f59e0b', label: '黄' },
-        { value: '#ef4444', label: '红' },
-        { value: '#3b82f6', label: '蓝' },
-        { value: '#ec4899', label: '粉' }
-      ],
-      aiLoading: false,
-      aiMsg: '',
-      expandingId: null
-    }
-  },
-  computed: {
-    filtered() {
-      let list = [...this.items]
-      list.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || new Date(b.createdAt) - new Date(a.createdAt))
-      if (this.filterColor) list = list.filter(i => i.color === this.filterColor)
-      if (this.search) {
-        const q = this.search.toLowerCase()
-        list = list.filter(i => [i.title, i.content, i.tags].some(f => f && f.toLowerCase().includes(q)))
-      }
-      return list
-    }
-  },
-  methods: {
-    formatDate(iso) { return new Date(iso).toLocaleDateString('zh-CN') },
-    saveInspiration() {
-      if (!this.form.title.trim()) return alert('请输入标题')
-      this.inspirationsStore.add(this.form)
-      this.items = this.inspirationsStore.inspirations
-      this.showForm = false
-      this.form = { title: '', content: '', tags: '', color: '#6366f1' }
-    },
-    togglePin(item) { this.inspirationsStore.update(item.id, { pinned: !item.pinned }); this.items = this.inspirationsStore.inspirations },
-    async aiExpand(item) {
-      if (!isAIConfigured()) { alert('请先在"翻译"页面配置 API Key'); return }
-      this.expandingId = item.id
-      try {
-        const result = await expandInspiration(item.title, item.content)
-        this.inspirationsStore.update(item.id, { content: (item.content ? item.content + '\n\n' : '') + '【AI 扩展分析】\n' + result })
-        this.items = this.inspirationsStore.inspirations
-      } catch (e) {
-        alert(e.message)
-      } finally {
-        this.expandingId = null
-      }
-    },
-    removeItem(id) { if (!confirm('确定删除？')) return; this.inspirationsStore.remove(id); this.items = this.inspirationsStore.inspirations }
-  },
-  mounted() { this.inspirationsStore.load(); this.items = this.inspirationsStore.inspirations }
+const inspirationsStore = useInspirationsStore()
+
+const items = ref([])
+const search = ref('')
+const filterColor = ref('')
+const showForm = ref(false)
+const form = ref({ title: '', content: '', tags: '', color: '#6366f1' })
+const expandingId = ref(null)
+
+const colors = [
+  { value: '#6366f1', label: '紫' },
+  { value: '#10b981', label: '绿' },
+  { value: '#f59e0b', label: '黄' },
+  { value: '#ef4444', label: '红' },
+  { value: '#3b82f6', label: '蓝' },
+  { value: '#ec4899', label: '粉' }
+]
+
+const filtered = computed(() => {
+  let list = [...items.value]
+  list.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || new Date(b.createdAt) - new Date(a.createdAt))
+  if (filterColor.value) list = list.filter(i => i.color === filterColor.value)
+  if (search.value) {
+    const q = search.value.toLowerCase()
+    list = list.filter(i => [i.title, i.content, i.tags].some(f => f && f.toLowerCase().includes(q)))
+  }
+  return list
+})
+
+function formatDate(iso) {
+  return new Date(iso).toLocaleDateString('zh-CN')
 }
+
+function saveInspiration() {
+  if (!form.value.title.trim()) return alert('请输入标题')
+  inspirationsStore.add(form.value)
+  items.value = inspirationsStore.inspirations
+  showForm.value = false
+  form.value = { title: '', content: '', tags: '', color: '#6366f1' }
+}
+
+function togglePin(item) {
+  inspirationsStore.update(item.id, { pinned: !item.pinned })
+  items.value = inspirationsStore.inspirations
+}
+
+async function aiExpand(item) {
+  if (!isAIConfigured()) { alert('请先在"翻译"页面配置 API Key'); return }
+  expandingId.value = item.id
+  try {
+    const result = await expandInspiration(item.title, item.content)
+    inspirationsStore.update(item.id, { content: (item.content ? item.content + '\n\n' : '') + '【AI 扩展分析】\n' + result })
+    items.value = inspirationsStore.inspirations
+  } catch (e) {
+    alert(e.message)
+  } finally {
+    expandingId.value = null
+  }
+}
+
+function removeItem(id) {
+  if (!confirm('确定删除？')) return
+  inspirationsStore.remove(id)
+  items.value = inspirationsStore.inspirations
+}
+
+onMounted(() => {
+  inspirationsStore.load()
+  items.value = inspirationsStore.inspirations
+})
 </script>
 
 <style scoped>

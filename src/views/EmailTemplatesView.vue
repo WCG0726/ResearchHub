@@ -85,96 +85,108 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, computed, onMounted } from 'vue'
 import { useEmailTemplatesStore } from '../stores/emailTemplates'
 import { generateEmail, isAIConfigured } from '../utils/ai'
 import { EMAIL_TEMPLATES } from '../data/emailTemplates'
 
-export default {
-  name: 'EmailTemplatesView',
-  data() {
-    return {
-      emailTemplatesStore: useEmailTemplatesStore(),
-      customTemplates: [],
-      search: '',
-      filterCat: '',
-      showForm: false,
-      form: { name: '', category: '自定义', content: '' },
-      openCats: {},
-      aiScenario: '',
-      aiKeyInfo: '',
-      aiResult: '',
-      aiLoading: false,
-      aiMsg: ''
-    }
-  },
-  computed: {
-    allTemplates() {
-      const built = EMAIL_TEMPLATES.map(t => ({ ...t, custom: false }))
-      const custom = this.customTemplates.map(t => ({ ...t, custom: true }))
-      return [...built, ...custom]
-    },
-    categories() { return [...new Set(this.allTemplates.map(t => t.category))] },
-    displayCategories() {
-      let cats = this.categories
-      if (this.filterCat) cats = cats.filter(c => c === this.filterCat)
-      return cats
-    }
-  },
-  methods: {
-    templatesByCat(cat) {
-      return this.allTemplates.filter(t => {
-        const matchCat = t.category === cat
-        const matchSearch = !this.search || t.name.toLowerCase().includes(this.search.toLowerCase()) || t.content.toLowerCase().includes(this.search.toLowerCase())
-        return matchCat && matchSearch
-      })
-    },
-    toggleCat(cat) { this.openCats = { ...this.openCats, [cat]: !this.openCats[cat] } },
-    copyContent(content) {
-      const ta = document.createElement('textarea')
-      ta.value = content
-      document.body.appendChild(ta)
-      ta.select()
-      document.execCommand('copy')
-      document.body.removeChild(ta)
-      alert('已复制到剪贴板')
-    },
-    saveTemplate() {
-      if (!this.form.name.trim() || !this.form.content.trim()) return alert('请填写名称和内容')
-      this.emailTemplatesStore.add(this.form)
-      this.customTemplates = this.emailTemplatesStore.templates
-      this.showForm = false
-      this.form = { name: '', category: '自定义', content: '' }
-    },
-    removeTemplate(id) { if (!confirm('确定删除？')) return; this.emailTemplatesStore.remove(id); this.customTemplates = this.emailTemplatesStore.templates },
-    async aiGenerate() {
-      if (!isAIConfigured()) { this.aiMsg = '请先在"翻译"页面配置 API Key'; return }
-      if (!this.aiScenario.trim()) { this.aiMsg = '请填写邮件场景'; return }
-      this.aiLoading = true
-      this.aiMsg = ''
-      try {
-        this.aiResult = await generateEmail(this.aiScenario, this.aiKeyInfo)
-      } catch (e) {
-        this.aiMsg = e.message
-      } finally {
-        this.aiLoading = false
-      }
-    },
-    aiCopyResult() {
-      navigator.clipboard.writeText(this.aiResult).then(() => { this.aiMsg = '✓ 已复制'; setTimeout(() => { this.aiMsg = '' }, 2000) })
-    },
-    aiSaveAsTemplate() {
-      if (!this.aiResult) return
-      this.form = { name: this.aiScenario || 'AI 生成邮件', category: '自定义', content: this.aiResult }
-      this.showForm = true
-    }
-  },
-  mounted() {
-    this.emailTemplatesStore.load()
-    this.customTemplates = this.emailTemplatesStore.templates
-    this.openCats = { '投稿沟通': true }
+const emailTemplatesStore = useEmailTemplatesStore()
+
+const customTemplates = ref([])
+const search = ref('')
+const filterCat = ref('')
+const showForm = ref(false)
+const form = ref({ name: '', category: '自定义', content: '' })
+const openCats = ref({})
+const aiScenario = ref('')
+const aiKeyInfo = ref('')
+const aiResult = ref('')
+const aiLoading = ref(false)
+const aiMsg = ref('')
+
+const allTemplates = computed(() => {
+  const built = EMAIL_TEMPLATES.map(t => ({ ...t, custom: false }))
+  const custom = customTemplates.value.map(t => ({ ...t, custom: true }))
+  return [...built, ...custom]
+})
+
+const categories = computed(() => [...new Set(allTemplates.value.map(t => t.category))])
+
+const displayCategories = computed(() => {
+  let cats = categories.value
+  if (filterCat.value) cats = cats.filter(c => c === filterCat.value)
+  return cats
+})
+
+function templatesByCat(cat) {
+  return allTemplates.value.filter(t => {
+    const matchCat = t.category === cat
+    const matchSearch = !search.value || t.name.toLowerCase().includes(search.value.toLowerCase()) || t.content.toLowerCase().includes(search.value.toLowerCase())
+    return matchCat && matchSearch
+  })
+}
+
+function toggleCat(cat) {
+  openCats.value = { ...openCats.value, [cat]: !openCats.value[cat] }
+}
+
+function copyContent(content) {
+  const ta = document.createElement('textarea')
+  ta.value = content
+  document.body.appendChild(ta)
+  ta.select()
+  document.execCommand('copy')
+  document.body.removeChild(ta)
+  alert('已复制到剪贴板')
+}
+
+function saveTemplate() {
+  if (!form.value.name.trim() || !form.value.content.trim()) return alert('请填写名称和内容')
+  emailTemplatesStore.add(form.value)
+  customTemplates.value = emailTemplatesStore.templates
+  showForm.value = false
+  form.value = { name: '', category: '自定义', content: '' }
+}
+
+function removeTemplate(id) {
+  if (!confirm('确定删除？')) return
+  emailTemplatesStore.remove(id)
+  customTemplates.value = emailTemplatesStore.templates
+}
+
+async function aiGenerate() {
+  if (!isAIConfigured()) { aiMsg.value = '请先在"翻译"页面配置 API Key'; return }
+  if (!aiScenario.value.trim()) { aiMsg.value = '请填写邮件场景'; return }
+  aiLoading.value = true
+  aiMsg.value = ''
+  try {
+    aiResult.value = await generateEmail(aiScenario.value, aiKeyInfo.value)
+  } catch (e) {
+    aiMsg.value = e.message
+  } finally {
+    aiLoading.value = false
   }
 }
+
+function aiCopyResult() {
+  navigator.clipboard.writeText(aiResult.value).then(() => {
+    aiMsg.value = '✓ 已复制'
+    setTimeout(() => { aiMsg.value = '' }, 2000)
+  })
+}
+
+function aiSaveAsTemplate() {
+  if (!aiResult.value) return
+  form.value = { name: aiScenario.value || 'AI 生成邮件', category: '自定义', content: aiResult.value }
+  showForm.value = true
+}
+
+onMounted(() => {
+  emailTemplatesStore.load()
+  customTemplates.value = emailTemplatesStore.templates
+  openCats.value = { '投稿沟通': true }
+})
 </script>
 
 <style scoped>

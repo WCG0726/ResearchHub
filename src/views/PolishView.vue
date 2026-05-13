@@ -73,95 +73,94 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, computed } from 'vue'
 import { polishText, isAIConfigured } from '../utils/ai'
 import { POLISH_PROMPTS, POLISH_CATEGORIES } from '../data/polishPrompts'
 import { getStorage, setStorage } from '../utils/storage'
 
-export default {
-  name: 'PolishView',
-  data() {
-    return {
-      prompts: POLISH_PROMPTS,
-      categories: POLISH_CATEGORIES,
-      activeCat: 'all',
-      copiedId: null,
-      aiStyle: 'academic',
-      aiInput: '',
-      aiResult: '',
-      aiError: '',
-      aiLoading: false,
-      aiCopied: false,
-      history: getStorage('polish_history', [])
+const prompts = POLISH_PROMPTS
+const categories = POLISH_CATEGORIES
+const activeCat = ref('all')
+const copiedId = ref(null)
+const aiStyle = ref('academic')
+const aiInput = ref('')
+const aiResult = ref('')
+const aiError = ref('')
+const aiLoading = ref(false)
+const aiCopied = ref(false)
+const history = ref(getStorage('polish_history', []))
+
+const filtered = computed(() => {
+  if (activeCat.value === 'all') return prompts
+  return prompts.filter(p => p.cat === activeCat.value)
+})
+
+function copyPrompt(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    const prompt = prompts.find(p => p.text === text)
+    if (prompt) {
+      copiedId.value = prompt.id
+      setTimeout(() => { copiedId.value = null }, 2000)
     }
-  },
-  computed: {
-    filtered() {
-      if (this.activeCat === 'all') return this.prompts
-      return this.prompts.filter(p => p.cat === this.activeCat)
-    }
-  },
-  methods: {
-    copyPrompt(text) {
-      navigator.clipboard.writeText(text).then(() => {
-        const prompt = this.prompts.find(p => p.text === text)
-        if (prompt) {
-          this.copiedId = prompt.id
-          setTimeout(() => { this.copiedId = null }, 2000)
-        }
-      })
-    },
-    async runPolish() {
-      if (!isAIConfigured()) { this.aiError = '请先在设置中配置 API Key'; return }
-      this.aiLoading = true
-      this.aiError = ''
-      this.aiResult = ''
-      try {
-        this.aiResult = await polishText(this.aiInput, this.aiStyle)
-        // 保存历史
-        this.history.unshift({ input: this.aiInput, result: this.aiResult, style: this.aiStyle, time: Date.now() })
-        if (this.history.length > 10) this.history = this.history.slice(0, 10)
-        setStorage('polish_history', this.history)
-      } catch (e) {
-        this.aiError = e.message
-      } finally {
-        this.aiLoading = false
-      }
-    },
-    loadHistory(h) {
-      this.aiInput = h.input
-      this.aiResult = h.result
-      this.aiStyle = h.style
-    },
-    clearHistory() {
-      this.history = []
-      setStorage('polish_history', [])
-    },
-    getStyleName(style) {
-      const map = { academic: '通用', deep: '深度', sci: 'SCI' }
-      return map[style] || style
-    },
-    getStyleTag(style) {
-      const map = { academic: 'primary', deep: 'warning', sci: 'success' }
-      return map[style] || 'primary'
-    },
-    formatTime(ts) {
-      if (!ts) return ''
-      const d = new Date(ts)
-      const now = new Date()
-      const diff = now - d
-      if (diff < 60000) return '刚刚'
-      if (diff < 3600000) return `${Math.floor(diff / 60000)} 分钟前`
-      if (diff < 86400000) return `${Math.floor(diff / 3600000)} 小时前`
-      return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`
-    },
-    copyResult() {
-      navigator.clipboard.writeText(this.aiResult).then(() => {
-        this.aiCopied = true
-        setTimeout(() => { this.aiCopied = false }, 2000)
-      })
-    }
+  })
+}
+
+async function runPolish() {
+  if (!isAIConfigured()) { aiError.value = '请先在设置中配置 API Key'; return }
+  aiLoading.value = true
+  aiError.value = ''
+  aiResult.value = ''
+  try {
+    aiResult.value = await polishText(aiInput.value, aiStyle.value)
+    // 保存历史
+    history.value.unshift({ input: aiInput.value, result: aiResult.value, style: aiStyle.value, time: Date.now() })
+    if (history.value.length > 10) history.value = history.value.slice(0, 10)
+    setStorage('polish_history', history.value)
+  } catch (e) {
+    aiError.value = e.message
+  } finally {
+    aiLoading.value = false
   }
+}
+
+function loadHistory(h) {
+  aiInput.value = h.input
+  aiResult.value = h.result
+  aiStyle.value = h.style
+}
+
+function clearHistory() {
+  history.value = []
+  setStorage('polish_history', [])
+}
+
+function getStyleName(style) {
+  const map = { academic: '通用', deep: '深度', sci: 'SCI' }
+  return map[style] || style
+}
+
+function getStyleTag(style) {
+  const map = { academic: 'primary', deep: 'warning', sci: 'success' }
+  return map[style] || 'primary'
+}
+
+function formatTime(ts) {
+  if (!ts) return ''
+  const d = new Date(ts)
+  const now = new Date()
+  const diff = now - d
+  if (diff < 60000) return '刚刚'
+  if (diff < 3600000) return `${Math.floor(diff / 60000)} 分钟前`
+  if (diff < 86400000) return `${Math.floor(diff / 3600000)} 小时前`
+  return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+
+function copyResult() {
+  navigator.clipboard.writeText(aiResult.value).then(() => {
+    aiCopied.value = true
+    setTimeout(() => { aiCopied.value = false }, 2000)
+  })
 }
 </script>
 

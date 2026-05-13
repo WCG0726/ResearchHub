@@ -127,45 +127,40 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { computed } from 'vue'
 import { useBugScannerStore } from '../stores/bugScanner'
 
-export default {
-  name: 'BugScannerView',
-  data() {
-    return {
-      store: useBugScannerStore()
-    }
-  },
-  computed: {
-    scanning() { return this.store.scanning },
-    filter() { return this.store.filterSeverity },
-    counts() { return this.store.errorCounts },
-    totalIssues() { return this.store.errors.length },
-    filteredErrors() { return this.store.filteredErrors },
-    runtimeErrors() { return this.store.runtimeErrors.slice(-20).reverse() },
-    metrics() { return this.store.performanceMetrics },
-    topComponents() { return this.store.topRenderComponents },
-    maxRender() {
-      return this.topComponents.length ? this.topComponents[0].count : 1
-    }
-  },
-  methods: {
-    runScan() {
-      this.store.scanProject()
-    },
-    setFilter(severity) {
-      this.store.setFilter(severity)
-    },
-    clearErrors() {
-      this.store.clearErrors()
-    },
-    formatTime(ts) {
-      if (!ts) return ''
-      const d = new Date(ts)
-      return d.toLocaleTimeString('zh-CN')
-    }
-  }
+const store = useBugScannerStore()
+
+const scanning = computed(() => store.scanning)
+const filter = computed(() => store.filterSeverity)
+const counts = computed(() => store.errorCounts)
+const totalIssues = computed(() => store.errors.length)
+const filteredErrors = computed(() => store.filteredErrors)
+const runtimeErrors = computed(() => store.runtimeErrors.slice(-20).reverse())
+const metrics = computed(() => store.performanceMetrics)
+const topComponents = computed(() => store.topRenderComponents)
+const maxRender = computed(() =>
+  topComponents.value.length ? topComponents.value[0].count : 1
+)
+
+function runScan() {
+  store.scanProject()
+}
+
+function setFilter(severity) {
+  store.setFilter(severity)
+}
+
+function clearErrors() {
+  store.clearErrors()
+}
+
+function formatTime(ts) {
+  if (!ts) return ''
+  const d = new Date(ts)
+  return d.toLocaleTimeString('zh-CN')
 }
 </script>
 

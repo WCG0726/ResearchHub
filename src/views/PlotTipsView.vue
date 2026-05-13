@@ -107,7 +107,8 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, computed, onMounted } from 'vue'
 import { getStorage, setStorage } from '../utils/storage'
 import { isAIConfigured, generatePlotCode } from '../utils/ai'
 
@@ -516,78 +517,78 @@ plt.tight_layout()</code></pre>`,
   }
 ]
 
-export default {
-  name: 'PlotTipsView',
-  data() {
-    return {
-      search: '',
-      filterCat: '',
-      openCats: {},
-      customNotes: [],
-      showForm: false,
-      form: { title: '', content: '' },
-      showAIPanel: isAIConfigured(),
-      plotDesc: '',
-      plotLang: 'python',
-      plotType: 'auto',
-      plotCode: '',
-      aiPlotLoading: false
-    }
-  },
-  computed: {
-    categories() { return [...new Set(TIPS.map(t => t.category))] },
-    displayCategories() {
-      let cats = this.categories
-      if (this.filterCat) cats = cats.filter(c => c === this.filterCat)
-      return cats
-    }
-  },
-  methods: {
-    tipsByCat(cat) {
-      return TIPS.filter(t => {
-        const matchCat = t.category === cat
-        const matchSearch = !this.search || t.title.includes(this.search) || t.content.includes(this.search)
-        return matchCat && matchSearch
-      })
-    },
-    toggleCat(cat) { this.openCats = { ...this.openCats, [cat]: !this.openCats[cat] } },
-    saveNote() {
-      if (!this.form.title.trim()) return alert('请输入标题')
-      const notes = getStorage('plot_notes', [])
-      notes.unshift({ ...this.form, id: Date.now(), createdAt: new Date().toISOString() })
-      setStorage('plot_notes', notes)
-      this.customNotes = notes
-      this.showForm = false
-      this.form = { title: '', content: '' }
-    },
-    removeNote(id) {
-      if (!confirm('确定删除？')) return
-      const notes = getStorage('plot_notes', []).filter(n => n.id !== id)
-      setStorage('plot_notes', notes)
-      this.customNotes = notes
-    },
-    async generatePlot() {
-      this.aiPlotLoading = true
-      this.plotCode = ''
-      try {
-        const raw = await generatePlotCode(this.plotDesc, this.plotType === 'auto' ? '' : this.plotType, '', this.plotLang)
-        // 提取代码块内容
-        const match = raw.match(/```(?:python|origin|labtalk)?\n?([\s\S]*?)```/)
-        this.plotCode = match ? match[1].trim() : raw
-      } catch (e) {
-        this.plotCode = '生成失败: ' + e.message
-      }
-      this.aiPlotLoading = false
-    },
-    copyPlotCode() {
-      if (this.plotCode) navigator.clipboard.writeText(this.plotCode)
-    }
-  },
-  mounted() {
-    this.customNotes = getStorage('plot_notes', [])
-    this.openCats = { 'Origin 绘图': true }
-  }
+const search = ref('')
+const filterCat = ref('')
+const openCats = ref({})
+const customNotes = ref([])
+const showForm = ref(false)
+const form = ref({ title: '', content: '' })
+const showAIPanel = ref(isAIConfigured())
+const plotDesc = ref('')
+const plotLang = ref('python')
+const plotType = ref('auto')
+const plotCode = ref('')
+const aiPlotLoading = ref(false)
+
+const categories = computed(() => [...new Set(TIPS.map(t => t.category))])
+
+const displayCategories = computed(() => {
+  let cats = categories.value
+  if (filterCat.value) cats = cats.filter(c => c === filterCat.value)
+  return cats
+})
+
+function tipsByCat(cat) {
+  return TIPS.filter(t => {
+    const matchCat = t.category === cat
+    const matchSearch = !search.value || t.title.includes(search.value) || t.content.includes(search.value)
+    return matchCat && matchSearch
+  })
 }
+
+function toggleCat(cat) {
+  openCats.value = { ...openCats.value, [cat]: !openCats.value[cat] }
+}
+
+function saveNote() {
+  if (!form.value.title.trim()) return alert('请输入标题')
+  const notes = getStorage('plot_notes', [])
+  notes.unshift({ ...form.value, id: Date.now(), createdAt: new Date().toISOString() })
+  setStorage('plot_notes', notes)
+  customNotes.value = notes
+  showForm.value = false
+  form.value = { title: '', content: '' }
+}
+
+function removeNote(id) {
+  if (!confirm('确定删除？')) return
+  const notes = getStorage('plot_notes', []).filter(n => n.id !== id)
+  setStorage('plot_notes', notes)
+  customNotes.value = notes
+}
+
+async function generatePlot() {
+  aiPlotLoading.value = true
+  plotCode.value = ''
+  try {
+    const raw = await generatePlotCode(plotDesc.value, plotType.value === 'auto' ? '' : plotType.value, '', plotLang.value)
+    // 提取代码块内容
+    const match = raw.match(/```(?:python|origin|labtalk)?\n?([\s\S]*?)```/)
+    plotCode.value = match ? match[1].trim() : raw
+  } catch (e) {
+    plotCode.value = '生成失败: ' + e.message
+  }
+  aiPlotLoading.value = false
+}
+
+function copyPlotCode() {
+  if (plotCode.value) navigator.clipboard.writeText(plotCode.value)
+}
+
+onMounted(() => {
+  customNotes.value = getStorage('plot_notes', [])
+  openCats.value = { 'Origin 绘图': true }
+})
 </script>
 
 <style scoped>

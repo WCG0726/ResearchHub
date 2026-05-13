@@ -54,57 +54,53 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, computed } from 'vue'
 import { useMealsStore } from '../stores/meals'
 import { FOOD_DB } from '../data/foods'
 
-export default {
-  name: 'MealView',
-  data() {
-    return {
-      mealsStore: useMealsStore(),
-      meals: [],
-      randomMeal: null,
-      newMeal: '',
-      newMealType: 'lunch',
-      categories: Object.entries(FOOD_DB).map(([name, v]) => ({ name, icon: v.icon }))
-    }
-  },
-  computed: {
-    todayMeals() {
-      const today = new Date().toISOString().split('T')[0]
-      return this.meals.filter(m => m.date && m.date.startsWith(today))
-    }
-  },
-  methods: {
-    roll() {
-      const all = Object.values(FOOD_DB).flatMap(c => c.items)
-      this.randomMeal = all[Math.floor(Math.random() * all.length)]
-    },
-    pickCategory(cat) {
-      const items = FOOD_DB[cat.name]?.items || []
-      this.randomMeal = items[Math.floor(Math.random() * items.length)]
-    },
-    addMealRecord() {
-      if (!this.newMeal.trim()) return
-      this.mealsStore.add({ name: this.newMeal.trim(), mealType: this.newMealType })
-      this.meals = this.mealsStore.meals
-      this.newMeal = ''
-    },
-    mealTypeIcon(type) {
-      return { breakfast: '🌅', lunch: '☀️', dinner: '🌙', snack: '🍪' }[type] || '🍽️'
-    },
-    formatTime(dateStr) {
-      if (!dateStr) return ''
-      const d = new Date(dateStr)
-      return d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
-    }
-  },
-  created() {
-    this.mealsStore.load()
-    this.meals = this.mealsStore.meals
-  }
+const mealsStore = useMealsStore()
+const meals = ref([])
+const randomMeal = ref(null)
+const newMeal = ref('')
+const newMealType = ref('lunch')
+const categories = Object.entries(FOOD_DB).map(([name, v]) => ({ name, icon: v.icon }))
+
+const todayMeals = computed(() => {
+  const today = new Date().toISOString().split('T')[0]
+  return meals.value.filter(m => m.date && m.date.startsWith(today))
+})
+
+function roll() {
+  const all = Object.values(FOOD_DB).flatMap(c => c.items)
+  randomMeal.value = all[Math.floor(Math.random() * all.length)]
 }
+
+function pickCategory(cat) {
+  const items = FOOD_DB[cat.name]?.items || []
+  randomMeal.value = items[Math.floor(Math.random() * items.length)]
+}
+
+function addMealRecord() {
+  if (!newMeal.value.trim()) return
+  mealsStore.add({ name: newMeal.value.trim(), mealType: newMealType.value })
+  meals.value = mealsStore.meals
+  newMeal.value = ''
+}
+
+function mealTypeIcon(type) {
+  return { breakfast: '🌅', lunch: '☀️', dinner: '🌙', snack: '🍪' }[type] || '🍽️'
+}
+
+function formatTime(dateStr) {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  return d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+}
+
+// created equivalent — runs during setup
+mealsStore.load()
+meals.value = mealsStore.meals
 </script>
 
 <style scoped>

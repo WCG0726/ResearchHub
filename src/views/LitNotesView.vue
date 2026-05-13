@@ -115,109 +115,110 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, computed, onMounted } from 'vue'
 import { useLitNotesStore } from '../stores/litNotes'
 import { formatDate } from '../utils/date'
 import { generateLitNoteTemplate, isAIConfigured } from '../utils/ai'
 
-export default {
-  name: 'LitNotesView',
-  data() {
-    return {
-      litNotesStore: useLitNotesStore(),
-      notes: [],
-      search: '',
-      filterTag: '',
-      showForm: false,
-      editing: null,
-      form: this.emptyForm(),
-      aiLoading: false,
-      aiMsg: ''
-    }
-  },
-  computed: {
-    allTags() {
-      const tags = new Set()
-      this.notes.forEach(n => { if (n.tags) this.parseTags(n.tags).forEach(t => tags.add(t)) })
-      return [...tags].sort()
-    },
-    filtered() {
-      return this.notes.filter(n => {
-        const matchSearch = !this.search || [n.title, n.authors, n.tags, n.keyPoints].some(f => f && f.toLowerCase().includes(this.search.toLowerCase()))
-        const matchTag = !this.filterTag || (n.tags && this.parseTags(n.tags).includes(this.filterTag))
-        return matchSearch && matchTag
-      })
-    }
-  },
-  methods: {
-    emptyForm() {
-      return { title: '', authors: '', journal: '', year: '', doi: '', rating: 0, tags: '', keyPoints: '', methods: '', comments: '' }
-    },
-    parseTags(str) {
-      return str.split(/[,，]/).map(s => s.trim()).filter(Boolean)
-    },
-    formatDate,
-    saveNote() {
-      if (!this.form.title.trim()) return alert('请输入论文标题')
-      if (this.editing) {
-        this.litNotesStore.update(this.editing, this.form)
-      } else {
-        this.litNotesStore.add(this.form)
+const litNotesStore = useLitNotesStore()
+
+const search = ref('')
+const filterTag = ref('')
+const showForm = ref(false)
+const editing = ref(null)
+const form = ref(emptyForm())
+const aiLoading = ref(false)
+const aiMsg = ref('')
+
+const notes = ref([])
+
+function emptyForm() {
+  return { title: '', authors: '', journal: '', year: '', doi: '', rating: 0, tags: '', keyPoints: '', methods: '', comments: '' }
+}
+
+function parseTags(str) {
+  return str.split(/[,，]/).map(s => s.trim()).filter(Boolean)
+}
+
+const allTags = computed(() => {
+  const tags = new Set()
+  notes.value.forEach(n => { if (n.tags) parseTags(n.tags).forEach(t => tags.add(t)) })
+  return [...tags].sort()
+})
+
+const filtered = computed(() => {
+  return notes.value.filter(n => {
+    const matchSearch = !search.value || [n.title, n.authors, n.tags, n.keyPoints].some(f => f && f.toLowerCase().includes(search.value.toLowerCase()))
+    const matchTag = !filterTag.value || (n.tags && parseTags(n.tags).includes(filterTag.value))
+    return matchSearch && matchTag
+  })
+})
+
+function saveNote() {
+  if (!form.value.title.trim()) return alert('请输入论文标题')
+  if (editing.value) {
+    litNotesStore.update(editing.value, form.value)
+  } else {
+    litNotesStore.add(form.value)
+  }
+  notes.value = litNotesStore.notes
+  cancelEdit()
+}
+
+function editNote(note) {
+  editing.value = note.id
+  form.value = { ...note }
+  showForm.value = true
+}
+
+function cancelEdit() {
+  showForm.value = false
+  editing.value = null
+  form.value = emptyForm()
+  aiMsg.value = ''
+}
+
+async function aiGenerateNote() {
+  if (!isAIConfigured()) { aiMsg.value = '请先在"翻译"页面配置 API Key'; return }
+  if (!form.value.title.trim()) { aiMsg.value = '请先填写论文标题'; return }
+  aiLoading.value = true
+  aiMsg.value = ''
+  try {
+    const result = await generateLitNoteTemplate(form.value.title, form.value.doi)
+    // 解析结果填充到对应字段
+    const lines = result.split('\n')
+    let section = ''
+    const parsed = { keyPoints: '', methods: '', comments: '' }
+    for (const line of lines) {
+      if (/核心要点|Key Points/i.test(line)) section = 'keyPoints'
+      else if (/研究方法|Methods/i.test(line)) section = 'methods'
+      else if (/个人评价|Comments/i.test(line)) section = 'comments'
+      else if (section && line.trim()) {
+        parsed[section] += (parsed[section] ? '\n' : '') + line.replace(/^[-•*]\s*/, '')
       }
-      this.notes = this.litNotesStore.notes
-      this.cancelEdit()
-    },
-    editNote(note) {
-      this.editing = note.id
-      this.form = { ...note }
-      this.showForm = true
-    },
-    cancelEdit() {
-      this.showForm = false
-      this.editing = null
-      this.form = this.emptyForm()
-      this.aiMsg = ''
-    },
-    async aiGenerateNote() {
-      if (!isAIConfigured()) { this.aiMsg = '请先在"翻译"页面配置 API Key'; return }
-      if (!this.form.title.trim()) { this.aiMsg = '请先填写论文标题'; return }
-      this.aiLoading = true
-      this.aiMsg = ''
-      try {
-        const result = await generateLitNoteTemplate(this.form.title, this.form.doi)
-        // 解析结果填充到对应字段
-        const lines = result.split('\n')
-        let section = ''
-        const parsed = { keyPoints: '', methods: '', comments: '' }
-        for (const line of lines) {
-          if (/核心要点|Key Points/i.test(line)) section = 'keyPoints'
-          else if (/研究方法|Methods/i.test(line)) section = 'methods'
-          else if (/个人评价|Comments/i.test(line)) section = 'comments'
-          else if (section && line.trim()) {
-            parsed[section] += (parsed[section] ? '\n' : '') + line.replace(/^[-•*]\s*/, '')
-          }
-        }
-        if (parsed.keyPoints) this.form.keyPoints = parsed.keyPoints
-        if (parsed.methods) this.form.methods = parsed.methods
-        if (parsed.comments) this.form.comments = parsed.comments
-        this.aiMsg = '✓ AI 已生成笔记模板'
-      } catch (e) {
-        this.aiMsg = e.message
-      } finally {
-        this.aiLoading = false
-      }
-    },
-    removeNote(id) {
-      if (!confirm('确定删除？')) return
-      this.litNotesStore.remove(id)
-      this.notes = this.litNotesStore.notes
     }
-  },
-  mounted() {
-    this.litNotesStore.load()
-    this.notes = this.litNotesStore.notes
+    if (parsed.keyPoints) form.value.keyPoints = parsed.keyPoints
+    if (parsed.methods) form.value.methods = parsed.methods
+    if (parsed.comments) form.value.comments = parsed.comments
+    aiMsg.value = '✓ AI 已生成笔记模板'
+  } catch (e) {
+    aiMsg.value = e.message
+  } finally {
+    aiLoading.value = false
   }
 }
+
+function removeNote(id) {
+  if (!confirm('确定删除？')) return
+  litNotesStore.remove(id)
+  notes.value = litNotesStore.notes
+}
+
+onMounted(() => {
+  litNotesStore.load()
+  notes.value = litNotesStore.notes
+})
 </script>
 
 <style scoped>

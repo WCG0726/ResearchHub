@@ -112,7 +112,8 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useCheckinsStore } from '../stores/checkins'
 import { useRecordsStore } from '../stores/records'
 import { useExperimentsStore } from '../stores/experiments'
@@ -125,169 +126,170 @@ import { useMilestonesStore } from '../stores/milestones'
 import { getCurrentUser } from '../utils/auth'
 import { calculateXP, getTier } from '../utils/rank'
 import { getAllPresence } from '../utils/presence'
-import { formatDate } from '../utils/date'
+import { formatDate as formatDateUtil } from '../utils/date'
 
-export default {
-  name: 'TeamView',
-  data() {
-    return {
-      _checkinsStore: useCheckinsStore(),
-      _recordsStore: useRecordsStore(),
-      _experimentsStore: useExperimentsStore(),
-      _litNotesStore: useLitNotesStore(),
-      _meetingsStore: useMeetingsStore(),
-      _inspirationsStore: useInspirationsStore(),
-      _pomodoroStore: usePomodoroStore(),
-      _writingStore: useWritingStore(),
-      _milestonesStore: useMilestonesStore(),
-      rankBy: 'xp',
-      rankTabs: [
-        { key: 'xp', label: '综合排名' },
-        { key: 'streak', label: '连续打卡' },
-        { key: 'total', label: '累计打卡' },
-        { key: 'records', label: '科研记录' },
-        { key: 'experiments', label: '实验记录' },
-        { key: 'litNotes', label: '文献笔记' },
-        { key: 'pomodoro', label: '番茄钟' },
-        { key: 'inspirations', label: '灵感' },
-      ],
-      currentUser: '',
-      myStats: { streak: 0, totalCheckins: 0, records: 0, experiments: 0, litNotes: 0, pomodoro: 0, inspirations: 0, meetings: 0 },
-      members: [],
-      allStats: {},
-      presenceData: {}
-    }
-  },
-  computed: {
-    rankUnit() {
-      const units = { xp: 'XP', streak: '天', total: '次', records: '条', experiments: '条', litNotes: '篇', pomodoro: '个', inspirations: '条', meetings: '次' }
-      return units[this.rankBy] || ''
-    },
-    rankedList() {
-      const presence = this.presenceData
-      const list = this.members.map(m => {
-        const p = presence[m.username]
-        const online = p ? p.online === true : false
-        const lastSeen = p ? (p.online ? '在线' : this.formatDiff(p.lastSeen)) : '从未活跃'
-        const stats = this.allStats[m.username] || {}
-        return { ...m, ...stats, online, lastSeen }
-      })
-      list.sort((a, b) => {
-        if (a.online !== b.online) return a.online ? -1 : 1
-        return (b[this.rankBy] || 0) - (a[this.rankBy] || 0)
-      })
-      return list
-    },
-    onlineCount() {
-      const presence = this.presenceData
-      return this.members.filter(m => presence[m.username]?.online === true).length
-    }
-  },
-  methods: {
-    formatDate(dateStr) {
-      return dateStr ? formatDate(dateStr) : ''
-    },
-    formatDiff(ts) {
-      if (!ts) return '从未活跃'
-      const diff = Date.now() - ts
-      if (diff < 120000) return '在线'
-      if (diff < 60000) return '刚刚'
-      if (diff < 3600000) return `${Math.floor(diff / 60000)} 分钟前`
-      if (diff < 86400000) return `${Math.floor(diff / 3600000)} 小时前`
-      return `${Math.floor(diff / 86400000)} 天前`
-    },
-    loadData() {
-      const user = getCurrentUser()
-      if (user) this.currentUser = user.username
+const checkinsStore = useCheckinsStore()
+const recordsStore = useRecordsStore()
+const experimentsStore = useExperimentsStore()
+const litNotesStore = useLitNotesStore()
+const meetingsStore = useMeetingsStore()
+const inspirationsStore = useInspirationsStore()
+const pomodoroStore = usePomodoroStore()
+const writingStore = useWritingStore()
+const milestonesStore = useMilestonesStore()
 
-      // 刷新 Firebase 在线状态
-      this.presenceData = getAllPresence()
+const rankBy = ref('xp')
+const rankTabs = [
+  { key: 'xp', label: '综合排名' },
+  { key: 'streak', label: '连续打卡' },
+  { key: 'total', label: '累计打卡' },
+  { key: 'records', label: '科研记录' },
+  { key: 'experiments', label: '实验记录' },
+  { key: 'litNotes', label: '文献笔记' },
+  { key: 'pomodoro', label: '番茄钟' },
+  { key: 'inspirations', label: '灵感' },
+]
+const currentUser = ref('')
+const myStats = ref({ streak: 0, totalCheckins: 0, records: 0, experiments: 0, litNotes: 0, pomodoro: 0, inspirations: 0, meetings: 0 })
+const members = ref([])
+const allStats = ref({})
+const presenceData = ref({})
 
-      // 加载所有用户：合并 localStorage 本地用户 + Firebase presence 用户
-      try {
-        const localUsers = JSON.parse(localStorage.getItem('research_hub_users') || '{}')
-        const presence = this.presenceData
-        const allUsers = new Map()
+let refreshTimer = null
 
-        // 先加本地用户
-        for (const [username, data] of Object.entries(localUsers)) {
-          allUsers.set(username, {
-            username,
-            nickname: data.nickname || username,
-            createdAt: data.createdAt
-          })
-        }
+const rankUnit = computed(() => {
+  const units = { xp: 'XP', streak: '天', total: '次', records: '条', experiments: '条', litNotes: '篇', pomodoro: '个', inspirations: '条', meetings: '次' }
+  return units[rankBy.value] || ''
+})
 
-        // 再加 Firebase 中的用户（可能来自其他浏览器）
-        for (const [username, data] of Object.entries(presence)) {
-          if (!allUsers.has(username)) {
-            allUsers.set(username, {
-              username,
-              nickname: data.nickname || username,
-              createdAt: null
-            })
-          }
-        }
+const rankedList = computed(() => {
+  const presence = presenceData.value
+  const list = members.value.map(m => {
+    const p = presence[m.username]
+    const online = p ? p.online === true : false
+    const lastSeen = p ? (p.online ? '在线' : formatDiff(p.lastSeen)) : '从未活跃'
+    const stats = allStats.value[m.username] || {}
+    return { ...m, ...stats, online, lastSeen }
+  })
+  list.sort((a, b) => {
+    if (a.online !== b.online) return a.online ? -1 : 1
+    return (b[rankBy.value] || 0) - (a[rankBy.value] || 0)
+  })
+  return list
+})
 
-        this.members = Array.from(allUsers.values())
-      } catch {
-        this.members = []
-      }
+const onlineCount = computed(() => {
+  const presence = presenceData.value
+  return members.value.filter(m => presence[m.username]?.online === true).length
+})
 
-      // 计算当前用户统计
-      this._checkinsStore.load()
-      this._recordsStore.load()
-      this._experimentsStore.load()
-      this._litNotesStore.load()
-      this._pomodoroStore.load()
-      this._inspirationsStore.load()
-      this._meetingsStore.load()
-      this._milestonesStore.load()
-
-      const myData = {
-        streak: this._checkinsStore.streak.current,
-        total: Object.keys(this._checkinsStore.checkins).length,
-        records: this._recordsStore.recordCount,
-        experiments: this._experimentsStore.experimentCount,
-        litNotes: this._litNotesStore.noteCount,
-        pomodoro: this._pomodoroStore.total || 0,
-        inspirations: this._inspirationsStore.inspirationCount,
-        meetings: this._meetingsStore.meetingCount
-      }
-      myData.xp = calculateXP({
-        checkinDays: myData.total,
-        maxStreak: this._checkinsStore.streak.longest,
-        currentStreak: myData.streak,
-        pomodoroCount: myData.pomodoro,
-        recordsCount: myData.records,
-        litNotesCount: myData.litNotes,
-        experimentsCount: myData.experiments,
-        milestonesCount: this._milestonesStore.doneCount,
-        meetingsCount: myData.meetings,
-        inspirationsCount: myData.inspirations,
-      })
-      myData.tier = getTier(myData.xp).tier
-      this.myStats = { ...myData, totalCheckins: myData.total }
-
-      // 为所有成员生成排行数据（仅当前用户有本地数据，其他用户显示在线状态）
-      this.allStats = {}
-      this.members.forEach(m => {
-        if (m.username === this.currentUser) {
-          this.allStats[m.username] = myData
-        } else {
-          this.allStats[m.username] = { streak: 0, total: 0, records: 0, experiments: 0, litNotes: 0, pomodoro: 0, inspirations: 0, meetings: 0, xp: 0, tier: getTier(0).tier }
-        }
-      })
-    }
-  },
-  mounted() {
-    this.loadData()
-    this.refreshTimer = setInterval(() => this.loadData(), 15000)
-  },
-  unmounted() {
-    if (this.refreshTimer) clearInterval(this.refreshTimer)
-  }
+function formatDate(dateStr) {
+  return dateStr ? formatDateUtil(dateStr) : ''
 }
+
+function formatDiff(ts) {
+  if (!ts) return '从未活跃'
+  const diff = Date.now() - ts
+  if (diff < 120000) return '在线'
+  if (diff < 60000) return '刚刚'
+  if (diff < 3600000) return `${Math.floor(diff / 60000)} 分钟前`
+  if (diff < 86400000) return `${Math.floor(diff / 3600000)} 小时前`
+  return `${Math.floor(diff / 86400000)} 天前`
+}
+
+function loadData() {
+  const user = getCurrentUser()
+  if (user) currentUser.value = user.username
+
+  // 刷新 Firebase 在线状态
+  presenceData.value = getAllPresence()
+
+  // 加载所有用户：合并 localStorage 本地用户 + Firebase presence 用户
+  try {
+    const localUsers = JSON.parse(localStorage.getItem('research_hub_users') || '{}')
+    const presence = presenceData.value
+    const allUsers = new Map()
+
+    // 先加本地用户
+    for (const [username, data] of Object.entries(localUsers)) {
+      allUsers.set(username, {
+        username,
+        nickname: data.nickname || username,
+        createdAt: data.createdAt
+      })
+    }
+
+    // 再加 Firebase 中的用户（可能来自其他浏览器）
+    for (const [username, data] of Object.entries(presence)) {
+      if (!allUsers.has(username)) {
+        allUsers.set(username, {
+          username,
+          nickname: data.nickname || username,
+          createdAt: null
+        })
+      }
+    }
+
+    members.value = Array.from(allUsers.values())
+  } catch {
+    members.value = []
+  }
+
+  // 计算当前用户统计
+  checkinsStore.load()
+  recordsStore.load()
+  experimentsStore.load()
+  litNotesStore.load()
+  pomodoroStore.load()
+  inspirationsStore.load()
+  meetingsStore.load()
+  milestonesStore.load()
+
+  const myData = {
+    streak: checkinsStore.streak.current,
+    total: Object.keys(checkinsStore.checkins).length,
+    records: recordsStore.recordCount,
+    experiments: experimentsStore.experimentCount,
+    litNotes: litNotesStore.noteCount,
+    pomodoro: pomodoroStore.total || 0,
+    inspirations: inspirationsStore.inspirationCount,
+    meetings: meetingsStore.meetingCount
+  }
+  myData.xp = calculateXP({
+    checkinDays: myData.total,
+    maxStreak: checkinsStore.streak.longest,
+    currentStreak: myData.streak,
+    pomodoroCount: myData.pomodoro,
+    recordsCount: myData.records,
+    litNotesCount: myData.litNotes,
+    experimentsCount: myData.experiments,
+    milestonesCount: milestonesStore.doneCount,
+    meetingsCount: myData.meetings,
+    inspirationsCount: myData.inspirations,
+  })
+  myData.tier = getTier(myData.xp).tier
+  myStats.value = { ...myData, totalCheckins: myData.total }
+
+  // 为所有成员生成排行数据（仅当前用户有本地数据，其他用户显示在线状态）
+  const stats = {}
+  members.value.forEach(m => {
+    if (m.username === currentUser.value) {
+      stats[m.username] = myData
+    } else {
+      stats[m.username] = { streak: 0, total: 0, records: 0, experiments: 0, litNotes: 0, pomodoro: 0, inspirations: 0, meetings: 0, xp: 0, tier: getTier(0).tier }
+    }
+  })
+  allStats.value = stats
+}
+
+onMounted(() => {
+  loadData()
+  refreshTimer = setInterval(() => loadData(), 15000)
+})
+
+onUnmounted(() => {
+  if (refreshTimer) clearInterval(refreshTimer)
+})
 </script>
 
 <style scoped>

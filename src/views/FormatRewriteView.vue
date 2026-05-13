@@ -89,81 +89,78 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, watch } from 'vue'
 import { isAIConfigured, rewriteFormat } from '../utils/ai'
 import { getStorage, setStorage } from '../utils/storage'
 import { useStreamingText } from '../composables/useStreamingText'
 
-export default {
-  name: 'FormatRewriteView',
-  setup() {
-    const { displayText, isStreaming, startStream, abort } = useStreamingText()
-    return { displayText, isStreaming, startStream, abortStream: abort }
-  },
-  data() {
-    return {
-      aiReady: isAIConfigured(),
-      source: '',
-      result: '',
-      sourceFormat: 'IEEE',
-      targetFormat: 'APA 7th',
-      formats: ['IEEE', 'APA 7th', 'Nature style', 'ACS style', 'Elsevier', 'Springer', '通用学术'],
-      opts: {
-        convertCitations: true,
-        restructureParagraphs: true,
-        adjustTone: 'formal'
-      },
-      history: getStorage('format_rewrite_history', [])
-    }
-  },
-  watch: {
-    displayText(val) { this.result = val }
-  },
-  methods: {
-    async rewrite() {
-      this.result = ''
-      const prompt = `Rewrite the following text from "${this.sourceFormat}" format to "${this.targetFormat}" format.
+const { displayText, isStreaming, startStream, abort: abortStream } = useStreamingText()
+
+const aiReady = ref(isAIConfigured())
+const source = ref('')
+const result = ref('')
+const sourceFormat = ref('IEEE')
+const targetFormat = ref('APA 7th')
+const formats = ['IEEE', 'APA 7th', 'Nature style', 'ACS style', 'Elsevier', 'Springer', '通用学术']
+const opts = ref({
+  convertCitations: true,
+  restructureParagraphs: true,
+  adjustTone: 'formal'
+})
+const history = ref(getStorage('format_rewrite_history', []))
+
+watch(displayText, (val) => {
+  result.value = val
+})
+
+async function rewrite() {
+  result.value = ''
+  const prompt = `Rewrite the following text from "${sourceFormat.value}" format to "${targetFormat.value}" format.
 
 Tasks:
-${this.opts.convertCitations ? '- Convert all citation formats to match the target style' : '- Keep citation formats unchanged'}
-${this.opts.restructureParagraphs ? '- Restructure paragraphs to fit the target format conventions' : '- Keep paragraph structure unchanged'}
-- Adjust tone to: ${this.opts.adjustTone}
+${opts.value.convertCitations ? '- Convert all citation formats to match the target style' : '- Keep citation formats unchanged'}
+${opts.value.restructureParagraphs ? '- Restructure paragraphs to fit the target format conventions' : '- Keep paragraph structure unchanged'}
+- Adjust tone to: ${opts.value.adjustTone}
 - Preserve all technical content and meaning
 - Output only the rewritten text`
-      await this.startStream(prompt, this.source, { temperature: 0.3, maxTokens: 2000 })
-      this.saveToHistory()
-    },
-    saveToHistory() {
-      if (!this.result) return
-      const entry = {
-        source: this.source,
-        result: this.result,
-        sourceFormat: this.sourceFormat,
-        targetFormat: this.targetFormat,
-        time: new Date().toLocaleString('zh-CN')
-      }
-      this.history.unshift(entry)
-      if (this.history.length > 10) this.history = this.history.slice(0, 10)
-      setStorage('format_rewrite_history', this.history)
-    },
-    loadHistory(h) {
-      this.source = h.source
-      this.sourceFormat = h.sourceFormat
-      this.targetFormat = h.targetFormat
-      this.result = h.result
-      this.displayText = h.result
-    },
-    clearHistory() {
-      this.history = []
-      setStorage('format_rewrite_history', [])
-    },
-    copyResult() {
-      if (this.result) navigator.clipboard.writeText(this.result)
-    },
-    formatResult(text) {
-      return text.replace(/\n/g, '<br>')
-    }
+  await startStream(prompt, source.value, { temperature: 0.3, maxTokens: 2000 })
+  saveToHistory()
+}
+
+function saveToHistory() {
+  if (!result.value) return
+  const entry = {
+    source: source.value,
+    result: result.value,
+    sourceFormat: sourceFormat.value,
+    targetFormat: targetFormat.value,
+    time: new Date().toLocaleString('zh-CN')
   }
+  history.value.unshift(entry)
+  if (history.value.length > 10) history.value = history.value.slice(0, 10)
+  setStorage('format_rewrite_history', history.value)
+}
+
+function loadHistory(h) {
+  source.value = h.source
+  sourceFormat.value = h.sourceFormat
+  targetFormat.value = h.targetFormat
+  result.value = h.result
+  displayText.value = h.result
+}
+
+function clearHistory() {
+  history.value = []
+  setStorage('format_rewrite_history', [])
+}
+
+function copyResult() {
+  if (result.value) navigator.clipboard.writeText(result.value)
+}
+
+function formatResult(text) {
+  return text.replace(/\n/g, '<br>')
 }
 </script>
 

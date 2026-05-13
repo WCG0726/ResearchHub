@@ -56,43 +56,39 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { login, register } from '../utils/auth'
 
-export default {
-  name: 'LoginView',
-  data() {
-    return {
-      mode: 'login',
-      username: '',
-      password: '',
-      nickname: '',
-      error: ''
-    }
-  },
-  methods: {
-    handleSubmit() {
-      this.error = ''
-      if (!this.username || !this.password) {
-        this.error = '请填写用户名和密码'
-        return
-      }
+const router = useRouter()
 
-      if (this.mode === 'login') {
-        const result = login(this.username, this.password)
-        if (result.success) {
-          this.$router.push('/')
-        } else {
-          this.error = result.message
-        }
-      } else {
-        const result = register(this.username, this.password, this.nickname)
-        if (result.success) {
-          this.$router.push('/')
-        } else {
-          this.error = result.message
-        }
-      }
+const mode = ref('login')
+const username = ref('')
+const password = ref('')
+const nickname = ref('')
+const error = ref('')
+
+function handleSubmit() {
+  error.value = ''
+  if (!username.value || !password.value) {
+    error.value = '请填写用户名和密码'
+    return
+  }
+
+  if (mode.value === 'login') {
+    const result = login(username.value, password.value)
+    if (result.success) {
+      router.push('/')
+    } else {
+      error.value = result.message
+    }
+  } else {
+    const result = register(username.value, password.value, nickname.value)
+    if (result.success) {
+      router.push('/')
+    } else {
+      error.value = result.message
     }
   }
 }

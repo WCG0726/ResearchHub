@@ -8,8 +8,8 @@
   </div>
 </template>
 
-<script>
-export default { name: 'NotFoundView' }
+<script setup>
+// NotFoundView
 </script>
 
 <style scoped>

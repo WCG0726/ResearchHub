@@ -96,61 +96,78 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, computed, onMounted } from 'vue'
 import { useMeetingsStore } from '../stores/meetings'
 import { generateMeetingMinutes, isAIConfigured } from '../utils/ai'
 
-export default {
-  name: 'MeetingView',
-  data() {
-    return {
-      meetingsStore: useMeetingsStore(),
-      meetings: [],
-      search: '',
-      showForm: false,
-      editing: null,
-      form: this.emptyForm(),
-      aiLoading: false,
-      aiMsg: ''
-    }
-  },
-  computed: {
-    filtered() {
-      if (!this.search) return this.meetings
-      const q = this.search.toLowerCase()
-      return this.meetings.filter(m => [m.topics, m.feedback, m.todos, m.notes].some(f => f && f.toLowerCase().includes(q)))
-    }
-  },
-  methods: {
-    emptyForm() { return { date: new Date().toISOString().split('T')[0], type: '组会', topics: '', feedback: '', todos: '', notes: '' } },
-    saveMeeting() {
-      if (!this.form.date) return alert('请选择日期')
-      if (this.editing) { this.meetingsStore.update(this.editing, this.form) }
-      else { this.meetingsStore.add(this.form) }
-      this.meetings = this.meetingsStore.meetings
-      this.cancelEdit()
-    },
-    editMeeting(m) { this.editing = m.id; this.form = { ...m }; this.showForm = true },
-    cancelEdit() { this.showForm = false; this.editing = null; this.form = this.emptyForm(); this.aiMsg = '' },
-    async aiGenerateMinutes() {
-      if (!isAIConfigured()) { this.aiMsg = '请先在"翻译"页面配置 API Key'; return }
-      if (!this.form.topics.trim()) { this.aiMsg = '请先填写主要议题'; return }
-      this.aiLoading = true
-      this.aiMsg = ''
-      try {
-        const result = await generateMeetingMinutes(this.form.topics, this.form.feedback)
-        this.form.notes = (this.form.notes ? this.form.notes + '\n\n' : '') + '【AI 会议纪要】\n' + result
-        this.aiMsg = '✓ AI 纪要已添加到备注'
-      } catch (e) {
-        this.aiMsg = e.message
-      } finally {
-        this.aiLoading = false
-      }
-    },
-    removeMeeting(id) { if (!confirm('确定删除？')) return; this.meetingsStore.remove(id); this.meetings = this.meetingsStore.meetings }
-  },
-  mounted() { this.meetingsStore.load(); this.meetings = this.meetingsStore.meetings }
+const meetingsStore = useMeetingsStore()
+const meetings = ref([])
+const search = ref('')
+const showForm = ref(false)
+const editing = ref(null)
+const aiLoading = ref(false)
+const aiMsg = ref('')
+
+function emptyForm() {
+  return { date: new Date().toISOString().split('T')[0], type: '组会', topics: '', feedback: '', todos: '', notes: '' }
 }
+
+const form = ref(emptyForm())
+
+const filtered = computed(() => {
+  if (!search.value) return meetings.value
+  const q = search.value.toLowerCase()
+  return meetings.value.filter(m => [m.topics, m.feedback, m.todos, m.notes].some(f => f && f.toLowerCase().includes(q)))
+})
+
+function saveMeeting() {
+  if (!form.value.date) return alert('请选择日期')
+  if (editing.value) { meetingsStore.update(editing.value, form.value) }
+  else { meetingsStore.add(form.value) }
+  meetings.value = meetingsStore.meetings
+  cancelEdit()
+}
+
+function editMeeting(m) {
+  editing.value = m.id
+  form.value = { ...m }
+  showForm.value = true
+}
+
+function cancelEdit() {
+  showForm.value = false
+  editing.value = null
+  form.value = emptyForm()
+  aiMsg.value = ''
+}
+
+async function aiGenerateMinutes() {
+  if (!isAIConfigured()) { aiMsg.value = '请先在"翻译"页面配置 API Key'; return }
+  if (!form.value.topics.trim()) { aiMsg.value = '请先填写主要议题'; return }
+  aiLoading.value = true
+  aiMsg.value = ''
+  try {
+    const result = await generateMeetingMinutes(form.value.topics, form.value.feedback)
+    form.value.notes = (form.value.notes ? form.value.notes + '\n\n' : '') + '【AI 会议纪要】\n' + result
+    aiMsg.value = '✓ AI 纪要已添加到备注'
+  } catch (e) {
+    aiMsg.value = e.message
+  } finally {
+    aiLoading.value = false
+  }
+}
+
+function removeMeeting(id) {
+  if (!confirm('确定删除？')) return
+  meetingsStore.remove(id)
+  meetings.value = meetingsStore.meetings
+}
+
+onMounted(() => {
+  meetingsStore.load()
+  meetings.value = meetingsStore.meetings
+})
 </script>
 
 <style scoped>

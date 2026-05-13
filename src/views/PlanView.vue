@@ -68,64 +68,61 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, computed, onMounted } from 'vue'
 import { usePlansStore } from '../stores/plans'
 
-export default {
-  name: 'PlanView',
-  data() {
-    return {
-      plansStore: usePlansStore(),
-      plans: [],
-      newText: '',
-      newPriority: 'medium',
-      newDate: new Date().toISOString().split('T')[0],
-      filter: 'all',
-      filters: [
-        { key: 'all', label: '全部' },
-        { key: 'today', label: '今天' },
-        { key: 'pending', label: '待完成' },
-        { key: 'done', label: '已完成' }
-      ]
-    }
-  },
-  computed: {
-    filtered() {
-      const today = new Date().toISOString().split('T')[0]
-      return this.plans.filter(p => {
-        if (this.filter === 'today') return p.date === today
-        if (this.filter === 'pending') return !p.done
-        if (this.filter === 'done') return p.done
-        return true
-      })
-    },
-    total() { return this.plans.length },
-    doneCount() { return this.plans.filter(p => p.done).length }
-  },
-  methods: {
-    addTask() {
-      if (!this.newText.trim()) return
-      this.plansStore.add({ text: this.newText.trim(), priority: this.newPriority, date: this.newDate })
-      this.plans = this.plansStore.plans
-      this.newText = ''
-    },
-    toggle(id) {
-      this.plansStore.toggle(id)
-      this.plans = this.plansStore.plans
-    },
-    remove(id) {
-      this.plansStore.remove(id)
-      this.plans = this.plansStore.plans
-    },
-    priorityLabel(p) {
-      return { high: '紧急', medium: '一般', low: '不急' }[p]
-    }
-  },
-  created() {
-    this.plansStore.load()
-    this.plans = this.plansStore.plans
-  }
+const plansStore = usePlansStore()
+const plans = ref([])
+const newText = ref('')
+const newPriority = ref('medium')
+const newDate = ref(new Date().toISOString().split('T')[0])
+const filter = ref('all')
+const filters = [
+  { key: 'all', label: '全部' },
+  { key: 'today', label: '今天' },
+  { key: 'pending', label: '待完成' },
+  { key: 'done', label: '已完成' }
+]
+
+const filtered = computed(() => {
+  const today = new Date().toISOString().split('T')[0]
+  return plans.value.filter(p => {
+    if (filter.value === 'today') return p.date === today
+    if (filter.value === 'pending') return !p.done
+    if (filter.value === 'done') return p.done
+    return true
+  })
+})
+
+const total = computed(() => plans.value.length)
+const doneCount = computed(() => plans.value.filter(p => p.done).length)
+
+function addTask() {
+  if (!newText.value.trim()) return
+  plansStore.add({ text: newText.value.trim(), priority: newPriority.value, date: newDate.value })
+  plans.value = plansStore.plans
+  newText.value = ''
 }
+
+function toggle(id) {
+  plansStore.toggle(id)
+  plans.value = plansStore.plans
+}
+
+function remove(id) {
+  plansStore.remove(id)
+  plans.value = plansStore.plans
+}
+
+function priorityLabel(p) {
+  return { high: '紧急', medium: '一般', low: '不急' }[p]
+}
+
+onMounted(() => {
+  plansStore.load()
+  plans.value = plansStore.plans
+})
 </script>
 
 <style scoped>

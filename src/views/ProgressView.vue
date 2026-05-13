@@ -49,7 +49,8 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, computed, onMounted } from 'vue'
 import { useRecordsStore } from '../stores/records'
 import { useLitNotesStore } from '../stores/litNotes'
 import { useExperimentsStore } from '../stores/experiments'
@@ -57,107 +58,91 @@ import { useInspirationsStore } from '../stores/inspirations'
 import { useMeetingsStore } from '../stores/meetings'
 import { usePlansStore } from '../stores/plans'
 
-export default {
-  name: 'ProgressView',
-  data() {
-    return {
-      _recordsStore: useRecordsStore(),
-      _litNotesStore: useLitNotesStore(),
-      _experimentsStore: useExperimentsStore(),
-      _inspirationsStore: useInspirationsStore(),
-      _meetingsStore: useMeetingsStore(),
-      _plansStore: usePlansStore(),
-      viewMode: 'week'
-    }
-  },
-  computed: {
-    modules() {
-      const recordsStore = this._recordsStore
-      const litNotesStore = this._litNotesStore
-      const experimentsStore = this._experimentsStore
-      const inspirationsStore = this._inspirationsStore
-      const meetingsStore = this._meetingsStore
-      const plansStore = this._plansStore
+const recordsStore = useRecordsStore()
+const litNotesStore = useLitNotesStore()
+const experimentsStore = useExperimentsStore()
+const inspirationsStore = useInspirationsStore()
+const meetingsStore = useMeetingsStore()
+const plansStore = usePlansStore()
 
-      const total = recordsStore.recordCount + litNotesStore.noteCount + experimentsStore.experimentCount + inspirationsStore.inspirationCount + meetingsStore.meetingCount + plansStore.planCount
-      const pct = (count) => total > 0 ? Math.round(count / total * 100) : 0
+const viewMode = ref('week')
 
-      return [
-        { key: 'records', icon: '📝', label: '科研记录', count: recordsStore.recordCount, percent: pct(recordsStore.recordCount), color: '#6366f1' },
-        { key: 'litNotes', icon: '📖', label: '文献笔记', count: litNotesStore.noteCount, percent: pct(litNotesStore.noteCount), color: '#8b5cf6' },
-        { key: 'experiments', icon: '🔬', label: '实验记录', count: experimentsStore.experimentCount, percent: pct(experimentsStore.experimentCount), color: '#f59e0b' },
-        { key: 'inspirations', icon: '💡', label: '灵感', count: inspirationsStore.inspirationCount, percent: pct(inspirationsStore.inspirationCount), color: '#10b981' },
-        { key: 'meetings', icon: '🗣️', label: '会议', count: meetingsStore.meetingCount, percent: pct(meetingsStore.meetingCount), color: '#ec4899' },
-        { key: 'plans', icon: '📋', label: '待办', count: plansStore.planCount, percent: pct(plansStore.planCount), color: '#3b82f6' }
-      ]
-    },
-    timelineItems() {
-      const now = new Date()
-      const cutoff = new Date()
-      if (this.viewMode === 'week') {
-        cutoff.setDate(now.getDate() - 7)
-      } else {
-        cutoff.setMonth(now.getMonth() - 1)
-      }
+const modules = computed(() => {
+  const total = recordsStore.recordCount + litNotesStore.noteCount + experimentsStore.experimentCount + inspirationsStore.inspirationCount + meetingsStore.meetingCount + plansStore.planCount
+  const pct = (count) => total > 0 ? Math.round(count / total * 100) : 0
 
-      const items = []
-      const recordsStore = this._recordsStore
-      const litNotesStore = this._litNotesStore
-      const experimentsStore = this._experimentsStore
-      const inspirationsStore = this._inspirationsStore
-      const meetingsStore = this._meetingsStore
+  return [
+    { key: 'records', icon: '📝', label: '科研记录', count: recordsStore.recordCount, percent: pct(recordsStore.recordCount), color: '#6366f1' },
+    { key: 'litNotes', icon: '📖', label: '文献笔记', count: litNotesStore.noteCount, percent: pct(litNotesStore.noteCount), color: '#8b5cf6' },
+    { key: 'experiments', icon: '🔬', label: '实验记录', count: experimentsStore.experimentCount, percent: pct(experimentsStore.experimentCount), color: '#f59e0b' },
+    { key: 'inspirations', icon: '💡', label: '灵感', count: inspirationsStore.inspirationCount, percent: pct(inspirationsStore.inspirationCount), color: '#10b981' },
+    { key: 'meetings', icon: '🗣️', label: '会议', count: meetingsStore.meetingCount, percent: pct(meetingsStore.meetingCount), color: '#ec4899' },
+    { key: 'plans', icon: '📋', label: '待办', count: plansStore.planCount, percent: pct(plansStore.planCount), color: '#3b82f6' }
+  ]
+})
 
-      for (const r of recordsStore.records) {
-        const d = new Date(r.createdAt)
-        if (d >= cutoff) items.push({ id: 'r-' + r.id, title: r.title, type: '记录', icon: '📝', color: '#6366f1', date: r.createdAt })
-      }
-      for (const n of litNotesStore.notes) {
-        const d = new Date(n.createdAt)
-        if (d >= cutoff) items.push({ id: 'n-' + n.id, title: n.title, type: '文献', icon: '📖', color: '#8b5cf6', date: n.createdAt })
-      }
-      for (const e of experimentsStore.experiments) {
-        const d = new Date(e.createdAt)
-        if (d >= cutoff) items.push({ id: 'e-' + e.id, title: e.title, type: '实验', icon: '🔬', color: '#f59e0b', date: e.createdAt })
-      }
-      for (const i of inspirationsStore.inspirations) {
-        const d = new Date(i.createdAt)
-        if (d >= cutoff) items.push({ id: 'i-' + i.id, title: i.title, type: '灵感', icon: '💡', color: '#10b981', date: i.createdAt })
-      }
-      for (const m of meetingsStore.meetings) {
-        const d = new Date(m.createdAt)
-        if (d >= cutoff) items.push({ id: 'm-' + m.id, title: m.date + ' ' + (m.type || ''), type: '会议', icon: '🗣️', color: '#ec4899', date: m.createdAt })
-      }
-
-      items.sort((a, b) => new Date(b.date) - new Date(a.date))
-      return items
-    },
-    timelineGroups() {
-      const groups = {}
-      for (const item of this.timelineItems) {
-        const d = new Date(item.date)
-        const key = d.toISOString().split('T')[0]
-        if (!groups[key]) {
-          const today = new Date().toISOString().split('T')[0]
-          const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
-          let label = `${d.getMonth() + 1}月${d.getDate()}日`
-          if (key === today) label = '今天'
-          else if (key === yesterday) label = '昨天'
-          groups[key] = { date: key, label, items: [] }
-        }
-        groups[key].items.push(item)
-      }
-      return Object.values(groups)
-    }
-  },
-  created() {
-    this._recordsStore.load()
-    this._litNotesStore.load()
-    this._experimentsStore.load()
-    this._inspirationsStore.load()
-    this._meetingsStore.load()
-    this._plansStore.load()
+const timelineItems = computed(() => {
+  const now = new Date()
+  const cutoff = new Date()
+  if (viewMode.value === 'week') {
+    cutoff.setDate(now.getDate() - 7)
+  } else {
+    cutoff.setMonth(now.getMonth() - 1)
   }
-}
+
+  const items = []
+
+  for (const r of recordsStore.records) {
+    const d = new Date(r.createdAt)
+    if (d >= cutoff) items.push({ id: 'r-' + r.id, title: r.title, type: '记录', icon: '📝', color: '#6366f1', date: r.createdAt })
+  }
+  for (const n of litNotesStore.notes) {
+    const d = new Date(n.createdAt)
+    if (d >= cutoff) items.push({ id: 'n-' + n.id, title: n.title, type: '文献', icon: '📖', color: '#8b5cf6', date: n.createdAt })
+  }
+  for (const e of experimentsStore.experiments) {
+    const d = new Date(e.createdAt)
+    if (d >= cutoff) items.push({ id: 'e-' + e.id, title: e.title, type: '实验', icon: '🔬', color: '#f59e0b', date: e.createdAt })
+  }
+  for (const i of inspirationsStore.inspirations) {
+    const d = new Date(i.createdAt)
+    if (d >= cutoff) items.push({ id: 'i-' + i.id, title: i.title, type: '灵感', icon: '💡', color: '#10b981', date: i.createdAt })
+  }
+  for (const m of meetingsStore.meetings) {
+    const d = new Date(m.createdAt)
+    if (d >= cutoff) items.push({ id: 'm-' + m.id, title: m.date + ' ' + (m.type || ''), type: '会议', icon: '🗣️', color: '#ec4899', date: m.createdAt })
+  }
+
+  items.sort((a, b) => new Date(b.date) - new Date(a.date))
+  return items
+})
+
+const timelineGroups = computed(() => {
+  const groups = {}
+  for (const item of timelineItems.value) {
+    const d = new Date(item.date)
+    const key = d.toISOString().split('T')[0]
+    if (!groups[key]) {
+      const today = new Date().toISOString().split('T')[0]
+      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
+      let label = `${d.getMonth() + 1}月${d.getDate()}日`
+      if (key === today) label = '今天'
+      else if (key === yesterday) label = '昨天'
+      groups[key] = { date: key, label, items: [] }
+    }
+    groups[key].items.push(item)
+  }
+  return Object.values(groups)
+})
+
+onMounted(() => {
+  recordsStore.load()
+  litNotesStore.load()
+  experimentsStore.load()
+  inspirationsStore.load()
+  meetingsStore.load()
+  plansStore.load()
+})
 </script>
 
 <style scoped>

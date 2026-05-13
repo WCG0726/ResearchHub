@@ -105,161 +105,180 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { useLatexSnippetsStore } from '../stores/latexSnippets'
 import { LATEX_SNIPPETS } from '../data/latexSnippets'
 import { getStorage, setStorage } from '../utils/storage'
 
-export default {
-  name: 'LatexSnippetsView',
-  data() {
-    return {
-      tab: 'snippets',
-      latexSnippetsStore: useLatexSnippetsStore(),
-      customSnippets: [],
-      search: '',
-      filterCat: '',
-      showForm: false,
-      form: { name: '', category: '自定义', code: '' },
-      openCats: {},
-      copiedId: null,
-      // Editor state
-      files: [],
-      currentFile: '',
-      content: '',
-      newFileName: '',
-      quickInserts: [
-        { label: '文档类', text: '\\documentclass[12pt]{article}\n\\usepackage[utf8]{inputenc}\n\n\\begin{document}\n\n\\end{document}' },
-        { label: '章节', text: '\\section{标题}\n\\subsection{子标题}' },
-        { label: '公式', text: '\\begin{equation}\n\\label{eq:}\n\n\\end{equation}' },
-        { label: '图片', text: '\\begin{figure}[htbp]\n\\centering\n\\includegraphics[width=0.8\\textwidth]{fig.eps}\n\\caption{}\n\\label{fig:}\n\\end{figure}' },
-        { label: '表格', text: '\\begin{table}[htbp]\n\\centering\n\\caption{}\n\\begin{tabular}{ccc}\n\\hline\n & & \\\\\n\\hline\n & & \\\\\n\\hline\n\\end{tabular}\n\\end{table}' },
-        { label: '引用', text: '\\cite{}' },
-        { label: '列表', text: '\\begin{itemize}\n\\item \n\\item \n\\end{itemize}' }
-      ]
-    }
-  },
-  computed: {
-    allSnippets() {
-      const built = LATEX_SNIPPETS.map(s => ({ ...s, custom: false }))
-      const custom = this.customSnippets.map(s => ({ ...s, custom: true }))
-      return [...built, ...custom]
-    },
-    categories() {
-      return [...new Set(this.allSnippets.map(s => s.category))]
-    },
-    displayCategories() {
-      let cats = this.categories
-      if (this.filterCat) cats = cats.filter(c => c === this.filterCat)
-      return cats
-    },
-    lineCount() { return this.content ? this.content.split('\n').length : 0 },
-    previewHtml() {
-      if (!this.content) return '<p style="color:var(--text-muted)">开始编辑后在此预览...</p>'
-      let html = this.content
-        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-        .replace(/^\\documentclass.*$/gm, '')
-        .replace(/^\\usepackage.*$/gm, '')
-        .replace(/^\\begin\{document\}/gm, '')
-        .replace(/^\\end\{document\}/gm, '')
-        .replace(/^\\title\{(.+?)\}/gm, '<h1 style="text-align:center">$1</h1>')
-        .replace(/^\\author\{(.+?)\}/gm, '<p style="text-align:center;color:var(--text-secondary)">$1</p>')
-        .replace(/^\\section\{(.+?)\}/gm, '<h2>$1</h2>')
-        .replace(/^\\subsection\{(.+?)\}/gm, '<h3>$1</h3>')
-        .replace(/^\\textbf\{(.+?)\}/gm, '<strong>$1</strong>')
-        .replace(/^\\textit\{(.+?)\}/gm, '<em>$1</em>')
-        .replace(/^%\s*(.*)/gm, '<span style="color:var(--text-muted);font-style:italic">// $1</span>')
-        .replace(/\n\n/g, '</p><p>')
-      return `<div style="font-size:14px;line-height:1.8"><p>${html}</p></div>`
-    }
-  },
-  methods: {
-    // Snippets methods
-    snippetsByCat(cat) {
-      return this.allSnippets.filter(s => {
-        const matchCat = s.category === cat
-        const matchSearch = !this.search || s.name.toLowerCase().includes(this.search.toLowerCase()) || s.code.toLowerCase().includes(this.search.toLowerCase())
-        return matchCat && matchSearch
-      })
-    },
-    toggleCat(cat) { this.openCats = { ...this.openCats, [cat]: !this.openCats[cat] } },
-    copyCode(code) {
-      navigator.clipboard.writeText(code).catch(() => {
-        const ta = document.createElement('textarea')
-        ta.value = code
-        document.body.appendChild(ta)
-        ta.select()
-        document.execCommand('copy')
-        document.body.removeChild(ta)
-      })
-    },
-    insertToEditor(code) {
-      this.content = code
-      this.tab = 'editor'
-    },
-    saveSnippet() {
-      if (!this.form.name.trim() || !this.form.code.trim()) return alert('请填写名称和代码')
-      this.latexSnippetsStore.add(this.form)
-      this.customSnippets = this.latexSnippetsStore.snippets
-      this.showForm = false
-      this.form = { name: '', category: '自定义', code: '' }
-    },
-    removeSnippet(id) { if (!confirm('确定删除？')) return; this.latexSnippetsStore.remove(id); this.customSnippets = this.latexSnippetsStore.snippets },
-    // Editor methods
-    loadFiles() { this.files = getStorage('latex_files', []) },
-    loadFile() {
-      if (!this.currentFile) { this.content = ''; return }
-      const f = this.files.find(f => f.name === this.currentFile)
-      this.content = f ? f.content : ''
-    },
-    createFile() {
-      const name = this.newFileName.trim()
-      if (!name) return alert('请输入文件名')
-      if (this.files.find(f => f.name === name)) return alert('文件已存在')
-      this.files.push({ name, content: '', updatedAt: new Date().toISOString() })
-      setStorage('latex_files', this.files)
-      this.currentFile = name
-      this.content = ''
-      this.newFileName = ''
-    },
-    saveFile() {
-      if (!this.currentFile) return
-      const f = this.files.find(f => f.name === this.currentFile)
-      if (f) { f.content = this.content; f.updatedAt = new Date().toISOString() }
-      setStorage('latex_files', this.files)
-    },
-    downloadFile() {
-      if (!this.currentFile) return
-      const blob = new Blob([this.content], { type: 'text/plain' })
-      const a = document.createElement('a')
-      a.href = URL.createObjectURL(blob)
-      a.download = this.currentFile
-      a.click()
-      URL.revokeObjectURL(a.href)
-    },
-    deleteCurrentFile() {
-      if (!confirm(`确定删除 ${this.currentFile}？`)) return
-      this.files = this.files.filter(f => f.name !== this.currentFile)
-      setStorage('latex_files', this.files)
-      this.currentFile = ''
-      this.content = ''
-    },
-    insertText(text) {
-      const ta = document.querySelector('.editor-textarea')
-      if (!ta) return
-      const start = ta.selectionStart
-      this.content = this.content.slice(0, start) + text + this.content.slice(ta.selectionEnd)
-      this.$nextTick(() => { ta.selectionStart = ta.selectionEnd = start + text.length; ta.focus() })
-    },
-    insertTab() { this.insertText('  ') }
-  },
-  mounted() {
-    this.latexSnippetsStore.load()
-    this.customSnippets = this.latexSnippetsStore.snippets
-    this.openCats = { '数学公式': true, '表格': true }
-    this.loadFiles()
-  }
+const latexSnippetsStore = useLatexSnippetsStore()
+
+// Snippets state
+const tab = ref('snippets')
+const customSnippets = ref([])
+const search = ref('')
+const filterCat = ref('')
+const showForm = ref(false)
+const form = ref({ name: '', category: '自定义', code: '' })
+const openCats = ref({})
+const copiedId = ref(null)
+
+// Editor state
+const files = ref([])
+const currentFile = ref('')
+const content = ref('')
+const newFileName = ref('')
+const quickInserts = [
+  { label: '文档类', text: '\\documentclass[12pt]{article}\n\\usepackage[utf8]{inputenc}\n\n\\begin{document}\n\n\\end{document}' },
+  { label: '章节', text: '\\section{标题}\n\\subsection{子标题}' },
+  { label: '公式', text: '\\begin{equation}\n\\label{eq:}\n\n\\end{equation}' },
+  { label: '图片', text: '\\begin{figure}[htbp]\n\\centering\n\\includegraphics[width=0.8\\textwidth]{fig.eps}\n\\caption{}\n\\label{fig:}\n\\end{figure}' },
+  { label: '表格', text: '\\begin{table}[htbp]\n\\centering\n\\caption{}\n\\begin{tabular}{ccc}\n\\hline\n & & \\\\\n\\hline\n & & \\\\\n\\hline\n\\end{tabular}\n\\end{table}' },
+  { label: '引用', text: '\\cite{}' },
+  { label: '列表', text: '\\begin{itemize}\n\\item \n\\item \n\\end{itemize}' }
+]
+
+// Computed
+const allSnippets = computed(() => {
+  const built = LATEX_SNIPPETS.map(s => ({ ...s, custom: false }))
+  const custom = customSnippets.value.map(s => ({ ...s, custom: true }))
+  return [...built, ...custom]
+})
+
+const categories = computed(() => {
+  return [...new Set(allSnippets.value.map(s => s.category))]
+})
+
+const displayCategories = computed(() => {
+  let cats = categories.value
+  if (filterCat.value) cats = cats.filter(c => c === filterCat.value)
+  return cats
+})
+
+const lineCount = computed(() => content.value ? content.value.split('\n').length : 0)
+
+const previewHtml = computed(() => {
+  if (!content.value) return '<p style="color:var(--text-muted)">开始编辑后在此预览...</p>'
+  let html = content.value
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/^\\documentclass.*$/gm, '')
+    .replace(/^\\usepackage.*$/gm, '')
+    .replace(/^\\begin\{document\}/gm, '')
+    .replace(/^\\end\{document\}/gm, '')
+    .replace(/^\\title\{(.+?)\}/gm, '<h1 style="text-align:center">$1</h1>')
+    .replace(/^\\author\{(.+?)\}/gm, '<p style="text-align:center;color:var(--text-secondary)">$1</p>')
+    .replace(/^\\section\{(.+?)\}/gm, '<h2>$1</h2>')
+    .replace(/^\\subsection\{(.+?)\}/gm, '<h3>$1</h3>')
+    .replace(/^\\textbf\{(.+?)\}/gm, '<strong>$1</strong>')
+    .replace(/^\\textit\{(.+?)\}/gm, '<em>$1</em>')
+    .replace(/^%\s*(.*)/gm, '<span style="color:var(--text-muted);font-style:italic">// $1</span>')
+    .replace(/\n\n/g, '</p><p>')
+  return `<div style="font-size:14px;line-height:1.8"><p>${html}</p></div>`
+})
+
+// Snippets methods
+function snippetsByCat(cat) {
+  return allSnippets.value.filter(s => {
+    const matchCat = s.category === cat
+    const matchSearch = !search.value || s.name.toLowerCase().includes(search.value.toLowerCase()) || s.code.toLowerCase().includes(search.value.toLowerCase())
+    return matchCat && matchSearch
+  })
 }
+
+function toggleCat(cat) { openCats.value = { ...openCats.value, [cat]: !openCats.value[cat] } }
+
+function copyCode(code) {
+  navigator.clipboard.writeText(code).catch(() => {
+    const ta = document.createElement('textarea')
+    ta.value = code
+    document.body.appendChild(ta)
+    ta.select()
+    document.execCommand('copy')
+    document.body.removeChild(ta)
+  })
+}
+
+function insertToEditor(code) {
+  content.value = code
+  tab.value = 'editor'
+}
+
+function saveSnippet() {
+  if (!form.value.name.trim() || !form.value.code.trim()) return alert('请填写名称和代码')
+  latexSnippetsStore.add(form.value)
+  customSnippets.value = latexSnippetsStore.snippets
+  showForm.value = false
+  form.value = { name: '', category: '自定义', code: '' }
+}
+
+function removeSnippet(id) {
+  if (!confirm('确定删除？')) return
+  latexSnippetsStore.remove(id)
+  customSnippets.value = latexSnippetsStore.snippets
+}
+
+// Editor methods
+function loadFiles() { files.value = getStorage('latex_files', []) }
+
+function loadFile() {
+  if (!currentFile.value) { content.value = ''; return }
+  const f = files.value.find(f => f.name === currentFile.value)
+  content.value = f ? f.content : ''
+}
+
+function createFile() {
+  const name = newFileName.value.trim()
+  if (!name) return alert('请输入文件名')
+  if (files.value.find(f => f.name === name)) return alert('文件已存在')
+  files.value.push({ name, content: '', updatedAt: new Date().toISOString() })
+  setStorage('latex_files', files.value)
+  currentFile.value = name
+  content.value = ''
+  newFileName.value = ''
+}
+
+function saveFile() {
+  if (!currentFile.value) return
+  const f = files.value.find(f => f.name === currentFile.value)
+  if (f) { f.content = content.value; f.updatedAt = new Date().toISOString() }
+  setStorage('latex_files', files.value)
+}
+
+function downloadFile() {
+  if (!currentFile.value) return
+  const blob = new Blob([content.value], { type: 'text/plain' })
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = currentFile.value
+  a.click()
+  URL.revokeObjectURL(a.href)
+}
+
+function deleteCurrentFile() {
+  if (!confirm(`确定删除 ${currentFile.value}？`)) return
+  files.value = files.value.filter(f => f.name !== currentFile.value)
+  setStorage('latex_files', files.value)
+  currentFile.value = ''
+  content.value = ''
+}
+
+function insertText(text) {
+  const ta = document.querySelector('.editor-textarea')
+  if (!ta) return
+  const start = ta.selectionStart
+  content.value = content.value.slice(0, start) + text + content.value.slice(ta.selectionEnd)
+  nextTick(() => { ta.selectionStart = ta.selectionEnd = start + text.length; ta.focus() })
+}
+
+function insertTab() { insertText('  ') }
+
+// Lifecycle
+onMounted(() => {
+  latexSnippetsStore.load()
+  customSnippets.value = latexSnippetsStore.snippets
+  openCats.value = { '数学公式': true, '表格': true }
+  loadFiles()
+})
 </script>
 
 <style scoped>

@@ -167,153 +167,152 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref } from 'vue'
 import { useWritingStore } from '../stores/writing'
 import { recommendJournalsDetailed, generateAbstract, generateSectionDraft, isAIConfigured } from '../utils/ai'
 
-export default {
-  name: 'WritingView',
-  data() {
-    return {
-      writingStore: useWritingStore(),
-      papers: [],
-      selectedPaper: null,
-      showEditor: false,
-      newPaper: {
-        title: '',
-        journal: '',
-        topic: ''
-      },
-      aiLoading: false,
-      aiJournalResult: '',
-      aiJournalCards: [],
-      aiAbstractResult: '',
-      aiError: ''
-    }
-  },
-  methods: {
-    selectPaper(paper) {
-      this.selectedPaper = paper
-    },
-    createPaper() {
-      const paper = {
-        id: Date.now(),
-        title: this.newPaper.title,
-        journal: this.newPaper.journal,
-        topic: this.newPaper.topic,
-        status: '构思',
-        progress: 0,
-        sections: [
-          { name: '摘要 (Abstract)', status: '未开始', notes: '' },
-          { name: '引言 (Introduction)', status: '未开始', notes: '' },
-          { name: '方法 (Methods)', status: '未开始', notes: '' },
-          { name: '结果 (Results)', status: '未开始', notes: '' },
-          { name: '讨论 (Discussion)', status: '未开始', notes: '' },
-          { name: '结论 (Conclusion)', status: '未开始', notes: '' },
-          { name: '参考文献 (References)', status: '未开始', notes: '' },
-        ],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }
-      this.papers.unshift(paper)
-      this.savePapers()
-      this.closeEditor()
-    },
-    savePapers() {
-      this.papers.forEach(p => {
-        if (p.sections) {
-          const completed = p.sections.filter(s => s.status === '已完成').length
-          p.progress = Math.round((completed / p.sections.length) * 100)
-        }
-        p.updatedAt = new Date().toISOString()
-      })
-      this.writingStore.save({ papers: this.papers })
-    },
-    deletePaper(id) {
-      if (!confirm('确定删除这篇论文？')) return
-      this.papers = this.papers.filter(p => p.id !== id)
-      this.selectedPaper = null
-      this.savePapers()
-    },
-    closeEditor() {
-      this.showEditor = false
-      this.newPaper = { title: '', journal: '', topic: '' }
-      this.aiJournalResult = ''
-      this.aiJournalCards = []
-    },
-    getStatusType(status) {
-      const map = { '构思': 'primary', '写作中': 'warning', '修改中': 'info', '已投稿': 'success', '已接收': 'success' }
-      return map[status] || 'primary'
-    },
-    formatDateTime(iso) {
-      if (!iso) return ''
-      const d = new Date(iso)
-      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
-    },
-    async aiRecommendJournals() {
-      if (!isAIConfigured()) { alert('请先在设置中配置 AI API Key'); return }
-      this.aiLoading = true
-      this.aiJournalResult = ''
-      this.aiJournalCards = []
-      try {
-        const result = await recommendJournalsDetailed(this.newPaper.title, '', this.newPaper.topic)
-        if (Array.isArray(result)) {
-          this.aiJournalCards = result
-        } else {
-          this.aiJournalResult = result
-        }
-      } catch (e) {
-        alert('AI 推荐失败：' + e.message)
-      }
-      this.aiLoading = false
-    },
-    async aiDraftSection(idx) {
-      if (!isAIConfigured()) { alert('请先在设置中配置 AI API Key'); return }
-      if (!this.selectedPaper) return
-      const section = this.selectedPaper.sections[idx]
-      this.aiLoading = true
-      try {
-        const sectionName = section.name.replace(/\s*\(.*?\)/, '')
-        const draft = await generateSectionDraft(sectionName, this.selectedPaper.title, section.notes || this.selectedPaper.topic)
-        section.notes = (section.notes ? section.notes + '\n\n' : '') + '--- AI 生成草稿 ---\n' + draft
-        section.status = '进行中'
-        this.savePapers()
-      } catch (e) {
-        alert('AI 生成失败：' + e.message)
-      }
-      this.aiLoading = false
-    },
-    async aiGenerateAbstract() {
-      if (!isAIConfigured()) { alert('请先在设置中配置 AI API Key'); return }
-      if (!this.selectedPaper) return
-      const completedSections = this.selectedPaper.sections
-        .filter(s => s.status === '已完成' && s.notes)
-        .map(s => `## ${s.name}\n${s.notes}`)
-        .join('\n\n')
-      if (!completedSections) { alert('请先完成至少一个章节并填写笔记'); return }
-      this.aiLoading = true
-      this.aiAbstractResult = ''
-      try {
-        this.aiAbstractResult = await generateAbstract(this.selectedPaper.title, completedSections)
-      } catch (e) {
-        alert('AI 生成摘要失败：' + e.message)
-      }
-      this.aiLoading = false
-    },
-    copyAbstract() {
-      navigator.clipboard.writeText(this.aiAbstractResult).then(() => {
-        alert('已复制到剪贴板')
-      })
-    },
-    loadData() {
-      this.writingStore.load()
-      this.papers = this.writingStore.papers || []
-    }
-  },
-  mounted() {
-    this.loadData()
-  }
+const writingStore = useWritingStore()
+
+const papers = ref([])
+const selectedPaper = ref(null)
+const showEditor = ref(false)
+const newPaper = ref({ title: '', journal: '', topic: '' })
+const aiLoading = ref(false)
+const aiJournalResult = ref('')
+const aiJournalCards = ref([])
+const aiAbstractResult = ref('')
+
+function selectPaper(paper) {
+  selectedPaper.value = paper
 }
+
+function createPaper() {
+  const paper = {
+    id: Date.now(),
+    title: newPaper.value.title,
+    journal: newPaper.value.journal,
+    topic: newPaper.value.topic,
+    status: '构思',
+    progress: 0,
+    sections: [
+      { name: '摘要 (Abstract)', status: '未开始', notes: '' },
+      { name: '引言 (Introduction)', status: '未开始', notes: '' },
+      { name: '方法 (Methods)', status: '未开始', notes: '' },
+      { name: '结果 (Results)', status: '未开始', notes: '' },
+      { name: '讨论 (Discussion)', status: '未开始', notes: '' },
+      { name: '结论 (Conclusion)', status: '未开始', notes: '' },
+      { name: '参考文献 (References)', status: '未开始', notes: '' },
+    ],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }
+  papers.value.unshift(paper)
+  savePapers()
+  closeEditor()
+}
+
+function savePapers() {
+  papers.value.forEach(p => {
+    if (p.sections) {
+      const completed = p.sections.filter(s => s.status === '已完成').length
+      p.progress = Math.round((completed / p.sections.length) * 100)
+    }
+    p.updatedAt = new Date().toISOString()
+  })
+  writingStore.save({ papers: papers.value })
+}
+
+function deletePaper(id) {
+  if (!confirm('确定删除这篇论文？')) return
+  papers.value = papers.value.filter(p => p.id !== id)
+  selectedPaper.value = null
+  savePapers()
+}
+
+function closeEditor() {
+  showEditor.value = false
+  newPaper.value = { title: '', journal: '', topic: '' }
+  aiJournalResult.value = ''
+  aiJournalCards.value = []
+}
+
+function getStatusType(status) {
+  const map = { '构思': 'primary', '写作中': 'warning', '修改中': 'info', '已投稿': 'success', '已接收': 'success' }
+  return map[status] || 'primary'
+}
+
+function formatDateTime(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+
+async function aiRecommendJournals() {
+  if (!isAIConfigured()) { alert('请先在设置中配置 AI API Key'); return }
+  aiLoading.value = true
+  aiJournalResult.value = ''
+  aiJournalCards.value = []
+  try {
+    const result = await recommendJournalsDetailed(newPaper.value.title, '', newPaper.value.topic)
+    if (Array.isArray(result)) {
+      aiJournalCards.value = result
+    } else {
+      aiJournalResult.value = result
+    }
+  } catch (e) {
+    alert('AI 推荐失败：' + e.message)
+  }
+  aiLoading.value = false
+}
+
+async function aiDraftSection(idx) {
+  if (!isAIConfigured()) { alert('请先在设置中配置 AI API Key'); return }
+  if (!selectedPaper.value) return
+  const section = selectedPaper.value.sections[idx]
+  aiLoading.value = true
+  try {
+    const sectionName = section.name.replace(/\s*\(.*?\)/, '')
+    const draft = await generateSectionDraft(sectionName, selectedPaper.value.title, section.notes || selectedPaper.value.topic)
+    section.notes = (section.notes ? section.notes + '\n\n' : '') + '--- AI 生成草稿 ---\n' + draft
+    section.status = '进行中'
+    savePapers()
+  } catch (e) {
+    alert('AI 生成失败：' + e.message)
+  }
+  aiLoading.value = false
+}
+
+async function aiGenerateAbstract() {
+  if (!isAIConfigured()) { alert('请先在设置中配置 AI API Key'); return }
+  if (!selectedPaper.value) return
+  const completedSections = selectedPaper.value.sections
+    .filter(s => s.status === '已完成' && s.notes)
+    .map(s => `## ${s.name}\n${s.notes}`)
+    .join('\n\n')
+  if (!completedSections) { alert('请先完成至少一个章节并填写笔记'); return }
+  aiLoading.value = true
+  aiAbstractResult.value = ''
+  try {
+    aiAbstractResult.value = await generateAbstract(selectedPaper.value.title, completedSections)
+  } catch (e) {
+    alert('AI 生成摘要失败：' + e.message)
+  }
+  aiLoading.value = false
+}
+
+function copyAbstract() {
+  navigator.clipboard.writeText(aiAbstractResult.value).then(() => {
+    alert('已复制到剪贴板')
+  })
+}
+
+function loadData() {
+  writingStore.load()
+  papers.value = writingStore.papers || []
+}
+
+loadData()
 </script>
 
 <style scoped>

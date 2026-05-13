@@ -94,41 +94,48 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, computed, onMounted } from 'vue'
 import { useMilestonesStore } from '../stores/milestones'
 
-export default {
-  name: 'MilestoneView',
-  data() {
-    return {
-      milestonesStore: useMilestonesStore(),
-      milestones: [],
-      showForm: false,
-      form: { name: '', deadline: '', stage: '研究阶段', priority: 'medium', description: '' }
-    }
-  },
-  computed: {
-    stages() { return [...new Set(this.milestones.map(m => m.stage))] },
-    doneCount() { return this.milestones.filter(m => m.done).length },
-    overdueCount() { return this.milestones.filter(m => !m.done && this.isOverdue(m)).length },
-    progressPct() { return this.milestones.length ? Math.round(this.doneCount / this.milestones.length * 100) : 0 }
-  },
-  methods: {
-    milestonesByStage(stage) { return this.milestones.filter(m => m.stage === stage) },
-    isOverdue(m) { return m.deadline && !m.done && m.deadline < new Date().toISOString().split('T')[0] },
-    priorityClass(p) { return { high: 'tag-danger', medium: 'tag-warning', low: 'tag-success' }[p] || 'tag-primary' },
-    saveMilestone() {
-      if (!this.form.name.trim()) return alert('请输入名称')
-      this.milestonesStore.add(this.form)
-      this.milestones = this.milestonesStore.milestones
-      this.showForm = false
-      this.form = { name: '', deadline: '', stage: '研究阶段', priority: 'medium', description: '' }
-    },
-    toggleDone(m) { this.milestonesStore.update(m.id, { done: !m.done }); this.milestones = this.milestonesStore.milestones },
-    removeMilestone(id) { if (!confirm('确定删除？')) return; this.milestonesStore.remove(id); this.milestones = this.milestonesStore.milestones }
-  },
-  mounted() { this.milestonesStore.load(); this.milestones = this.milestonesStore.milestones }
+const milestonesStore = useMilestonesStore()
+
+const milestones = ref([])
+const showForm = ref(false)
+const form = ref({ name: '', deadline: '', stage: '研究阶段', priority: 'medium', description: '' })
+
+const stages = computed(() => [...new Set(milestones.value.map(m => m.stage))])
+const doneCount = computed(() => milestones.value.filter(m => m.done).length)
+const overdueCount = computed(() => milestones.value.filter(m => !m.done && isOverdue(m)).length)
+const progressPct = computed(() => milestones.value.length ? Math.round(doneCount.value / milestones.value.length * 100) : 0)
+
+function milestonesByStage(stage) { return milestones.value.filter(m => m.stage === stage) }
+function isOverdue(m) { return m.deadline && !m.done && m.deadline < new Date().toISOString().split('T')[0] }
+function priorityClass(p) { return { high: 'tag-danger', medium: 'tag-warning', low: 'tag-success' }[p] || 'tag-primary' }
+
+function saveMilestone() {
+  if (!form.value.name.trim()) return alert('请输入名称')
+  milestonesStore.add(form.value)
+  milestones.value = milestonesStore.milestones
+  showForm.value = false
+  form.value = { name: '', deadline: '', stage: '研究阶段', priority: 'medium', description: '' }
 }
+
+function toggleDone(m) {
+  milestonesStore.update(m.id, { done: !m.done })
+  milestones.value = milestonesStore.milestones
+}
+
+function removeMilestone(id) {
+  if (!confirm('确定删除？')) return
+  milestonesStore.remove(id)
+  milestones.value = milestonesStore.milestones
+}
+
+onMounted(() => {
+  milestonesStore.load()
+  milestones.value = milestonesStore.milestones
+})
 </script>
 
 <style scoped>

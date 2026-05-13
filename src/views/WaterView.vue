@@ -63,41 +63,35 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, computed } from 'vue'
 import { useWaterStore } from '../stores/water'
 
-export default {
-  name: 'WaterView',
-  data() {
-    return {
-      waterStore: useWaterStore(),
-      water: { cups: 0, goal: 8 }
-    }
-  },
-  computed: {
-    percent() {
-      return this.water.goal ? Math.round(this.water.cups / this.water.goal * 100) : 0
-    }
-  },
-  methods: {
-    addCup() {
-      this.waterStore.addCup()
-      this.water = this.waterStore.todayData
-    },
-    removeCup() {
-      this.waterStore.removeCup()
-      this.water = this.waterStore.todayData
-    },
-    setGoal(g) {
-      this.waterStore.setGoal(g)
-      this.water = this.waterStore.todayData
-    }
-  },
-  created() {
-    this.waterStore.load()
-    this.water = this.waterStore.todayData
-  }
+const waterStore = useWaterStore()
+const water = ref({ cups: 0, goal: 8 })
+
+const percent = computed(() => {
+  return water.value.goal ? Math.round(water.value.cups / water.value.goal * 100) : 0
+})
+
+function addCup() {
+  waterStore.addCup()
+  water.value = waterStore.todayData
 }
+
+function removeCup() {
+  waterStore.removeCup()
+  water.value = waterStore.todayData
+}
+
+function setGoal(g) {
+  waterStore.setGoal(g)
+  water.value = waterStore.todayData
+}
+
+// created() equivalent: runs during setup
+waterStore.load()
+water.value = waterStore.todayData
 </script>
 
 <style scoped>

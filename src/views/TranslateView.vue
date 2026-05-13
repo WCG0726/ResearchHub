@@ -76,61 +76,58 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref } from 'vue'
 import { isAIConfigured, translateText } from '../utils/ai'
 
-export default {
-  name: 'TranslateView',
-  data() {
-    return {
-      aiReady: isAIConfigured(),
-      source: '',
-      result: '',
-      loading: false,
-      direction: 'en2zh',
-      style: 'academic',
-      styles: [
-        { value: 'academic', label: '学术论文' },
-        { value: 'natural', label: '自然流畅' },
-        { value: 'formal', label: '正式商务' },
-        { value: 'simple', label: '简洁明了' }
-      ],
-      phrases: [
-        { en: 'This paper presents a novel approach to...', zh: '本文提出了一种新颖的方法来...' },
-        { en: 'The results demonstrate that...', zh: '结果表明...' },
-        { en: 'In conclusion, our findings suggest that...', zh: '总之，我们的研究结果表明...' },
-        { en: 'The experimental setup is as follows...', zh: '实验设置如下...' },
-        { en: 'As shown in Figure 1, ...', zh: '如图1所示，...' },
-        { en: 'It is worth noting that...', zh: '值得注意的是...' },
-        { en: 'The correlation between X and Y was found to be...', zh: 'X与Y之间的相关性被发现为...' },
-        { en: 'Further investigation is required to...', zh: '需要进一步研究以...' }
-      ]
-    }
-  },
-  methods: {
-    swapLang() {
-      this.direction = this.direction === 'en2zh' ? 'zh2en' : 'en2zh'
-      if (this.result) {
-        this.source = this.result
-        this.result = ''
-      }
-    },
-    async translate() {
-      this.loading = true
-      this.result = ''
-      try {
-        this.result = await translateText(this.source, this.direction, this.style)
-      } catch (e) {
-        this.result = '翻译失败: ' + e.message
-      } finally {
-        this.loading = false
-      }
-    },
-    copyResult() {
-      if (this.result) {
-        navigator.clipboard.writeText(this.result)
-      }
-    }
+const aiReady = ref(isAIConfigured())
+const source = ref('')
+const result = ref('')
+const loading = ref(false)
+const direction = ref('en2zh')
+const style = ref('academic')
+
+const styles = [
+  { value: 'academic', label: '学术论文' },
+  { value: 'natural', label: '自然流畅' },
+  { value: 'formal', label: '正式商务' },
+  { value: 'simple', label: '简洁明了' }
+]
+
+const phrases = [
+  { en: 'This paper presents a novel approach to...', zh: '本文提出了一种新颖的方法来...' },
+  { en: 'The results demonstrate that...', zh: '结果表明...' },
+  { en: 'In conclusion, our findings suggest that...', zh: '总之，我们的研究结果表明...' },
+  { en: 'The experimental setup is as follows...', zh: '实验设置如下...' },
+  { en: 'As shown in Figure 1, ...', zh: '如图1所示，...' },
+  { en: 'It is worth noting that...', zh: '值得注意的是...' },
+  { en: 'The correlation between X and Y was found to be...', zh: 'X与Y之间的相关性被发现为...' },
+  { en: 'Further investigation is required to...', zh: '需要进一步研究以...' }
+]
+
+function swapLang() {
+  direction.value = direction.value === 'en2zh' ? 'zh2en' : 'en2zh'
+  if (result.value) {
+    source.value = result.value
+    result.value = ''
+  }
+}
+
+async function translate() {
+  loading.value = true
+  result.value = ''
+  try {
+    result.value = await translateText(source.value, direction.value, style.value)
+  } catch (e) {
+    result.value = '翻译失败: ' + e.message
+  } finally {
+    loading.value = false
+  }
+}
+
+function copyResult() {
+  if (result.value) {
+    navigator.clipboard.writeText(result.value)
   }
 }
 </script>

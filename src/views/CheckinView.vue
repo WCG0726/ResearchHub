@@ -169,7 +169,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useCheckinsStore } from '../stores/checkins'
 import { useCalendarEventsStore } from '../stores/calendarEvents'
 import { usePomodoroStore } from '../stores/pomodoro'
@@ -371,6 +371,10 @@ function loadData() {
 onMounted(() => {
   loadData()
   _durationTimer = setInterval(updateWorkingDuration, 60000)
+})
+
+onUnmounted(() => {
+  if (_durationTimer) clearInterval(_durationTimer)
 })
 </script>
 
