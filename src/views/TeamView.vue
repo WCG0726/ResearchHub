@@ -2,113 +2,22 @@
   <div class="team-page">
     <h1 class="page-title">团队排行榜</h1>
 
-    <!-- 个人统计 -->
-    <div class="stats-grid">
-      <div class="stat-card" style="--accent: var(--primary)">
-        <div class="stat-value">{{ myStats.streak }}</div>
-        <div class="stat-label">连续打卡天数</div>
-        <div class="stat-icon">🔥</div>
-      </div>
-      <div class="stat-card" style="--accent: var(--success)">
-        <div class="stat-value">{{ myStats.totalCheckins }}</div>
-        <div class="stat-label">累计打卡</div>
-        <div class="stat-icon">📅</div>
-      </div>
-      <div class="stat-card" style="--accent: var(--warning)">
-        <div class="stat-value">{{ myStats.records }}</div>
-        <div class="stat-label">科研记录</div>
-        <div class="stat-icon">📝</div>
-      </div>
-      <div class="stat-card" style="--accent: var(--info)">
-        <div class="stat-value">{{ myStats.experiments }}</div>
-        <div class="stat-label">实验记录</div>
-        <div class="stat-icon">🔬</div>
-      </div>
-      <div class="stat-card" style="--accent: #ec4899">
-        <div class="stat-value">{{ myStats.litNotes }}</div>
-        <div class="stat-label">文献笔记</div>
-        <div class="stat-icon">📖</div>
-      </div>
-      <div class="stat-card" style="--accent: #8b5cf6">
-        <div class="stat-value">{{ myStats.pomodoro }}</div>
-        <div class="stat-label">番茄钟数</div>
-        <div class="stat-icon">🍅</div>
-      </div>
-      <div class="stat-card" style="--accent: #06b6d4">
-        <div class="stat-value">{{ myStats.inspirations }}</div>
-        <div class="stat-label">灵感记录</div>
-        <div class="stat-icon">💡</div>
-      </div>
-      <div class="stat-card" style="--accent: #f97316">
-        <div class="stat-value">{{ myStats.meetings }}</div>
-        <div class="stat-label">会议记录</div>
-        <div class="stat-icon">🗣️</div>
-      </div>
-    </div>
+    <TeamStatsGrid :stats="statsCards" />
 
-    <!-- 排行榜 -->
-    <div class="card">
-      <div class="rank-header">
-        <h3 class="card-title" style="margin-bottom:0">排行榜</h3>
-        <div class="rank-tabs">
-          <button v-for="tab in rankTabs" :key="tab.key" class="rank-tab" :class="{ active: rankBy === tab.key }" @click="rankBy = tab.key">{{ tab.label }}</button>
-        </div>
-      </div>
+    <TeamRankList
+      :list="rankedList"
+      :rank-by="rankBy"
+      :unit="rankUnit"
+      :current-user="currentUser"
+      :tabs="rankTabs"
+      @update:rankBy="rankBy = $event"
+    />
 
-      <div class="rank-list">
-        <div
-          v-for="(entry, idx) in rankedList"
-          :key="entry.username"
-          class="rank-item"
-          :class="{ 'is-me': entry.username === currentUser }"
-        >
-          <div class="rank-pos">
-            <span v-if="idx === 0" class="rank-medal">🥇</span>
-            <span v-else-if="idx === 1" class="rank-medal">🥈</span>
-            <span v-else-if="idx === 2" class="rank-medal">🥉</span>
-            <span v-else class="rank-num">{{ idx + 1 }}</span>
-          </div>
-          <div class="rank-avatar-wrap">
-            <div class="rank-avatar">{{ entry.nickname.charAt(0) }}</div>
-            <span class="online-dot" :class="{ online: entry.online }"></span>
-          </div>
-          <div class="rank-info">
-            <div class="rank-name-row">
-              <span class="rank-name">{{ entry.nickname }}</span>
-              <span v-if="entry.tier" class="rank-tier-badge" :style="{ color: entry.tier.color }">{{ entry.tier.icon }}</span>
-              <span v-if="entry.username === currentUser" class="rank-me-tag">我</span>
-            </div>
-            <span class="rank-status" :class="{ online: entry.online }">{{ entry.online ? '在线' : entry.lastSeen }}</span>
-          </div>
-          <div class="rank-value">
-            {{ entry[rankBy] || 0 }}
-            <span class="rank-unit">{{ rankUnit }}</span>
-          </div>
-        </div>
-
-        <div v-if="rankedList.length === 0" class="empty">
-          <div class="empty-text">暂无数据，快去打卡吧！</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 团队成员 -->
-    <div class="card">
-      <h3 class="card-title">团队成员 <span class="online-count">{{ onlineCount }} 人在线</span></h3>
-      <div class="member-list">
-        <div v-for="member in members" :key="member.username" class="member-item">
-          <div class="member-avatar-wrap">
-            <div class="member-avatar">{{ member.nickname.charAt(0) }}</div>
-            <span class="online-dot" :class="{ online: member.online }"></span>
-          </div>
-          <div class="member-info">
-            <span class="member-name">{{ member.nickname }}</span>
-            <span class="member-join">加入于 {{ formatDate(member.createdAt) }} · <span :class="{ 'text-online': member.online }">{{ member.online ? '在线' : member.lastSeen }}</span></span>
-          </div>
-          <span v-if="member.username === currentUser" class="tag tag-primary">当前用户</span>
-        </div>
-      </div>
-    </div>
+    <TeamMembers
+      :members="rankedList"
+      :online-count="onlineCount"
+      :current-user="currentUser"
+    />
   </div>
 </template>
 
@@ -127,6 +36,9 @@ import { getCurrentUser } from '../utils/auth'
 import { calculateXP, getTier } from '../utils/rank'
 import { getAllPresence } from '../utils/presence'
 import { formatDate as formatDateUtil } from '../utils/date'
+import TeamStatsGrid from '../components/team/TeamStatsGrid.vue'
+import TeamRankList from '../components/team/TeamRankList.vue'
+import TeamMembers from '../components/team/TeamMembers.vue'
 
 const checkinsStore = useCheckinsStore()
 const recordsStore = useRecordsStore()
@@ -157,6 +69,17 @@ const presenceData = ref({})
 
 let refreshTimer = null
 
+const statsCards = computed(() => [
+  { label: '连续打卡天数', value: myStats.value.streak, icon: '🔥', color: 'var(--primary)' },
+  { label: '累计打卡', value: myStats.value.totalCheckins, icon: '📅', color: 'var(--success)' },
+  { label: '科研记录', value: myStats.value.records, icon: '📝', color: 'var(--warning)' },
+  { label: '实验记录', value: myStats.value.experiments, icon: '🔬', color: 'var(--info)' },
+  { label: '文献笔记', value: myStats.value.litNotes, icon: '📖', color: '#ec4899' },
+  { label: '番茄钟数', value: myStats.value.pomodoro, icon: '🍅', color: '#8b5cf6' },
+  { label: '灵感记录', value: myStats.value.inspirations, icon: '💡', color: '#06b6d4' },
+  { label: '会议记录', value: myStats.value.meetings, icon: '🗣️', color: '#f97316' },
+])
+
 const rankUnit = computed(() => {
   const units = { xp: 'XP', streak: '天', total: '次', records: '条', experiments: '条', litNotes: '篇', pomodoro: '个', inspirations: '条', meetings: '次' }
   return units[rankBy.value] || ''
@@ -183,10 +106,6 @@ const onlineCount = computed(() => {
   return members.value.filter(m => presence[m.username]?.online === true).length
 })
 
-function formatDate(dateStr) {
-  return dateStr ? formatDateUtil(dateStr) : ''
-}
-
 function formatDiff(ts) {
   if (!ts) return '从未活跃'
   const diff = Date.now() - ts
@@ -201,32 +120,20 @@ function loadData() {
   const user = getCurrentUser()
   if (user) currentUser.value = user.username
 
-  // 刷新 Firebase 在线状态
   presenceData.value = getAllPresence()
 
-  // 加载所有用户：合并 localStorage 本地用户 + Firebase presence 用户
   try {
     const localUsers = JSON.parse(localStorage.getItem('research_hub_users') || '{}')
     const presence = presenceData.value
     const allUsers = new Map()
 
-    // 先加本地用户
     for (const [username, data] of Object.entries(localUsers)) {
-      allUsers.set(username, {
-        username,
-        nickname: data.nickname || username,
-        createdAt: data.createdAt
-      })
+      allUsers.set(username, { username, nickname: data.nickname || username, createdAt: data.createdAt })
     }
 
-    // 再加 Firebase 中的用户（可能来自其他浏览器）
     for (const [username, data] of Object.entries(presence)) {
       if (!allUsers.has(username)) {
-        allUsers.set(username, {
-          username,
-          nickname: data.nickname || username,
-          createdAt: null
-        })
+        allUsers.set(username, { username, nickname: data.nickname || username, createdAt: null })
       }
     }
 
@@ -235,7 +142,6 @@ function loadData() {
     members.value = []
   }
 
-  // 计算当前用户统计
   checkinsStore.load()
   recordsStore.load()
   experimentsStore.load()
@@ -270,7 +176,6 @@ function loadData() {
   myData.tier = getTier(myData.xp).tier
   myStats.value = { ...myData, totalCheckins: myData.total }
 
-  // 为所有成员生成排行数据（仅当前用户有本地数据，其他用户显示在线状态）
   const stats = {}
   members.value.forEach(m => {
     if (m.username === currentUser.value) {
@@ -294,199 +199,4 @@ onUnmounted(() => {
 
 <style scoped>
 .team-page { max-width: 900px; }
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  margin-bottom: 24px;
-}
-
-.stat-card {
-  background: var(--bg-primary);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 20px;
-  position: relative;
-  overflow: hidden;
-}
-
-.stat-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 4px;
-  height: 100%;
-  background: var(--accent);
-}
-
-.stat-value { font-size: 32px; font-weight: 700; color: var(--text-primary); }
-.stat-label { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
-.stat-icon { position: absolute; top: 12px; right: 12px; font-size: 20px; opacity: 0.5; }
-
-.rank-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.rank-tabs { display: flex; gap: 0; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-
-.rank-tab {
-  padding: 6px 14px;
-  border: none;
-  background: none;
-  font-size: 13px;
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-
-.rank-tab.active {
-  background: var(--primary);
-  color: white;
-}
-
-.rank-list { display: flex; flex-direction: column; gap: 8px; }
-
-.rank-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  background: var(--bg-surface);
-  border-radius: var(--radius);
-  transition: all 0.2s;
-}
-
-.rank-item.is-me {
-  background: rgba(99, 102, 241, 0.08);
-  border: 1px solid rgba(99, 102, 241, 0.2);
-}
-
-.rank-pos { width: 32px; text-align: center; flex-shrink: 0; }
-.rank-medal { font-size: 24px; }
-.rank-num { font-size: 16px; font-weight: 600; color: var(--text-muted); }
-
-.rank-avatar {
-  width: 36px;
-  height: 36px;
-  background: var(--primary);
-  color: white;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  font-weight: 600;
-  flex-shrink: 0;
-}
-
-.rank-avatar-wrap, .member-avatar-wrap {
-  position: relative;
-  flex-shrink: 0;
-}
-
-.online-dot {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  border: 2px solid var(--bg-primary);
-  background: var(--text-muted);
-}
-
-.online-dot.online {
-  background: #22c55e;
-  box-shadow: 0 0 6px rgba(34, 197, 94, 0.5);
-}
-
-.rank-info { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-
-.rank-name-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.rank-name { font-weight: 500; color: var(--text-primary); font-size: 15px; }
-
-.rank-status {
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.rank-status.online {
-  color: #22c55e;
-  font-weight: 500;
-}
-
-.online-count {
-  font-size: 13px;
-  font-weight: 400;
-  color: #22c55e;
-  margin-left: 8px;
-}
-
-.rank-me-tag {
-  padding: 1px 6px;
-  background: var(--primary);
-  color: white;
-  font-size: 11px;
-  border-radius: 4px;
-}
-
-.rank-tier-badge {
-  font-size: 16px;
-  flex-shrink: 0;
-}
-
-.rank-value {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--primary);
-}
-
-.rank-unit {
-  font-size: 13px;
-  font-weight: 400;
-  color: var(--text-muted);
-}
-
-.member-list { display: flex; flex-direction: column; gap: 8px; }
-
-.member-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  background: var(--bg-surface);
-  border-radius: var(--radius);
-}
-
-.member-avatar {
-  width: 36px;
-  height: 36px;
-  background: var(--primary);
-  color: white;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  font-weight: 600;
-  flex-shrink: 0;
-}
-
-.member-info { flex: 1; }
-.member-name { display: block; font-weight: 500; color: var(--text-primary); font-size: 14px; }
-.member-join { font-size: 12px; color: var(--text-muted); }
-.text-online { color: #22c55e; font-weight: 500; }
-
-@media (max-width: 768px) {
-  .stats-grid { grid-template-columns: repeat(2, 1fr); }
-}
 </style>
