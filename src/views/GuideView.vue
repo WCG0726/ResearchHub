@@ -34,17 +34,18 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import GuideStructure from './guide/GuideStructure.vue'
-import GuideEnglish from './guide/GuideEnglish.vue'
-import GuidePhrases from './guide/GuidePhrases.vue'
-import GuideFigures from './guide/GuideFigures.vue'
-import GuideSubmission from './guide/GuideSubmission.vue'
-import GuideThermoelectric from './guide/GuideThermoelectric.vue'
-import GuideChinese from './guide/GuideChinese.vue'
-import GuideSearch from './guide/GuideSearch.vue'
-import GuideSocial from './guide/GuideSocial.vue'
-import GuideTools from './guide/GuideTools.vue'
+import { ref, defineAsyncComponent } from 'vue'
+
+const GuideStructure = defineAsyncComponent(() => import('./guide/GuideStructure.vue'))
+const GuideEnglish = defineAsyncComponent(() => import('./guide/GuideEnglish.vue'))
+const GuidePhrases = defineAsyncComponent(() => import('./guide/GuidePhrases.vue'))
+const GuideFigures = defineAsyncComponent(() => import('./guide/GuideFigures.vue'))
+const GuideSubmission = defineAsyncComponent(() => import('./guide/GuideSubmission.vue'))
+const GuideThermoelectric = defineAsyncComponent(() => import('./guide/GuideThermoelectric.vue'))
+const GuideChinese = defineAsyncComponent(() => import('./guide/GuideChinese.vue'))
+const GuideSearch = defineAsyncComponent(() => import('./guide/GuideSearch.vue'))
+const GuideSocial = defineAsyncComponent(() => import('./guide/GuideSocial.vue'))
+const GuideTools = defineAsyncComponent(() => import('./guide/GuideTools.vue'))
 
 const searchQuery = ref('')
 const activeCategory = ref('structure')
