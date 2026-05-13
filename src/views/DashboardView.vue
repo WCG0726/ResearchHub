@@ -16,12 +16,41 @@
         </div>
       </div>
       <div class="welcome-right">
-        <div class="clock-display">
-          <span class="clock-time">{{ currentTime }}</span>
-        </div>
         <div class="welcome-quote">
           <span class="welcome-quote-text">"{{ quote.text }}"</span>
           <span class="welcome-quote-author">—— {{ quote.author }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 统计卡片行 -->
+    <div class="stats-cards">
+      <div class="stats-card" style="--accent: #6366f1">
+        <div class="stats-card-icon">⏱️</div>
+        <div class="stats-card-body">
+          <div class="stats-card-value">{{ todayHours }}</div>
+          <div class="stats-card-label">今日工时</div>
+        </div>
+      </div>
+      <div class="stats-card" style="--accent: #10b981">
+        <div class="stats-card-icon">✅</div>
+        <div class="stats-card-body">
+          <div class="stats-card-value">{{ pendingTodos }}</div>
+          <div class="stats-card-label">本周待办</div>
+        </div>
+      </div>
+      <div class="stats-card" style="--accent: #f59e0b">
+        <div class="stats-card-icon">🎯</div>
+        <div class="stats-card-body">
+          <div class="stats-card-value">{{ milestoneProgress }}%</div>
+          <div class="stats-card-label">里程碑进度</div>
+        </div>
+      </div>
+      <div class="stats-card" style="--accent: #ef4444">
+        <div class="stats-card-icon">🔥</div>
+        <div class="stats-card-body">
+          <div class="stats-card-value">{{ streak.current }}</div>
+          <div class="stats-card-label">连续打卡</div>
         </div>
       </div>
     </div>
@@ -67,30 +96,6 @@
             <span class="quick-icon">🔍</span>
             <span>Bug 检测</span>
           </router-link>
-        </div>
-
-        <!-- 打卡统计 -->
-        <div class="stats-row">
-          <div class="stat-chip">
-            <span class="stat-chip-icon">🔥</span>
-            <span class="stat-chip-value">{{ streak.current }}</span>
-            <span class="stat-chip-label">连续打卡</span>
-          </div>
-          <div class="stat-chip">
-            <span class="stat-chip-icon">📊</span>
-            <span class="stat-chip-value">{{ streak.total }}</span>
-            <span class="stat-chip-label">累计打卡</span>
-          </div>
-          <div class="stat-chip">
-            <span class="stat-chip-icon">📝</span>
-            <span class="stat-chip-value">{{ records.length }}</span>
-            <span class="stat-chip-label">科研记录</span>
-          </div>
-          <div class="stat-chip">
-            <span class="stat-chip-icon">🏆</span>
-            <span class="stat-chip-value">{{ streak.longest }}</span>
-            <span class="stat-chip-label">最长连续</span>
-          </div>
         </div>
 
         <!-- 今日考勤 -->
@@ -282,7 +287,8 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { formatDate, toDateString } from '../utils/date'
 import { useCalendarEventsStore } from '../stores/calendarEvents'
 import { generateCalendarDays } from '../utils/calendar'
@@ -301,179 +307,152 @@ import { useWaterStore } from '../stores/water'
 import { useBugScannerStore } from '../stores/bugScanner'
 import { calculateXP, getTier } from '../utils/rank'
 
-export default {
-  name: 'DashboardView',
-  data() {
+const profileStore = useProfileStore()
+const checkinsStore = useCheckinsStore()
+const recordsStore = useRecordsStore()
+const inspirationsStore = useInspirationsStore()
+const litNotesStore = useLitNotesStore()
+const plansStore = usePlansStore()
+const pomodoroStore = usePomodoroStore()
+const experimentsStore = useExperimentsStore()
+const meetingsStore = useMeetingsStore()
+const milestonesStore = useMilestonesStore()
+const waterStore = useWaterStore()
+const bugScannerStore = useBugScannerStore()
+const calendarEventsStore = useCalendarEventsStore()
+
+const quote = getRandomQuote()
+const now = new Date()
+const miniYear = ref(now.getFullYear())
+const miniMonth = ref(now.getMonth() + 1)
+const events = ref({})
+
+// Load all stores
+profileStore.load()
+checkinsStore.load()
+recordsStore.load()
+inspirationsStore.load()
+litNotesStore.load()
+plansStore.load()
+pomodoroStore.load()
+experimentsStore.load()
+meetingsStore.load()
+milestonesStore.load()
+waterStore.load()
+
+const nickname = computed(() => profileStore.profile.nickname)
+const streak = computed(() => checkinsStore.streak)
+const clockStatus = computed(() => checkinsStore.clockStatus)
+const recentRecords = computed(() => recordsStore.recentRecords)
+const recentInspirations = computed(() => inspirationsStore.recentInspirations)
+const recentLitNotes = computed(() => litNotesStore.recentNotes)
+const todos = computed(() => plansStore.todos)
+const waterData = computed(() => waterStore.todayData)
+const waterPercent = computed(() => {
+  const d = waterStore.todayData
+  return d.goal ? Math.round(d.cups / d.goal * 100) : 0
+})
+const bugCounts = computed(() => bugScannerStore.errorCounts)
+const runtimeErrorCount = computed(() => bugScannerStore.runtimeErrors.length)
+
+// Stats cards
+const todayHours = computed(() => {
+  const status = checkinsStore.clockStatus
+  if (status.clockedOut) return status.duration || '0h'
+  if (status.clockedIn && status.clockInTime) {
+    const [h, m] = status.clockInTime.split(':').map(Number)
     const now = new Date()
-    return {
-      _profileStore: useProfileStore(),
-      _checkinsStore: useCheckinsStore(),
-      _recordsStore: useRecordsStore(),
-      _inspirationsStore: useInspirationsStore(),
-      _litNotesStore: useLitNotesStore(),
-      _plansStore: usePlansStore(),
-      _pomodoroStore: usePomodoroStore(),
-      _experimentsStore: useExperimentsStore(),
-      _meetingsStore: useMeetingsStore(),
-      _milestonesStore: useMilestonesStore(),
-      _waterStore: useWaterStore(),
-      _bugScannerStore: useBugScannerStore(),
-      quote: getRandomQuote(),
-      currentTime: now.toLocaleTimeString('zh-CN'),
-      miniYear: now.getFullYear(),
-      miniMonth: now.getMonth() + 1,
-      calendarEventsStore: useCalendarEventsStore(),
-      events: {},
-      _clockTimer: null
-    }
-  },
-  computed: {
-    nickname() {
-      return this._profileStore.profile.nickname
-    },
-    streak() {
-      return this._checkinsStore.streak
-    },
-    clockStatus() {
-      return this._checkinsStore.clockStatus
-    },
-    records() {
-      return this._recordsStore.records
-    },
-    recentRecords() {
-      return this._recordsStore.recentRecords
-    },
-    inspirations() {
-      return this._inspirationsStore.inspirations
-    },
-    recentInspirations() {
-      return this._inspirationsStore.recentInspirations
-    },
-    litNotes() {
-      return this._litNotesStore.notes
-    },
-    recentLitNotes() {
-      return this._litNotesStore.recentNotes
-    },
-    todos() {
-      return this._plansStore.todos
-    },
-    rankInfo() {
-      // 直接访问 store 属性，确保 Vue 响应式追踪
-      const s = this._checkinsStore.streak
-      const xp = calculateXP({
-        checkinDays: s.total,
-        maxStreak: s.longest,
-        currentStreak: s.current,
-        pomodoroCount: this._pomodoroStore.total,
-        recordsCount: this._recordsStore.records.length,
-        litNotesCount: this._litNotesStore.notes.length,
-        experimentsCount: this._experimentsStore.experiments.length,
-        milestonesCount: this._milestonesStore.milestones.filter(m => m.done).length,
-        meetingsCount: this._meetingsStore.meetings.length,
-        inspirationsCount: this._inspirationsStore.inspirations.length,
-      })
-      return getTier(xp)
-    },
-    waterData() {
-      return this._waterStore.todayData
-    },
-    waterPercent() {
-      const d = this._waterStore.todayData
-      return d.goal ? Math.round(d.cups / d.goal * 100) : 0
-    },
-    bugCounts() {
-      return this._bugScannerStore.errorCounts
-    },
-    runtimeErrorCount() {
-      return this._bugScannerStore.runtimeErrors.length
-    },
-    greeting() {
-      const h = new Date().getHours()
-      if (h < 6) return '夜深了'
-      if (h < 12) return '早上好'
-      if (h < 14) return '中午好'
-      if (h < 18) return '下午好'
-      return '晚上好'
-    },
-    todayText() {
-      const d = new Date()
-      return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`
-    },
-    weekdayText() {
-      return '星期' + ['日', '一', '二', '三', '四', '五', '六'][new Date().getDay()]
-    },
-    miniCalendarDays() {
-      return generateCalendarDays(this.miniYear, this.miniMonth - 1, this._checkinsStore.checkins, this.events)
-    },
-    upcomingEvents() {
-      const today = new Date()
-      const result = []
-      for (let i = 0; i < 30; i++) {
-        const d = new Date(today)
-        d.setDate(d.getDate() + i)
-        const ds = toDateString(d)
-        const evs = this.events[ds]
-        if (evs) {
-          for (const ev of evs) {
-            result.push({
-              ...ev,
-              date: ds,
-              dateLabel: i === 0 ? '今天' : i === 1 ? '明天' : `${d.getMonth() + 1}月${d.getDate()}日`
-            })
-          }
-        }
-      }
-      return result.slice(0, 8)
-    }
-  },
-  methods: {
-    formatDate,
-    miniPrev() {
-      if (this.miniMonth === 1) { this.miniMonth = 12; this.miniYear-- }
-      else this.miniMonth--
-    },
-    miniNext() {
-      if (this.miniMonth === 12) { this.miniMonth = 1; this.miniYear++ }
-      else this.miniMonth++
-    },
-    loadData() {
-      this.calendarEventsStore.load()
-      this.events = this.calendarEventsStore.events
-    },
-    waterAdd() {
-      this._waterStore.addCup()
-    },
-    waterRemove() {
-      this._waterStore.removeCup()
-    },
-    startClock() {
-      this._clockTimer = setInterval(() => {
-        this.currentTime = new Date().toLocaleTimeString('zh-CN')
-      }, 1000)
-    }
-  },
-  created() {
-    this._profileStore.load()
-    this._checkinsStore.load()
-    this._recordsStore.load()
-    this._inspirationsStore.load()
-    this._litNotesStore.load()
-    this._plansStore.load()
-    this._pomodoroStore.load()
-    this._experimentsStore.load()
-    this._meetingsStore.load()
-    this._milestonesStore.load()
-    this._waterStore.load()
-  },
-  mounted() {
-    this.loadData()
-    this.startClock()
-  },
-  beforeUnmount() {
-    if (this._clockTimer) clearInterval(this._clockTimer)
+    const diff = (now.getHours() - h) + (now.getMinutes() - m) / 60
+    return diff > 0 ? diff.toFixed(1) + 'h' : '0h'
   }
+  return '0h'
+})
+
+const pendingTodos = computed(() => plansStore.plans.filter(p => !p.done).length)
+
+const milestoneProgress = computed(() => {
+  const ms = milestonesStore.milestones
+  if (ms.length === 0) return 0
+  return Math.round(ms.filter(m => m.done).length / ms.length * 100)
+})
+
+const rankInfo = computed(() => {
+  const s = checkinsStore.streak
+  const xp = calculateXP({
+    checkinDays: s.total,
+    maxStreak: s.longest,
+    currentStreak: s.current,
+    pomodoroCount: pomodoroStore.total,
+    recordsCount: recordsStore.records.length,
+    litNotesCount: litNotesStore.notes.length,
+    experimentsCount: experimentsStore.experiments.length,
+    milestonesCount: milestonesStore.milestones.filter(m => m.done).length,
+    meetingsCount: meetingsStore.meetings.length,
+    inspirationsCount: inspirationsStore.inspirations.length,
+  })
+  return getTier(xp)
+})
+
+const greeting = computed(() => {
+  const h = new Date().getHours()
+  if (h < 6) return '夜深了'
+  if (h < 12) return '早上好'
+  if (h < 14) return '中午好'
+  if (h < 18) return '下午好'
+  return '晚上好'
+})
+
+const todayText = computed(() => {
+  const d = new Date()
+  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`
+})
+
+const weekdayText = computed(() => {
+  return '星期' + ['日', '一', '二', '三', '四', '五', '六'][new Date().getDay()]
+})
+
+const miniCalendarDays = computed(() => {
+  return generateCalendarDays(miniYear.value, miniMonth.value - 1, checkinsStore.checkins, events.value)
+})
+
+const upcomingEvents = computed(() => {
+  const today = new Date()
+  const result = []
+  for (let i = 0; i < 30; i++) {
+    const d = new Date(today)
+    d.setDate(d.getDate() + i)
+    const ds = toDateString(d)
+    const evs = events.value[ds]
+    if (evs) {
+      for (const ev of evs) {
+        result.push({
+          ...ev,
+          date: ds,
+          dateLabel: i === 0 ? '今天' : i === 1 ? '明天' : `${d.getMonth() + 1}月${d.getDate()}日`
+        })
+      }
+    }
+  }
+  return result.slice(0, 8)
+})
+
+function miniPrev() {
+  if (miniMonth.value === 1) { miniMonth.value = 12; miniYear.value-- }
+  else miniMonth.value--
 }
+
+function miniNext() {
+  if (miniMonth.value === 12) { miniMonth.value = 1; miniYear.value++ }
+  else miniMonth.value++
+}
+
+function waterAdd() { waterStore.addCup() }
+function waterRemove() { waterStore.removeCup() }
+
+onMounted(() => {
+  calendarEventsStore.load()
+  events.value = calendarEventsStore.events
+})
 </script>
 
 <style scoped>
@@ -482,7 +461,7 @@ export default {
 .welcome-section {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 20px;
 }
 
@@ -568,14 +547,60 @@ export default {
   color: var(--text-muted);
 }
 
-.clock-time {
+/* 统计卡片 */
+.stats-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.stats-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  position: relative;
+  overflow: hidden;
+  transition: all var(--transition);
+}
+
+.stats-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px 0 0 3px;
+}
+
+.stats-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.stats-card-icon {
   font-size: 28px;
-  font-weight: 300;
-  background: var(--gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.stats-card-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.1;
+}
+
+.stats-card-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
 }
 
 /* 快捷入口 */
@@ -632,51 +657,6 @@ export default {
 }
 
 .quick-icon { font-size: 24px; }
-
-/* 统计条 */
-.stats-row {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-  margin-bottom: 16px;
-}
-
-.stat-chip {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 12px;
-  background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur));
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius);
-  position: relative;
-  overflow: hidden;
-}
-
-.stat-chip::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 3px;
-  height: 100%;
-  background: var(--gradient-primary);
-  border-radius: 3px 0 0 3px;
-}
-
-.stat-chip-icon { font-size: 18px; }
-
-.stat-chip-value {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.stat-chip-label {
-  font-size: 12px;
-  color: var(--text-muted);
-}
 
 /* 双栏布局 */
 .dashboard-grid {
@@ -883,8 +863,6 @@ export default {
 .rating-stars { color: #f59e0b; }
 
 /* 项目健康度 */
-.health-card { }
-
 .health-good {
   display: flex;
   align-items: center;
@@ -1014,11 +992,10 @@ export default {
   background: rgba(59, 130, 246, 0.12);
 }
 
-
 @media (max-width: 900px) {
   .dashboard-grid { grid-template-columns: 1fr; }
   .quick-actions { grid-template-columns: repeat(4, 1fr); gap: 8px; }
-  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .stats-cards { grid-template-columns: repeat(2, 1fr); }
   .welcome-section { flex-direction: column; align-items: flex-start; gap: 8px; }
 }
 
@@ -1026,5 +1003,6 @@ export default {
   .quick-actions { grid-template-columns: repeat(3, 1fr); gap: 6px; }
   .quick-btn { padding: 10px 6px; }
   .quick-icon { font-size: 20px; }
+  .stats-cards { grid-template-columns: 1fr; }
 }
 </style>

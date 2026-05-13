@@ -16,6 +16,7 @@
           🔍 <span class="search-hint">Ctrl+K</span>
         </button>
       </div>
+      <span class="header-clock">{{ currentTime }}</span>
       <button class="theme-btn" @click="$emit('toggle-theme')" :title="isDark ? '浅色模式' : '深色模式'">
         {{ isDark ? '☀️' : '🌙' }}
       </button>
@@ -157,7 +158,9 @@ export default {
       searchQuery: '',
       debouncedQuery: '',
       selectedIndex: 0,
-      _searchTimer: null
+      _searchTimer: null,
+      currentTime: '',
+      _clockTimer: null
     }
   },
   computed: {
@@ -339,8 +342,17 @@ export default {
       }
     }
   },
+  mounted() {
+    const updateClock = () => {
+      const now = new Date()
+      this.currentTime = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    }
+    updateClock()
+    this._clockTimer = setInterval(updateClock, 1000)
+  },
   beforeUnmount() {
     clearTimeout(this._searchTimer)
+    clearInterval(this._clockTimer)
   }
 }
 </script>
@@ -659,6 +671,23 @@ export default {
   .search-hint {
     display: none;
   }
+  .header-clock {
+    display: none;
+  }
+}
+
+.header-clock {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.5px;
+  padding: 4px 10px;
+  border-radius: var(--radius);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  min-width: 80px;
+  text-align: center;
 }
 
 /* 全局搜索 */

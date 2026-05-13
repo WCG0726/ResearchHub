@@ -1,41 +1,83 @@
 <template>
   <div class="checkin-page">
-    <h1 class="page-title">打卡</h1>
+    <!-- 周日历条 -->
+    <div class="week-bar">
+      <div
+        v-for="day in weekDays"
+        :key="day.date"
+        class="week-day"
+        :class="{ today: day.isToday, checked: day.isChecked, weekend: day.isWeekend }"
+      >
+        <span class="week-day-label">{{ day.weekday }}</span>
+        <span class="week-day-num">{{ day.date }}</span>
+        <span v-if="day.isChecked" class="week-check">✓</span>
+      </div>
+    </div>
 
-    <!-- 上班/下班打卡 -->
-    <div class="card checkin-card">
-      <!-- 已下班 -->
-      <div v-if="clockStatus.clockedOut" class="checkin-success">
-        <div class="success-icon">🏠</div>
-        <h2>今日已下班</h2>
-        <div class="clock-detail">
-          <div class="clock-row">
-            <span class="clock-label">上班时间</span>
-            <span class="clock-value">{{ clockStatus.clockInTime }}</span>
-          </div>
-          <div class="clock-row">
-            <span class="clock-label">下班时间</span>
-            <span class="clock-value">{{ clockStatus.clockOutTime }}</span>
-          </div>
-          <div class="clock-row highlight">
-            <span class="clock-label">工作时长</span>
-            <span class="clock-value">{{ clockStatus.duration }}</span>
-          </div>
+    <!-- 主打卡区 -->
+    <div class="checkin-main">
+      <div class="checkin-status">
+        <div v-if="clockStatus.clockedOut" class="status-done">
+          <span class="status-icon">🏠</span>
+          <span class="status-text">今日已下班</span>
+        </div>
+        <div v-else-if="clockStatus.clockedIn" class="status-working">
+          <span class="status-icon pulse">💼</span>
+          <span class="status-text">上班中 · {{ clockStatus.clockInTime }}</span>
+        </div>
+        <div v-else class="status-waiting">
+          <span class="status-icon">🌅</span>
+          <span class="status-text">今日尚未打卡</span>
         </div>
       </div>
-      <!-- 已上班未下班 -->
-      <div v-else-if="clockStatus.clockedIn" class="checkin-success">
-        <div class="success-icon">💼</div>
-        <h2>上班打卡成功</h2>
-        <p>上班时间：{{ clockStatus.clockInTime }}</p>
-        <button class="btn btn-primary btn-xl" @click="doClockOut">下班打卡</button>
+
+      <!-- 大圆按钮 -->
+      <button
+        class="clock-btn"
+        :class="{ 'clocked-in': clockStatus.clockedIn, 'clocked-out': clockStatus.clockedOut }"
+        @click="clockStatus.clockedOut ? null : clockStatus.clockedIn ? doClockOut() : doClockIn()"
+        :disabled="clockStatus.clockedOut"
+      >
+        <span class="clock-btn-icon">{{ clockStatus.clockedOut ? '✓' : clockStatus.clockedIn ? '🏠' : '⏰' }}</span>
+        <span class="clock-btn-text">{{ clockStatus.clockedOut ? '已完成' : clockStatus.clockedIn ? '下班打卡' : '上班打卡' }}</span>
+      </button>
+
+      <!-- 工时统计 -->
+      <div class="time-info">
+        <div v-if="clockStatus.clockedOut" class="time-row">
+          <span class="time-label">上班 {{ clockStatus.clockInTime }}</span>
+          <span class="time-sep">→</span>
+          <span class="time-label">下班 {{ clockStatus.clockOutTime }}</span>
+          <span class="time-sep">·</span>
+          <span class="time-highlight">{{ clockStatus.duration }}</span>
+        </div>
+        <div v-else-if="clockStatus.clockedIn" class="time-row">
+          <span class="time-label">已工作</span>
+          <span class="time-highlight">{{ workingDuration }}</span>
+        </div>
+        <div v-else class="time-row">
+          <span class="time-label">签到后开始计时</span>
+        </div>
       </div>
-      <!-- 未打卡 -->
-      <div v-else class="checkin-prompt">
-        <div class="prompt-icon">🌅</div>
-        <h2>今日尚未打卡</h2>
-        <p>开始新的一天，加油！</p>
-        <button class="btn btn-primary btn-xl" @click="doClockIn">上班打卡</button>
+    </div>
+
+    <!-- 统计条 -->
+    <div class="stats-bar">
+      <div class="stat-item">
+        <span class="stat-val">{{ streak.current }}</span>
+        <span class="stat-lbl">🔥 连续打卡</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-val">{{ streak.longest }}</span>
+        <span class="stat-lbl">🏆 最长连续</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-val">{{ streak.total }}</span>
+        <span class="stat-lbl">📊 累计打卡</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-val">{{ rankInfo.tier.icon }}</span>
+        <span class="stat-lbl">{{ rankInfo.tier.name }} · {{ rankInfo.xp }} XP</span>
       </div>
     </div>
 
@@ -49,7 +91,7 @@
       </div>
       <div class="calendar">
         <div class="calendar-header">
-          <span v-for="day in weekDays" :key="day" class="weekday">{{ day }}</span>
+          <span v-for="day in ['日','一','二','三','四','五','六']" :key="day" class="weekday">{{ day }}</span>
         </div>
         <div class="calendar-body">
           <div
@@ -106,22 +148,6 @@
       </div>
     </div>
 
-    <!-- 统计 -->
-    <div class="stats-row">
-      <div class="stat-card">
-        <div class="stat-value">{{ streak.current }}</div>
-        <div class="stat-label">🔥 当前连续</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value">{{ streak.longest }}</div>
-        <div class="stat-label">🏆 最长连续</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value">{{ streak.total }}</div>
-        <div class="stat-label">📊 累计打卡</div>
-      </div>
-    </div>
-
     <!-- 学术段位 -->
     <div class="card rank-card">
       <div class="rank-display">
@@ -142,7 +168,8 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, computed, onMounted } from 'vue'
 import { useCheckinsStore } from '../stores/checkins'
 import { useCalendarEventsStore } from '../stores/calendarEvents'
 import { usePomodoroStore } from '../stores/pomodoro'
@@ -155,167 +182,196 @@ import { useInspirationsStore } from '../stores/inspirations'
 import { calculateXP, getTier } from '../utils/rank'
 import { toDateString, formatTime } from '../utils/date'
 
-export default {
-  name: 'CheckinView',
-  data() {
-    const now = new Date()
-    return {
-      _checkinsStore: useCheckinsStore(),
-      _calendarEventsStore: useCalendarEventsStore(),
-      _pomodoroStore: usePomodoroStore(),
-      _recordsStore: useRecordsStore(),
-      _litNotesStore: useLitNotesStore(),
-      _experimentsStore: useExperimentsStore(),
-      _milestonesStore: useMilestonesStore(),
-      _meetingsStore: useMeetingsStore(),
-      _inspirationsStore: useInspirationsStore(),
-      clockStatus: { clockedIn: false, clockedOut: false },
-      streak: { current: 0, longest: 0, total: 0 },
-      checkins: {},
-      events: {},
-      currentYear: now.getFullYear(),
-      currentMonth: now.getMonth() + 1,
-      weekDays: ['日', '一', '二', '三', '四', '五', '六'],
-      selectedDay: null,
-      newEventText: '',
-      newEventColor: '#6366f1',
-      newEventRecurring: false
-    }
-  },
-  computed: {
-    calendarDays() {
-      const year = this.currentYear
-      const month = this.currentMonth - 1
-      const firstDay = new Date(year, month, 1)
-      const lastDay = new Date(year, month + 1, 0)
-      const today = new Date().toISOString().split('T')[0]
-      const days = []
+const checkinsStore = useCheckinsStore()
+const calendarEventsStore = useCalendarEventsStore()
+const pomodoroStore = usePomodoroStore()
+const recordsStore = useRecordsStore()
+const litNotesStore = useLitNotesStore()
+const experimentsStore = useExperimentsStore()
+const milestonesStore = useMilestonesStore()
+const meetingsStore = useMeetingsStore()
+const inspirationsStore = useInspirationsStore()
 
-      // 上月填充
-      const startWeekday = firstDay.getDay()
-      for (let i = startWeekday - 1; i >= 0; i--) {
-        const d = new Date(year, month, -i)
-        const dateStr = this.formatDate(d)
-        days.push(this.makeDay(d.getDate(), dateStr, false, today))
-      }
+const clockStatus = ref({ clockedIn: false, clockedOut: false })
+const streak = ref({ current: 0, longest: 0, total: 0 })
+const checkins = ref({})
+const events = ref({})
+const now = new Date()
+const currentYear = ref(now.getFullYear())
+const currentMonth = ref(now.getMonth() + 1)
+const selectedDay = ref(null)
+const newEventText = ref('')
+const newEventColor = ref('#6366f1')
+const newEventRecurring = ref(false)
+const _workingDuration = ref('0:00')
 
-      // 本月
-      for (let i = 1; i <= lastDay.getDate(); i++) {
-        const d = new Date(year, month, i)
-        const dateStr = this.formatDate(d)
-        days.push(this.makeDay(i, dateStr, true, today))
-      }
+let _durationTimer = null
 
-      // 下月填充
-      const remaining = 42 - days.length
-      for (let i = 1; i <= remaining; i++) {
-        const d = new Date(year, month + 1, i)
-        const dateStr = this.formatDate(d)
-        days.push(this.makeDay(i, dateStr, false, today))
-      }
+// 周日历条
+const weekDays = computed(() => {
+  const today = new Date()
+  const dayOfWeek = today.getDay()
+  const result = []
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(today)
+    d.setDate(today.getDate() - dayOfWeek + i)
+    const dateStr = toDateString(d)
+    result.push({
+      date: d.getDate(),
+      weekday: ['日', '一', '二', '三', '四', '五', '六'][d.getDay()],
+      dateStr,
+      isToday: i === dayOfWeek,
+      isChecked: !!checkins.value[dateStr],
+      isWeekend: d.getDay() === 0 || d.getDay() === 6
+    })
+  }
+  return result
+})
 
-      return days
-    },
-    dayEvents() {
-      if (!this.selectedDay) return []
-      return this._calendarEventsStore.eventsForDate(this.selectedDay.fullDate)
-    },
-    rankInfo() {
-      const s = this._checkinsStore.streak
-      const xp = calculateXP({
-        checkinDays: s.total,
-        maxStreak: s.longest,
-        currentStreak: s.current,
-        pomodoroCount: this._pomodoroStore.total,
-        recordsCount: this._recordsStore.records.length,
-        litNotesCount: this._litNotesStore.notes.length,
-        experimentsCount: this._experimentsStore.experiments.length,
-        milestonesCount: this._milestonesStore.milestones.filter(m => m.done).length,
-        meetingsCount: this._meetingsStore.meetings.length,
-        inspirationsCount: this._inspirationsStore.inspirations.length,
-      })
-      return getTier(xp)
-    },
-  },
-  methods: {
-    formatDate(d) {
-      return toDateString(d)
-    },
-    makeDay(date, dateStr, currentMonth, today) {
-      const d = new Date(dateStr)
-      const weekday = d.getDay()
-      return {
-        date,
-        fullDate: dateStr,
-        currentMonth,
-        isToday: dateStr === today,
-        isWeekend: weekday === 0 || weekday === 6,
-        isChecked: !!this.checkins[dateStr],
-        hasEvent: !!(this.events[dateStr] && this.events[dateStr].length),
-        eventText: (this.events[dateStr] || []).map(e => e.text).join(', ')
-      }
-    },
-    formatTime,
-    prevMonth() {
-      if (this.currentMonth === 1) {
-        this.currentMonth = 12
-        this.currentYear--
-      } else {
-        this.currentMonth--
-      }
-    },
-    nextMonth() {
-      if (this.currentMonth === 12) {
-        this.currentMonth = 1
-        this.currentYear++
-      } else {
-        this.currentMonth++
-      }
-    },
-    goToday() {
-      const now = new Date()
-      this.currentYear = now.getFullYear()
-      this.currentMonth = now.getMonth() + 1
-    },
-    onDayClick(day) {
-      this.selectedDay = day
-    },
-    addEvent() {
-      if (!this.newEventText.trim() || !this.selectedDay) return
-      this._calendarEventsStore.add(this.selectedDay.fullDate, {
-        text: this.newEventText.trim(),
-        color: this.newEventColor,
-        recurring: this.newEventRecurring
-      })
-      this.events = this._calendarEventsStore.events
-      this.newEventText = ''
-      this.newEventRecurring = false
-    },
-    removeEvent(eventId, originalDate) {
-      if (!this.selectedDay) return
-      const date = originalDate || this.selectedDay.fullDate
-      this._calendarEventsStore.remove(date, eventId)
-      this.events = this._calendarEventsStore.events
-    },
-    doClockIn() {
-      if (this._checkinsStore.clockIn()) this.loadData()
-    },
-    doClockOut() {
-      if (this._checkinsStore.clockOut()) this.loadData()
-    },
-    loadData() {
-      this._checkinsStore.forceLoad()
-      this._calendarEventsStore.forceLoad()
-      this.checkins = this._checkinsStore.checkins
-      this.streak = this._checkinsStore.streak
-      this.clockStatus = this._checkinsStore.clockStatus
-      this.events = this._calendarEventsStore.events
-    }
-  },
-  mounted() {
-    this.loadData()
+const calendarDays = computed(() => {
+  const year = currentYear.value
+  const month = currentMonth.value - 1
+  const firstDay = new Date(year, month, 1)
+  const lastDay = new Date(year, month + 1, 0)
+  const today = new Date().toISOString().split('T')[0]
+  const days = []
+
+  const startWeekday = firstDay.getDay()
+  for (let i = startWeekday - 1; i >= 0; i--) {
+    const d = new Date(year, month, -i)
+    const dateStr = toDateString(d)
+    days.push(makeDay(d.getDate(), dateStr, false, today))
+  }
+
+  for (let i = 1; i <= lastDay.getDate(); i++) {
+    const d = new Date(year, month, i)
+    const dateStr = toDateString(d)
+    days.push(makeDay(i, dateStr, true, today))
+  }
+
+  const remaining = 42 - days.length
+  for (let i = 1; i <= remaining; i++) {
+    const d = new Date(year, month + 1, i)
+    const dateStr = toDateString(d)
+    days.push(makeDay(i, dateStr, false, today))
+  }
+
+  return days
+})
+
+const dayEvents = computed(() => {
+  if (!selectedDay.value) return []
+  return calendarEventsStore.eventsForDate(selectedDay.value.fullDate)
+})
+
+const rankInfo = computed(() => {
+  const s = checkinsStore.streak
+  const xp = calculateXP({
+    checkinDays: s.total,
+    maxStreak: s.longest,
+    currentStreak: s.current,
+    pomodoroCount: pomodoroStore.total,
+    recordsCount: recordsStore.records.length,
+    litNotesCount: litNotesStore.notes.length,
+    experimentsCount: experimentsStore.experiments.length,
+    milestonesCount: milestonesStore.milestones.filter(m => m.done).length,
+    meetingsCount: meetingsStore.meetings.length,
+    inspirationsCount: inspirationsStore.inspirations.length,
+  })
+  return getTier(xp)
+})
+
+const workingDuration = computed(() => _workingDuration.value)
+
+function makeDay(date, dateStr, isCurrentMonth, today) {
+  const d = new Date(dateStr)
+  const weekday = d.getDay()
+  return {
+    date,
+    fullDate: dateStr,
+    currentMonth: isCurrentMonth,
+    isToday: dateStr === today,
+    isWeekend: weekday === 0 || weekday === 6,
+    isChecked: !!checkins.value[dateStr],
+    hasEvent: !!(events.value[dateStr] && events.value[dateStr].length),
+    eventText: (events.value[dateStr] || []).map(e => e.text).join(', ')
   }
 }
+
+function prevMonth() {
+  if (currentMonth.value === 1) { currentMonth.value = 12; currentYear.value-- }
+  else currentMonth.value--
+}
+
+function nextMonth() {
+  if (currentMonth.value === 12) { currentMonth.value = 1; currentYear.value++ }
+  else currentMonth.value++
+}
+
+function goToday() {
+  const n = new Date()
+  currentYear.value = n.getFullYear()
+  currentMonth.value = n.getMonth() + 1
+}
+
+function onDayClick(day) {
+  selectedDay.value = day
+}
+
+function addEvent() {
+  if (!newEventText.value.trim() || !selectedDay.value) return
+  calendarEventsStore.add(selectedDay.value.fullDate, {
+    text: newEventText.value.trim(),
+    color: newEventColor.value,
+    recurring: newEventRecurring.value
+  })
+  events.value = calendarEventsStore.events
+  newEventText.value = ''
+  newEventRecurring.value = false
+}
+
+function removeEvent(eventId, originalDate) {
+  if (!selectedDay.value) return
+  const date = originalDate || selectedDay.value.fullDate
+  calendarEventsStore.remove(date, eventId)
+  events.value = calendarEventsStore.events
+}
+
+function doClockIn() {
+  if (checkinsStore.clockIn()) loadData()
+}
+
+function doClockOut() {
+  if (checkinsStore.clockOut()) loadData()
+}
+
+function updateWorkingDuration() {
+  if (clockStatus.value.clockedIn && clockStatus.value.clockInTime) {
+    const [h, m] = clockStatus.value.clockInTime.split(':').map(Number)
+    const now = new Date()
+    const diff = (now.getHours() * 60 + now.getMinutes()) - (h * 60 + m)
+    if (diff >= 0) {
+      const hrs = Math.floor(diff / 60)
+      const mins = diff % 60
+      _workingDuration.value = `${hrs}:${String(mins).padStart(2, '0')}`
+    }
+  }
+}
+
+function loadData() {
+  checkinsStore.forceLoad()
+  calendarEventsStore.forceLoad()
+  checkins.value = checkinsStore.checkins
+  streak.value = checkinsStore.streak
+  clockStatus.value = checkinsStore.clockStatus
+  events.value = calendarEventsStore.events
+  updateWorkingDuration()
+}
+
+onMounted(() => {
+  loadData()
+  _durationTimer = setInterval(updateWorkingDuration, 60000)
+})
 </script>
 
 <style scoped>
@@ -323,115 +379,227 @@ export default {
   max-width: 800px;
 }
 
-.page-title {
-  font-size: 28px;
-  font-weight: 700;
-  margin-bottom: 30px;
+/* 周日历条 */
+.week-bar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin-bottom: 24px;
+  padding: 12px 16px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
 }
 
-.checkin-card {
-  text-align: center;
-  padding: 40px;
-  margin-bottom: 30px;
+.week-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 4px;
+  border-radius: var(--radius);
+  position: relative;
+  transition: all 0.2s;
 }
 
-.checkin-success .success-icon {
-  font-size: 64px;
-  margin-bottom: 16px;
+.week-day.today {
+  background: var(--gradient-primary);
+  color: white;
+  box-shadow: 0 2px 10px rgba(99, 102, 241, 0.3);
 }
 
-.checkin-success h2 {
+.week-day.checked:not(.today) {
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.week-day-label {
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0.7;
+}
+
+.week-day.today .week-day-label {
+  opacity: 0.9;
+}
+
+.week-day-num {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.week-day.weekend:not(.today) {
+  color: var(--danger);
+}
+
+.week-check {
+  font-size: 10px;
   color: var(--success);
-  margin-bottom: 8px;
+  font-weight: 700;
 }
 
-.checkin-success p {
-  color: var(--text-secondary);
+.week-day.today .week-check {
+  color: white;
+}
+
+/* 主打卡区 */
+.checkin-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 20px;
+  margin-bottom: 20px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+}
+
+.checkin-status {
   margin-bottom: 24px;
 }
 
-.streak-info {
-  display: flex;
-  justify-content: center;
-  gap: 48px;
+.status-icon {
+  font-size: 24px;
+  margin-right: 8px;
 }
 
-.streak-item {
+.status-icon.pulse {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.status-text {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.status-working .status-text {
+  color: var(--success);
+}
+
+/* 大圆按钮 */
+.clock-btn {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  border: none;
+  background: var(--gradient-primary);
+  color: white;
+  cursor: pointer;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.35);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  overflow: hidden;
 }
 
-.streak-value {
-  font-size: 32px;
-  font-weight: 700;
-  color: var(--primary);
+.clock-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--refraction);
+  pointer-events: none;
 }
 
-.streak-label {
+.clock-btn:hover:not(:disabled) {
+  transform: scale(1.08);
+  box-shadow: 0 12px 40px rgba(99, 102, 241, 0.45);
+}
+
+.clock-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.clock-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+  background: var(--bg-surface);
+  box-shadow: none;
+}
+
+.clock-btn.clocked-out {
+  background: var(--success);
+  box-shadow: 0 8px 32px rgba(16, 185, 129, 0.35);
+}
+
+.clock-btn.clocked-in {
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  box-shadow: 0 8px 32px rgba(245, 158, 11, 0.35);
+}
+
+.clock-btn-icon {
+  font-size: 48px;
+  line-height: 1;
+}
+
+.clock-btn-text {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* 工时信息 */
+.time-info {
+  margin-top: 24px;
+}
+
+.time-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 14px;
   color: var(--text-secondary);
 }
 
-.clock-detail {
-  max-width: 320px;
-  margin: 0 auto;
+.time-sep {
+  color: var(--text-muted);
 }
 
-.clock-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--border);
-  font-size: 15px;
-}
-
-.clock-row:last-child {
-  border-bottom: none;
-}
-
-.clock-row.highlight {
-  margin-top: 8px;
-  padding: 12px 0;
-  border-top: 2px solid var(--primary);
-  border-bottom: none;
-}
-
-.clock-label {
-  color: var(--text-secondary);
-}
-
-.clock-value {
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.clock-row.highlight .clock-value {
+.time-highlight {
+  font-size: 20px;
+  font-weight: 700;
   color: var(--primary);
-  font-size: 18px;
 }
 
-.checkin-prompt .prompt-icon {
-  font-size: 64px;
-  margin-bottom: 16px;
-}
-
-.checkin-prompt h2 {
-  margin-bottom: 8px;
-}
-
-.checkin-prompt p {
-  color: var(--text-secondary);
+/* 统计条 */
+.stats-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
   margin-bottom: 24px;
-}
-
-.btn-xl {
-  padding: 16px 48px;
-  font-size: 18px;
+  padding: 16px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
 }
 
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.stat-val {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.stat-lbl {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* 日历卡片 */
 .calendar-card {
-  margin-bottom: 30px;
+  margin-bottom: 24px;
 }
 
 .calendar-nav {
@@ -466,10 +634,6 @@ export default {
   padding: 0 12px;
   font-size: 13px;
   margin-left: auto;
-}
-
-.calendar {
-  margin-top: 0;
 }
 
 .calendar-header {
@@ -702,35 +866,8 @@ export default {
   accent-color: var(--primary);
 }
 
-.stats-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-}
-
-.stat-card {
-  background: var(--bg-primary);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 24px;
-  text-align: center;
-}
-
-.stat-value {
-  font-size: 36px;
-  font-weight: 700;
-  color: var(--primary);
-}
-
-.stat-label {
-  font-size: 14px;
-  color: var(--text-secondary);
-  margin-top: 4px;
-}
-
 /* 段位卡片 */
 .rank-card {
-  margin-top: 20px;
   padding: 24px;
 }
 
@@ -781,5 +918,12 @@ export default {
   font-size: 14px;
   color: var(--warning);
   font-weight: 500;
+}
+
+@media (max-width: 600px) {
+  .stats-bar { grid-template-columns: repeat(2, 1fr); }
+  .clock-btn { width: 130px; height: 130px; }
+  .clock-btn-icon { font-size: 36px; }
+  .week-bar { gap: 3px; padding: 8px 10px; }
 }
 </style>
