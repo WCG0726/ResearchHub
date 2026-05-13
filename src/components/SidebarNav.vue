@@ -69,7 +69,7 @@ const SECTIONS = [
     key: 'schedule', label: '打卡与日程',
     items: [
       { to: '/checkin', name: 'checkin', icon: '✅', text: '打卡' },
-      { to: '/plan', name: 'plan', icon: '📋', text: '计划表' },
+      { to: '/project', name: 'project', icon: '📋', text: '项目管理' },
       { to: '/academic-calendar', name: 'academic-calendar', icon: '📅', text: '学术日历' },
       { to: '/pomodoro', name: 'pomodoro', icon: '🍅', text: '番茄钟' },
     ]
@@ -80,6 +80,7 @@ const SECTIONS = [
       { to: '/records', name: 'records', icon: '📝', text: '科研记录' },
       { to: '/lit-notes', name: 'lit-notes', icon: '📖', text: '文献笔记' },
       { to: '/experiment', name: 'experiment', icon: '🔬', text: '实验记录' },
+      { to: '/plot-tips', name: 'plot-tips', icon: '📊', text: '绘图技巧' },
       { to: '/meeting', name: 'meeting', icon: '🗣️', text: '组会记录' },
       { to: '/inspiration', name: 'inspiration', icon: '💡', text: '灵感板' },
     ]
@@ -88,8 +89,7 @@ const SECTIONS = [
     key: 'writing', label: '论文写作',
     items: [
       { to: '/writing', name: 'writing', icon: '📄', text: '论文写作' },
-      { to: '/guide', name: 'guide', icon: '📘', text: '写作指南' },
-      { to: '/polish', name: 'polish', icon: '✨', text: '润色提示词' },
+      { to: '/writing-assistant', name: 'writing-assistant', icon: '📘', text: '写作助手' },
       { to: '/translate', name: 'translate', icon: '🌐', text: '翻译工具' },
       { to: '/email-templates', name: 'email-templates', icon: '📧', text: '邮件模板' },
     ]
@@ -97,17 +97,15 @@ const SECTIONS = [
   {
     key: 'toolbox', label: '工具箱',
     items: [
-      { to: '/latex-snippets', name: 'latex-snippets', icon: 'Σ', text: 'LaTeX 片段' },
-      { to: '/plot-tips', name: 'plot-tips', icon: '📊', text: '绘图技巧' },
+      { to: '/latex-snippets', name: 'latex-snippets', icon: 'Σ', text: 'LaTeX' },
       { to: '/format-rewrite', name: 'format-rewrite', icon: '🔄', text: '格式改写' },
       { to: '/zotero', name: 'zotero', icon: '📚', text: 'Zotero' },
       { to: '/links', name: 'links', icon: '🔗', text: '学术导航' },
     ]
   },
   {
-    key: 'stats', label: '统计与里程碑',
+    key: 'stats', label: '统计',
     items: [
-      { to: '/milestone', name: 'milestone', icon: '🎯', text: '里程碑' },
       { to: '/progress', name: 'progress', icon: '📈', text: '科研进度' },
       { to: '/team', name: 'team', icon: '🏆', text: '排行榜' },
     ]
@@ -115,8 +113,7 @@ const SECTIONS = [
   {
     key: 'life', label: '生活',
     items: [
-      { to: '/water', name: 'water', icon: '💧', text: '喝水提醒' },
-      { to: '/meal', name: 'meal', icon: '🍜', text: '吃什么' },
+      { to: '/life', name: 'life', icon: '🏠', text: '生活助手' },
     ]
   },
 ]
