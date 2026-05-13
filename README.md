@@ -117,6 +117,14 @@ ResearchHub/
 - **LaTeX 预览：** 编辑器的预览功能基于正则表达式解析，仅支持基本命令（`\title`、`\section`、`\textbf` 等），复杂 LaTeX 公式无法正确渲染。
 - **浏览器兼容：** 建议使用 Chrome/Edge/Firefox 最新版本，Safari 部分 CSS 特性可能不支持。
 
+## 后续规划
+
+- 期刊推荐
+- 文献追踪
+- 格式改写
+- 一键作图
+- 更多科研功能持续更新中……
+
 ## 许可证
 
 MIT License
