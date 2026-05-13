@@ -1,5 +1,7 @@
 import { defineStore } from 'pinia'
-import { getStorage, setStorage } from '../utils/storage'
+import { createPersistedRef } from '../composables/useLocalStorage'
+
+const _data = createPersistedRef('plans', [])
 
 export const usePlansStore = defineStore('plans', {
   state: () => ({
@@ -15,12 +17,12 @@ export const usePlansStore = defineStore('plans', {
   actions: {
     load() {
       if (!this.loaded) {
-        this.plans = getStorage('plans', [])
+        this.plans = _data.value
         this.loaded = true
       }
     },
     forceLoad() {
-      this.plans = getStorage('plans', [])
+      this.plans = _data.value
       this.loaded = true
     },
     add(plan) {
@@ -46,7 +48,7 @@ export const usePlansStore = defineStore('plans', {
       this._persist()
     },
     _persist() {
-      setStorage('plans', this.plans)
+      _data.value = this.plans
     }
   }
 })

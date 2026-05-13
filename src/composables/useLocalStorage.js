@@ -1,5 +1,8 @@
 import { ref, watch } from 'vue'
-import { getStorage, setStorage } from '../utils/storage'
+import { getStorage, setStorage, removeStorage } from '../utils/storage'
+
+// Re-export storage utils so stores import from composables, not utils directly
+export { getStorage, setStorage, removeStorage }
 
 /**
  * Reactive localStorage composable.
@@ -30,4 +33,24 @@ export function useLocalStorage(key, defaultValue = null, options = {}) {
   }
 
   return data
+}
+
+/**
+ * Storage-backed accessor for Pinia stores.
+ * Returns an object with a `.value` property backed by getStorage/setStorage.
+ * Safe to use at module scope (no Vue setup context required).
+ *
+ * @param {string} key - Storage key (without prefix)
+ * @param {*} defaultValue - Default value if key doesn't exist
+ * @returns {{ value: * }} - accessor whose .value reads/writes localStorage
+ */
+export function createPersistedRef(key, defaultValue = null) {
+  return {
+    get value() {
+      return getStorage(key, defaultValue)
+    },
+    set value(v) {
+      setStorage(key, v)
+    }
+  }
 }

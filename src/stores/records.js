@@ -1,5 +1,7 @@
 import { defineStore } from 'pinia'
-import { getStorage, setStorage } from '../utils/storage'
+import { createPersistedRef } from '../composables/useLocalStorage'
+
+const _data = createPersistedRef('records', [])
 
 export const useRecordsStore = defineStore('records', {
   state: () => ({
@@ -14,12 +16,12 @@ export const useRecordsStore = defineStore('records', {
   actions: {
     load() {
       if (!this.loaded) {
-        this.records = getStorage('records', [])
+        this.records = _data.value
         this.loaded = true
       }
     },
     forceLoad() {
-      this.records = getStorage('records', [])
+      this.records = _data.value
       this.loaded = true
     },
     add(record) {
@@ -47,7 +49,7 @@ export const useRecordsStore = defineStore('records', {
       this._persist()
     },
     _persist() {
-      setStorage('records', this.records)
+      _data.value = this.records
     }
   }
 })

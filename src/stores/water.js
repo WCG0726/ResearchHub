@@ -1,5 +1,7 @@
 import { defineStore } from 'pinia'
-import { getStorage, setStorage } from '../utils/storage'
+import { createPersistedRef } from '../composables/useLocalStorage'
+
+const _data = createPersistedRef('water', {})
 
 export const useWaterStore = defineStore('water', {
   state: () => ({
@@ -20,12 +22,12 @@ export const useWaterStore = defineStore('water', {
   actions: {
     load() {
       if (!this.loaded) {
-        this.allData = getStorage('water', {})
+        this.allData = _data.value
         this.loaded = true
       }
     },
     forceLoad() {
-      this.allData = getStorage('water', {})
+      this.allData = _data.value
       this.loaded = true
     },
     addCup() {
@@ -53,7 +55,7 @@ export const useWaterStore = defineStore('water', {
       this._persist()
     },
     _persist() {
-      setStorage('water', this.allData)
+      _data.value = this.allData
     }
   }
 })
