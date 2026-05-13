@@ -24,20 +24,40 @@
       </div>
 
       <div class="records-list">
-        <div
-          v-for="record in filteredRecords"
-          :key="record.id"
-          class="record-item"
-          :class="{ active: editingId === record.id }"
-          @click="selectRecord(record)"
-        >
-          <div class="record-item-title">{{ record.title || '无标题' }}</div>
-          <div class="record-item-meta">
-            <span>{{ formatDate(record.createdAt) }}</span>
-            <span v-for="tag in (record.tags || []).slice(0, 2)" :key="tag" class="mini-tag">{{ tag }}</span>
+        <template v-if="filteredRecords.length > 50">
+          <VirtualList :items="filteredRecords" :item-height="76" :height="listHeight" key-field="id">
+            <template #default="{ item }">
+              <div
+                class="record-item"
+                :class="{ active: editingId === item.id }"
+                @click="selectRecord(item)"
+              >
+                <div class="record-item-title">{{ item.title || '无标题' }}</div>
+                <div class="record-item-meta">
+                  <span>{{ formatDate(item.createdAt) }}</span>
+                  <span v-for="tag in (item.tags || []).slice(0, 2)" :key="tag" class="mini-tag">{{ tag }}</span>
+                </div>
+                <div class="record-item-preview">{{ truncate(item.content, 60) }}</div>
+              </div>
+            </template>
+          </VirtualList>
+        </template>
+        <template v-else>
+          <div
+            v-for="record in filteredRecords"
+            :key="record.id"
+            class="record-item"
+            :class="{ active: editingId === record.id }"
+            @click="selectRecord(record)"
+          >
+            <div class="record-item-title">{{ record.title || '无标题' }}</div>
+            <div class="record-item-meta">
+              <span>{{ formatDate(record.createdAt) }}</span>
+              <span v-for="tag in (record.tags || []).slice(0, 2)" :key="tag" class="mini-tag">{{ tag }}</span>
+            </div>
+            <div class="record-item-preview">{{ truncate(record.content, 60) }}</div>
           </div>
-          <div class="record-item-preview">{{ truncate(record.content, 60) }}</div>
-        </div>
+        </template>
         <div v-if="filteredRecords.length === 0" class="empty-list">暂无记录</div>
       </div>
     </aside>
@@ -99,11 +119,15 @@ import { ref, computed, onMounted } from 'vue'
 import { useRecordsStore } from '../stores/records'
 import { formatDate } from '../utils/date'
 import { suggestTags, generateSummary, isAIConfigured } from '../utils/ai'
+import { useDebounce } from '../composables/useDebounce'
+import VirtualList from '../components/ui/VirtualList.vue'
 
 const recordsStore = useRecordsStore()
 const records = ref([])
 const searchQuery = ref('')
+const debouncedSearch = useDebounce(searchQuery, 300)
 const selectedTags = ref([])
+const listHeight = ref(600)
 const showEditor = ref(false)
 const editingId = ref(null)
 const form = ref({ title: '', content: '', tagsStr: '', category: 'experiment', updatedAt: null })
@@ -121,7 +145,7 @@ const allTags = computed(() => {
 
 const filteredRecords = computed(() => {
   return records.value.filter(r => {
-    const q = searchQuery.value.toLowerCase()
+    const q = debouncedSearch.value.toLowerCase()
     const matchSearch = !q ||
       (r.title && r.title.toLowerCase().includes(q)) ||
       (r.content && r.content.toLowerCase().includes(q))
@@ -129,6 +153,12 @@ const filteredRecords = computed(() => {
       selectedTags.value.some(t => r.tags?.includes(t))
     return matchSearch && matchTags
   })
+})
+
+onMounted(() => {
+  // Calculate available height for virtual list
+  const sidebar = document.querySelector('.records-sidebar')
+  if (sidebar) listHeight.value = sidebar.clientHeight - 180
 })
 
 function toggleTag(tag) {
