@@ -8,7 +8,7 @@
     </div>
 
     <!-- ===== 片段库 Tab ===== -->
-    <div v-show="tab === 'snippets'">
+    <div v-if="tab === 'snippets'">
       <div class="toolbar">
         <input v-model="search" class="input search-input" placeholder="搜索片段..." />
         <select v-model="filterCat" class="input filter-select">
@@ -67,7 +67,7 @@
     </div>
 
     <!-- ===== 编辑器 Tab ===== -->
-    <div v-show="tab === 'editor'">
+    <div v-if="tab === 'editor'">
       <div class="toolbar">
         <select v-model="currentFile" class="input file-select" @change="loadFile">
           <option value="">-- 选择文件 --</option>
@@ -110,6 +110,7 @@ import { ref, computed, onMounted, nextTick } from 'vue'
 import { useLatexSnippetsStore } from '../stores/latexSnippets'
 import { LATEX_SNIPPETS } from '../data/latexSnippets'
 import { getStorage, setStorage } from '../utils/storage'
+import { useDebounce } from '../composables/useDebounce'
 
 const latexSnippetsStore = useLatexSnippetsStore()
 
@@ -117,6 +118,7 @@ const latexSnippetsStore = useLatexSnippetsStore()
 const tab = ref('snippets')
 const customSnippets = ref([])
 const search = ref('')
+const debouncedSearch = useDebounce(search, 300)
 const filterCat = ref('')
 const showForm = ref(false)
 const form = ref({ name: '', category: '自定义', code: '' })
@@ -180,7 +182,7 @@ const previewHtml = computed(() => {
 function snippetsByCat(cat) {
   return allSnippets.value.filter(s => {
     const matchCat = s.category === cat
-    const matchSearch = !search.value || s.name.toLowerCase().includes(search.value.toLowerCase()) || s.code.toLowerCase().includes(search.value.toLowerCase())
+    const matchSearch = !debouncedSearch.value || s.name.toLowerCase().includes(debouncedSearch.value.toLowerCase()) || s.code.toLowerCase().includes(debouncedSearch.value.toLowerCase())
     return matchCat && matchSearch
   })
 }

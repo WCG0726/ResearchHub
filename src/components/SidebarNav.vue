@@ -1,5 +1,5 @@
 <template>
-  <aside class="sidebar" :class="{ open }">
+  <aside class="sidebar" :class="{ open, collapsed }">
     <div v-if="open" class="sidebar-backdrop" @click="$emit('close')"></div>
     <nav class="sidebar-nav">
       <router-link to="/" class="nav-item" :class="{ active: $route.name === 'dashboard' }">
@@ -54,6 +54,9 @@
     </nav>
 
     <div class="sidebar-footer">
+      <button class="btn-collapse" @click="$emit('toggle-collapse')" :title="collapsed ? '展开侧边栏' : '收起侧边栏'">
+        {{ collapsed ? '▶' : '◀' }}
+      </button>
       <button class="btn-logout" @click="handleLogout">退出登录</button>
       <div class="version">v2.5.0</div>
     </div>
@@ -126,9 +129,10 @@ const DIRECT_LINKS = [
 export default {
   name: 'SidebarNav',
   props: {
-    open: { type: Boolean, default: false }
+    open: { type: Boolean, default: false },
+    collapsed: { type: Boolean, default: false }
   },
-  emits: ['close'],
+  emits: ['close', 'toggle-collapse'],
   data() {
     return {
       user: getCurrentUser(),
@@ -183,8 +187,34 @@ export default {
   padding: 12px 10px;
   z-index: 90;
   overflow-y: auto;
+  overflow-x: hidden;
   backdrop-filter: blur(20px) saturate(180%);
   background: rgba(255, 255, 255, 0.78);
+  transition: width 0.25s ease;
+}
+
+.sidebar.collapsed {
+  width: var(--sidebar-w-collapsed);
+  padding: 12px 6px;
+}
+
+.sidebar.collapsed .nav-text,
+.sidebar.collapsed .nav-section,
+.sidebar.collapsed .section-arrow,
+.sidebar.collapsed .nav-group-body,
+.sidebar.collapsed .version,
+.sidebar.collapsed .btn-logout {
+  display: none;
+}
+
+.sidebar.collapsed .nav-item {
+  justify-content: center;
+  padding: 10px 0;
+}
+
+.sidebar.collapsed .nav-icon {
+  width: auto;
+  font-size: 18px;
 }
 
 .sidebar::after {
@@ -350,6 +380,28 @@ export default {
 }
 
 .ext-icon { font-size: 14px; }
+
+.btn-collapse {
+  width: 100%;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: none;
+  color: var(--text-muted);
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 6px;
+}
+
+.btn-collapse:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.sidebar.collapsed .btn-collapse {
+  padding: 8px 0;
+}
 
 .btn-logout {
   width: 100%;

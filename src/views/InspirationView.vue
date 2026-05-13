@@ -66,11 +66,13 @@
 import { ref, computed, onMounted } from 'vue'
 import { useInspirationsStore } from '../stores/inspirations'
 import { expandInspiration, isAIConfigured } from '../utils/ai'
+import { useDebounce } from '../composables/useDebounce'
 
 const inspirationsStore = useInspirationsStore()
 
 const items = ref([])
 const search = ref('')
+const debouncedSearch = useDebounce(search, 300)
 const filterColor = ref('')
 const showForm = ref(false)
 const form = ref({ title: '', content: '', tags: '', color: '#6366f1' })
@@ -89,8 +91,8 @@ const filtered = computed(() => {
   let list = [...items.value]
   list.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || new Date(b.createdAt) - new Date(a.createdAt))
   if (filterColor.value) list = list.filter(i => i.color === filterColor.value)
-  if (search.value) {
-    const q = search.value.toLowerCase()
+  if (debouncedSearch.value) {
+    const q = debouncedSearch.value.toLowerCase()
     list = list.filter(i => [i.title, i.content, i.tags].some(f => f && f.toLowerCase().includes(q)))
   }
   return list

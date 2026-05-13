@@ -2,9 +2,9 @@
   <div class="app" :class="{ 'dark': isDark }">
     <AmbientBackground :is-login="isLoginPage" />
     <template v-if="!isLoginPage">
-      <HeaderNav :is-dark="isDark" @toggle-theme="toggleTheme" @toggle-sidebar="sidebarOpen = !sidebarOpen" />
-      <div class="layout">
-        <SidebarNav :open="sidebarOpen" @close="sidebarOpen = false" />
+      <HeaderNav :is-dark="isDark" @toggle-theme="toggleTheme" @toggle-sidebar="sidebarOpen = !sidebarOpen" @toggle-collapse="sidebarCollapsed = !sidebarCollapsed" />
+      <div class="layout" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
+        <SidebarNav :open="sidebarOpen" :collapsed="sidebarCollapsed" @close="sidebarOpen = false" />
         <main class="main" @click="sidebarOpen = false">
           <ErrorBoundary>
             <router-view v-slot="{ Component }">
@@ -43,6 +43,7 @@ const profileStore = useProfileStore()
 
 const isDark = ref(false)
 const sidebarOpen = ref(false)
+const sidebarCollapsed = ref(false)
 const showQuickNote = ref(false)
 const aiReady = ref(isAIConfigured())
 
@@ -167,6 +168,11 @@ onUnmounted(() => {
   margin-left: var(--sidebar-w);
   padding: 30px 40px;
   min-height: calc(100vh - var(--header-h));
+  transition: margin-left 0.25s ease;
+}
+
+.sidebar-collapsed .main {
+  margin-left: var(--sidebar-w-collapsed);
 }
 
 /* 页面切换动画 */

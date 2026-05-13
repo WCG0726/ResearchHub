@@ -80,7 +80,8 @@ a {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 8px 18px;
+  height: 36px;
+  padding: 0 18px;
   border: none;
   border-radius: var(--radius);
   font-size: 13px;
@@ -145,15 +146,35 @@ a {
   box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
 }
 
+.btn-text {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  padding: 0 8px;
+}
+
+.btn-text:hover {
+  color: var(--primary);
+  background: rgba(99, 102, 241, 0.06);
+}
+
 .btn-sm {
-  padding: 6px 12px;
+  height: 28px;
+  padding: 0 12px;
   font-size: 13px;
+}
+
+.btn-lg {
+  height: 44px;
+  padding: 0 28px;
+  font-size: 15px;
 }
 
 /* ===== 输入框 ===== */
 .input, select, textarea {
   width: 100%;
-  padding: 9px 14px;
+  height: 36px;
+  padding: 0 14px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   font-size: 13px;
@@ -194,6 +215,8 @@ a {
 }
 
 .textarea {
+  height: auto;
+  padding: 9px 14px;
   resize: vertical;
   min-height: 100px;
   font-family: inherit;
@@ -360,6 +383,16 @@ a:hover {
 }
 
 /* ===== 表格行悬停 ===== */
+.table-block thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.table-block tbody tr:nth-child(even) td {
+  background: var(--bg-surface);
+}
+
 .table-block tr:hover td {
   background: var(--bg-hover);
 }

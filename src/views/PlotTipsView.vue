@@ -111,6 +111,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { getStorage, setStorage } from '../utils/storage'
 import { isAIConfigured, generatePlotCode } from '../utils/ai'
+import { useDebounce } from '../composables/useDebounce'
 
 const TIPS = [
   {
@@ -518,6 +519,7 @@ plt.tight_layout()</code></pre>`,
 ]
 
 const search = ref('')
+const debouncedSearch = useDebounce(search, 300)
 const filterCat = ref('')
 const openCats = ref({})
 const customNotes = ref([])
@@ -541,7 +543,7 @@ const displayCategories = computed(() => {
 function tipsByCat(cat) {
   return TIPS.filter(t => {
     const matchCat = t.category === cat
-    const matchSearch = !search.value || t.title.includes(search.value) || t.content.includes(search.value)
+    const matchSearch = !debouncedSearch.value || t.title.includes(debouncedSearch.value) || t.content.includes(debouncedSearch.value)
     return matchCat && matchSearch
   })
 }

@@ -100,10 +100,12 @@
 import { ref, computed, onMounted } from 'vue'
 import { useMeetingsStore } from '../stores/meetings'
 import { generateMeetingMinutes, isAIConfigured } from '../utils/ai'
+import { useDebounce } from '../composables/useDebounce'
 
 const meetingsStore = useMeetingsStore()
 const meetings = ref([])
 const search = ref('')
+const debouncedSearch = useDebounce(search, 300)
 const showForm = ref(false)
 const editing = ref(null)
 const aiLoading = ref(false)
@@ -116,8 +118,8 @@ function emptyForm() {
 const form = ref(emptyForm())
 
 const filtered = computed(() => {
-  if (!search.value) return meetings.value
-  const q = search.value.toLowerCase()
+  if (!debouncedSearch.value) return meetings.value
+  const q = debouncedSearch.value.toLowerCase()
   return meetings.value.filter(m => [m.topics, m.feedback, m.todos, m.notes].some(f => f && f.toLowerCase().includes(q)))
 })
 

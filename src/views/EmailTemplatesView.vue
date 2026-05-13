@@ -90,11 +90,13 @@ import { ref, computed, onMounted } from 'vue'
 import { useEmailTemplatesStore } from '../stores/emailTemplates'
 import { generateEmail, isAIConfigured } from '../utils/ai'
 import { EMAIL_TEMPLATES } from '../data/emailTemplates'
+import { useDebounce } from '../composables/useDebounce'
 
 const emailTemplatesStore = useEmailTemplatesStore()
 
 const customTemplates = ref([])
 const search = ref('')
+const debouncedSearch = useDebounce(search, 300)
 const filterCat = ref('')
 const showForm = ref(false)
 const form = ref({ name: '', category: '自定义', content: '' })
@@ -122,7 +124,7 @@ const displayCategories = computed(() => {
 function templatesByCat(cat) {
   return allTemplates.value.filter(t => {
     const matchCat = t.category === cat
-    const matchSearch = !search.value || t.name.toLowerCase().includes(search.value.toLowerCase()) || t.content.toLowerCase().includes(search.value.toLowerCase())
+    const matchSearch = !debouncedSearch.value || t.name.toLowerCase().includes(debouncedSearch.value.toLowerCase()) || t.content.toLowerCase().includes(debouncedSearch.value.toLowerCase())
     return matchCat && matchSearch
   })
 }

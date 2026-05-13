@@ -120,10 +120,12 @@ import { ref, computed, onMounted } from 'vue'
 import { useLitNotesStore } from '../stores/litNotes'
 import { formatDate } from '../utils/date'
 import { generateLitNoteTemplate, isAIConfigured } from '../utils/ai'
+import { useDebounce } from '../composables/useDebounce'
 
 const litNotesStore = useLitNotesStore()
 
 const search = ref('')
+const debouncedSearch = useDebounce(search, 300)
 const filterTag = ref('')
 const showForm = ref(false)
 const editing = ref(null)
@@ -149,7 +151,7 @@ const allTags = computed(() => {
 
 const filtered = computed(() => {
   return notes.value.filter(n => {
-    const matchSearch = !search.value || [n.title, n.authors, n.tags, n.keyPoints].some(f => f && f.toLowerCase().includes(search.value.toLowerCase()))
+    const matchSearch = !debouncedSearch.value || [n.title, n.authors, n.tags, n.keyPoints].some(f => f && f.toLowerCase().includes(debouncedSearch.value.toLowerCase()))
     const matchTag = !filterTag.value || (n.tags && parseTags(n.tags).includes(filterTag.value))
     return matchSearch && matchTag
   })

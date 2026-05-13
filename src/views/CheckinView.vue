@@ -497,7 +497,7 @@ onUnmounted(() => {
   justify-content: center;
   gap: 8px;
   box-shadow: 0 8px 32px rgba(99, 102, 241, 0.35);
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
 }

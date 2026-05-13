@@ -104,6 +104,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useExperimentsStore } from '../stores/experiments'
+import { useDebounce } from '../composables/useDebounce'
 
 const experimentsStore = useExperimentsStore()
 
@@ -113,6 +114,7 @@ function emptyForm() {
 
 const experiments = ref([])
 const search = ref('')
+const debouncedSearch = useDebounce(search, 300)
 const filterStatus = ref('')
 const showForm = ref(false)
 const editing = ref(null)
@@ -120,7 +122,7 @@ const form = ref(emptyForm())
 
 const filtered = computed(() => {
   return experiments.value.filter(e => {
-    const matchSearch = !search.value || [e.sampleId, e.name, e.params, e.results].some(f => f && f.toLowerCase().includes(search.value.toLowerCase()))
+    const matchSearch = !debouncedSearch.value || [e.sampleId, e.name, e.params, e.results].some(f => f && f.toLowerCase().includes(debouncedSearch.value.toLowerCase()))
     const matchStatus = !filterStatus.value || e.status === filterStatus.value
     return matchSearch && matchStatus
   })

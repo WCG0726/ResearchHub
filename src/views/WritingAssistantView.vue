@@ -114,6 +114,7 @@ import { ref, computed, defineAsyncComponent } from 'vue'
 import { polishText, isAIConfigured } from '../utils/ai'
 import { POLISH_PROMPTS, POLISH_CATEGORIES } from '../data/polishPrompts'
 import { getStorage, setStorage } from '../utils/storage'
+import { useDebounce } from '../composables/useDebounce'
 
 // Guide sub-components (lazy loaded)
 const GuideStructure = defineAsyncComponent(() => import('./guide/GuideStructure.vue'))
@@ -131,6 +132,7 @@ const tab = ref('guide')
 
 // Guide state
 const searchQuery = ref('')
+const debouncedSearchQuery = useDebounce(searchQuery, 300)
 const activeCategory = ref('structure')
 const categories = [
   { id: 'structure', name: '论文结构', icon: '📄', keywords: ['title', 'abstract', 'introduction', 'methods', 'results', 'discussion', 'conclusion', '摘要', '引言', '方法', '结果', '讨论', '结论', '结构', 'IMRD'] },
@@ -146,7 +148,7 @@ const categories = [
 ]
 
 const filteredCategories = computed(() => {
-  const q = searchQuery.value.toLowerCase().trim()
+  const q = debouncedSearchQuery.value.toLowerCase().trim()
   if (!q) return categories
   return categories.filter(cat =>
     cat.name.toLowerCase().includes(q) ||
